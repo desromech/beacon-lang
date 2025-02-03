@@ -12,6 +12,8 @@ struct beacon_context_s
     {
 
     } roots;
+
+    beacon_MemoryHeap_t *heap;
 };
 
 beacon_context_t *beacon_context_new(void);

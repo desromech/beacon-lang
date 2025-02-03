@@ -31,4 +31,6 @@ beacon_ObjectHeader_t *beacon_allocateObject(beacon_MemoryHeap_t *heap, size_t s
     beacon_ObjectHeader_t *header = (beacon_ObjectHeader_t *)(allocation + 1);
     header->objectKind = kind;
     header->gcColor = heap->whiteGCColor;
+
+    return header;
 }
