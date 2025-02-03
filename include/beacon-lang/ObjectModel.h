@@ -17,7 +17,7 @@ typedef intptr_t beacon_oop_t;
 struct beacon_ObjectHeader_s
 {
     uint8_t objectKind : 2;
-    uint8_t gcCcolor : 2;
+    uint8_t gcColor : 2;
 
     uint32_t slotCount;
     beacon_Behavior_t *behavior;

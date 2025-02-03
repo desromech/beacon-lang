@@ -14,6 +14,9 @@ typedef struct beacon_MemoryAllocationHeader_s
 typedef struct beacon_MemoryHeap_s
 {
     beacon_MemoryAllocationHeader_t *lastAllocation;
+    uint8_t whiteGCColor;
+    uint8_t grayGCColor;
+    uint8_t blackGCColor;
 } beacon_MemoryHeap_t;
 
 beacon_MemoryHeap_t *beacon_createMemoryHeap(void);
