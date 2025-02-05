@@ -48,7 +48,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->roots.dictionaryClass = beacon_context_createClassAndMetaclass(context, context->roots.hashedCollectionClass, "Dictionary");
     context->roots.methodDictionaryClass = beacon_context_createClassAndMetaclass(context, context->roots.methodDictionaryClass, "MethodDictionary");
     context->roots.sequenceableCollectionClass = beacon_context_createClassAndMetaclass(context, context->roots.collectionClass, "SequenceableCollection");
-    context->roots.orderedCollectionClass = beacon_context_createClassAndMetaclass(context, context->roots.sequenceableCollectionClass, "OrderedCollection");
+    context->roots.orderedCollectionClass = beacon_context_createClassAndMetaclass(context, context->roots.sequenceableCollectionClass, "ArrayList");
     context->roots.arrayedCollectionClass = beacon_context_createClassAndMetaclass(context, context->roots.sequenceableCollectionClass, "ArrayedCollection");
     context->roots.arrayClass = beacon_context_createClassAndMetaclass(context, context->roots.arrayedCollectionClass, "Array");
     context->roots.stringClass = beacon_context_createClassAndMetaclass(context, context->roots.arrayedCollectionClass, "String");

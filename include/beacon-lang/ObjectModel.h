@@ -120,13 +120,13 @@ typedef struct beacon_Array_s
     beacon_oop_t elements[];
 } beacon_Array_t;
 
-typedef struct beacon_OrderedCollection_s
+typedef struct beacon_ArrayList_s
 {
     beacon_SequenceableCollection_t super;
     beacon_Array_t *array;
-    beacon_oop_t firstIndex;
-    beacon_oop_t lastIndex;
-} beacon_OrderedCollection_t;
+    beacon_oop_t size;
+    beacon_oop_t capacity;
+} beacon_ArrayList_t;
 
 typedef struct beacon_String_s
 {

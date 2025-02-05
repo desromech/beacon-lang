@@ -1,7 +1,7 @@
 #include "beacon-lang/Scanner.h"
 #include "beacon-lang/Memory.h"
 #include "beacon-lang/Context.h"
-#include "beacon-lang/OrderedCollection.h"
+#include "beacon-lang/ArrayList.h"
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -37,7 +37,7 @@ bool scanner_isIdentifierMiddle(int character)
 
 bool scanner_isOperatorCharacter(int character)
 {
-    const char *charset = "+-/\\*~<>=@%|&?!^";
+    const char *charset = "+-/\\*~<>=@,%|&?!";
     while(*charset != 0)
     {
         if(*charset == character)
@@ -177,8 +177,305 @@ beacon_ScannerToken_t *scannerState_makeErrorTokenStartingFrom(beacon_scannerSta
     return token;
 }
 
-beacon_OrderedCollection_t *beacon_scanSourceCode(beacon_context_t *context, beacon_SourceCode_t *sourceCode)
+beacon_ScannerToken_t *beacon_scanner_skipWhite(beacon_scannerState_t *state)
 {
-    beacon_OrderedCollection_t *tokens = beacon_OrderedCollection_new(context);
-    return tokens;
+    bool hasSeenComment = false;
+    
+    do
+    {
+        hasSeenComment = false;
+        while (!scannerState_atEnd(state) && scannerState_peek(state, 0) <= ' ')
+            scannerState_advance(state, 1);
+
+        // Multiline comment
+        if(scannerState_peek(state, 0) == '"')
+        {
+            beacon_scannerState_t commentInitialState = *state;
+            scannerState_advance(state, 2);
+            bool hasCommentEnd = false;
+            while (!scannerState_atEnd(state))
+            {
+                hasCommentEnd = scannerState_peek(state, 0) == '"';
+                scannerState_advance(state, 1);
+                if (hasCommentEnd)
+                    break;
+            }
+            
+            if (!hasCommentEnd)
+            {
+                return scannerState_makeErrorTokenStartingFrom(state, "Incomplete multiline comment.", &commentInitialState);
+            }
+            hasSeenComment = true;
+
+        }
+    } while (hasSeenComment);
+    
+    return NULL;
+}
+
+bool scanAdvanceKeyword(beacon_scannerState_t *state)
+{
+    if(!scanner_isIdentifierStart(scannerState_peek(state, 0)))
+        return false;
+
+    beacon_scannerState_t initialState = *state;
+    while (scanner_isIdentifierMiddle(scannerState_peek(state, 0)))
+        scannerState_advance(state, 1);
+
+    if(scannerState_peek(state, 0) == ':')
+    {
+        scannerState_advance(state, 1);
+    }
+    else
+    {
+        *state = initialState;
+        return false;
+    }
+    
+    return true;
+}
+
+beacon_ScannerToken_t *beacon_scanSingleToken(beacon_scannerState_t *state)
+{
+    beacon_ScannerToken_t *whiteToken = beacon_scanner_skipWhite(state);
+    if(whiteToken)
+        return whiteToken;
+
+    if(scannerState_atEnd(state))
+        return scannerState_makeToken(state, BeaconTokenEndOfSource);
+
+    beacon_scannerState_t initialState = *state;
+    int c = scannerState_peek(state, 0);
+
+    // Identifiers, keywords and multi-keywords
+    if(scanner_isIdentifierStart(c))
+    {
+        scannerState_advance(state, 1);
+        while (scanner_isIdentifierMiddle(scannerState_peek(state, 0)))
+            scannerState_advance(state, 1);
+
+        if(scannerState_peek(state, 0) == ':')
+        {
+            scannerState_advance(state, 1);
+            bool isMultiKeyword = false;
+            bool hasAdvanced = true;
+            while(hasAdvanced)
+            {
+                hasAdvanced = scanAdvanceKeyword(state);
+                isMultiKeyword = isMultiKeyword || hasAdvanced;
+            }
+
+            if(isMultiKeyword)
+                return scannerState_makeTokenStartingFrom(state, BeaconTokenMultiKeyword, &initialState);
+            else
+                return scannerState_makeTokenStartingFrom(state, BeaconTokenKeyword, &initialState);
+        }
+
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenIdentifier, &initialState);
+    }
+
+    // Numbers
+    if(scanner_isDigit(c) || (c == '-' && scanner_isDigit(scannerState_peek(state, 1))))
+    {
+        scannerState_advance(state, 1);
+        while(scanner_isDigit(scannerState_peek(state, 0)))
+            scannerState_advance(state, 1);
+
+        // Parse the radix
+        if(scannerState_peek(state, 0) == 'r')
+        {
+            scannerState_advance(state, 1);
+            while(scanner_isIdentifierMiddle(scannerState_peek(state, 0)))
+                scannerState_advance(state, 1);
+            return scannerState_makeTokenStartingFrom(state, BeaconTokenInteger, &initialState);
+        }
+
+        // Parse the decimal point
+        if(scannerState_peek(state, 0) == '.' && scanner_isDigit(scannerState_peek(state, 1)))
+        {
+            scannerState_advance(state, 2);
+            while(scanner_isDigit(scannerState_peek(state, 0)))
+                scannerState_advance(state, 1);
+
+            // Parse the exponent
+            if(scannerState_peek(state, 0) == 'e' || scannerState_peek(state, 0) == 'E')
+            {
+                if(scanner_isDigit(scannerState_peek(state, 1)) ||
+                ((scannerState_peek(state, 1) == '+' || scannerState_peek(state, 1) == '-') && scanner_isDigit(scannerState_peek(state, 2) )))
+                {
+                    scannerState_advance(state, 2);
+                    while(scanner_isDigit(scannerState_peek(state, 0)))
+                        scannerState_advance(state, 1);
+                }
+            }
+
+            return scannerState_makeTokenStartingFrom(state, BeaconTokenFloat, &initialState);
+        }
+
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenInteger, &initialState);
+    }
+
+    // Symbols
+    if(c == '#')
+    {
+        int c1 = scannerState_peek(state, 1);
+        if(scanner_isIdentifierStart(c1))
+        {
+            scannerState_advance(state, 2);
+            while (scanner_isIdentifierMiddle(scannerState_peek(state, 0)))
+                scannerState_advance(state, 1);
+
+
+            if (scannerState_peek(state, 0) == ':')
+            {
+                scannerState_advance(state, 1);
+                bool hasAdvanced = true;
+                while(hasAdvanced)
+                {
+                    hasAdvanced = scanAdvanceKeyword(state);
+                }
+
+                return scannerState_makeTokenStartingFrom(state, BeaconTokenSymbol, &initialState); 
+            }
+            return scannerState_makeTokenStartingFrom(state, BeaconTokenSymbol, &initialState); 
+        }
+        else if(scanner_isOperatorCharacter(c1))
+        {
+            scannerState_advance(state, 2);
+            while(scanner_isOperatorCharacter(scannerState_peek(state, 0)))
+                scannerState_advance(state, 1);
+            return scannerState_makeTokenStartingFrom(state, BeaconTokenSymbol, &initialState);
+        }
+        else if(c1 == '\'')
+        {
+            scannerState_advance(state, 2);
+            while (!scannerState_atEnd(state) && scannerState_peek(state, 0) != '\'')
+            {
+                if(scannerState_peek(state, 0) == '\\' && scannerState_peek(state, 1) > 0)
+                    scannerState_advance(state, 2);
+                else
+                    scannerState_advance(state, 1);
+            }
+
+            if (scannerState_peek(state, 0) != '\'')
+                return scannerState_makeErrorTokenStartingFrom(state, "Incomplete symbol string literal.", &initialState);
+            
+            scannerState_advance(state, 1);
+            return scannerState_makeTokenStartingFrom(state, BeaconTokenSymbol, &initialState);
+        }
+        else if (c1 == '[')
+        {
+            scannerState_advance(state, 2);
+            return scannerState_makeTokenStartingFrom(state, BeaconTokenByteArrayStart, &initialState);
+        }
+        else if (c1 == '(')
+        {
+            scannerState_advance(state, 2);
+            return scannerState_makeTokenStartingFrom(state, BeaconTokenLiteralArrayStart, &initialState);
+        }
+    }
+
+    // Strings
+    if(c == '\'')
+    {
+        scannerState_advance(state, 1);
+        while (!scannerState_atEnd(state) && scannerState_peek(state, 0) != '\'')
+        {
+            if(scannerState_peek(state, 0) == '\\' && scannerState_peek(state, 1) > 0)
+                scannerState_advance(state, 2);
+            else
+                scannerState_advance(state, 1);
+        }
+
+        if (scannerState_peek(state, 0) != '\'')
+            return scannerState_makeErrorTokenStartingFrom(state, "Incomplete string literal.", &initialState);
+        
+        scannerState_advance(state, 1);
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenString, &initialState);
+    }
+
+    switch(c)
+    {
+    case '(':
+        scannerState_advance(state, 1);
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenLeftParent, &initialState);
+    case ')':
+        scannerState_advance(state, 1);
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenRightParent, &initialState);
+    case '[':
+        scannerState_advance(state, 1);
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenLeftBracket, &initialState);
+    case ']':
+        scannerState_advance(state, 1);
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenRightBracket, &initialState);
+    case '{':
+        scannerState_advance(state, 1);
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenLeftCurlyBracket, &initialState);
+    case '}':
+        scannerState_advance(state, 1);
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenRightCurlyBracket, &initialState);
+    case ';':
+        scannerState_advance(state, 1);
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenSemicolon, &initialState);
+    case '.':
+        scannerState_advance(state, 1);
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenDot, &initialState);
+    case '|':
+        scannerState_advance(state, 1);
+        if (scanner_isOperatorCharacter(scannerState_peek(state, 0)))
+        {
+            while(scanner_isOperatorCharacter(scannerState_peek(state, 0)))
+                scannerState_advance(state, 1);
+            return scannerState_makeTokenStartingFrom(state, BeaconTokenOperator, &initialState);
+        }
+
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenBar, &initialState);
+    default:
+        break;
+    }
+
+    if(scanner_isOperatorCharacter(c))
+    {
+        scannerState_advance(state, 1);
+        if(!scanner_isOperatorCharacter(scannerState_peek(state, 0)))
+        {
+            switch(c)
+            {
+            case '<':
+                return scannerState_makeTokenStartingFrom(state, BeaconTokenLessThan, &initialState);
+            case '>':
+                return scannerState_makeTokenStartingFrom(state, BeaconTokenGreaterThan, &initialState);
+            default:
+                // Generic character, do nothing.
+                break;
+            }
+        }
+
+        while(scanner_isOperatorCharacter(scannerState_peek(state, 0)))
+            scannerState_advance(state, 1);
+
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenOperator, &initialState);
+    }
+
+    scannerState_advance(state, 1);
+    return scannerState_makeErrorTokenStartingFrom(state, "Unknown character", &initialState);
+}
+
+beacon_ArrayList_t *beacon_scanSourceCode(beacon_context_t *context, beacon_SourceCode_t *sourceCode)
+{
+    beacon_ArrayList_t *arrayList = beacon_ArrayList_new(context);
+    beacon_scannerState_t currentState = scannerState_newForSourceCode(context, sourceCode);
+    beacon_ScannerToken_t *scannedToken = NULL;
+    do
+    {
+        scannedToken = beacon_scanSingleToken(&currentState);
+        if(beacon_decodeSmallInteger(scannedToken->kind) != BeaconTokenNullToken)
+        {
+            beacon_ArrayList_add(context, arrayList, (beacon_oop_t)scannedToken);
+            if (beacon_decodeSmallInteger(scannedToken->kind) == BeaconTokenEndOfSource)
+                break;
+        }
+    } while (beacon_decodeSmallInteger(scannedToken->kind) == BeaconTokenEndOfSource);
+
+    return arrayList;
 }

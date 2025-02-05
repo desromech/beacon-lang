@@ -16,7 +16,7 @@ typedef enum beacon_TokenKind_e {
 } beacon_TokenKind_t;
 
 
-beacon_OrderedCollection_t *beacon_scanSourceCode(beacon_context_t *context, beacon_SourceCode_t *sourceCode);
+beacon_ArrayList_t *beacon_scanSourceCode(beacon_context_t *context, beacon_SourceCode_t *sourceCode);
 
 const char *beacon_TokenKind_toString(beacon_TokenKind_t);
 
