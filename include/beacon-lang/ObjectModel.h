@@ -82,7 +82,8 @@ typedef struct beacon_Behavior_s
     beacon_Object_t super;
     beacon_Behavior_t *superclass;
     beacon_MethodDictionary_t methodDict;
-    beacon_oop_t format;
+    beacon_oop_t instSize;
+    beacon_oop_t objectKind;
 } beacon_Behavior_t;
 
 typedef struct beacon_ClassDescription_s
@@ -119,6 +120,12 @@ typedef struct beacon_Array_s
     beacon_ArrayedCollection_t super;
     beacon_oop_t elements[];
 } beacon_Array_t;
+
+typedef struct beacon_ByteArray_s
+{
+    beacon_ArrayedCollection_t super;
+    uint8_t elements[];
+} beacon_ByteArray_t;
 
 typedef struct beacon_ArrayList_s
 {
@@ -170,5 +177,68 @@ typedef struct beacon_ScannerToken_s
     beacon_oop_t textPosition;
     beacon_oop_t textSize;
 } beacon_ScannerToken_t;
+
+typedef struct beacon_ParseTreeNode_s
+{
+    beacon_SourcePosition_t *sourcePosition;
+} beacon_ParseTreeNode_t;
+
+typedef struct beacon_ParseTreeLiteralNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_oop_t value;
+} beacon_ParseTreeLiteralNode_t;
+
+typedef struct beacon_ParseTreeIdentifierReferenceNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_oop_t identifier;
+} beacon_ParseTreeIdentifierReferenceNode_t;
+
+typedef struct beacon_ParseTreeMessageSendNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_ParseTreeNode_t *receiver;
+    beacon_ParseTreeNode_t *selector;
+    beacon_Array_t *arguments;
+} beacon_ParseTreeMessageSendNode_t;
+
+typedef struct beacon_ParseTreeMessageCascadeNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_ParseTreeNode_t *receiver;
+    beacon_Array_t *cascadedMessages;
+} beacon_ParseTreeMessageCascadeNode_t;
+
+typedef struct beacon_ParseTreeCascadedMessageNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_ParseTreeNode_t *selector;
+    beacon_Array_t *arguments;
+} beacon_ParseTreeCascadedMessageNode_t;
+
+typedef struct beacon_ParseTreeSequenceNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_Array_t *elements;
+} beacon_ParseTreeSequenceNode_t;
+
+typedef struct beacon_ParseTreeReturnNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_ParseTreeNode_t *expression;
+} beacon_ParseTreeReturnNode_t;
+
+typedef struct beacon_ParseTreeArrayNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_Array_t *elements;
+} beacon_ParseTreeArrayNode_t;
+
+typedef struct beacon_ParseTreeLiteralArrayNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_Array_t *elements;
+} beacon_ParseTreeLiteralArrayNode_t;
 
 #endif // BEACON_OBJECT_MODEL_H

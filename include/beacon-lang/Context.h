@@ -22,15 +22,30 @@ struct beacon_context_s
         beacon_Behavior_t *classDescriptionClass;
         beacon_Behavior_t *classClass;
         beacon_Behavior_t *metaclassClass;
+
         beacon_Behavior_t *sequenceableCollectionClass;
         beacon_Behavior_t *orderedCollectionClass;
         beacon_Behavior_t *arrayedCollectionClass;
         beacon_Behavior_t *arrayClass;
+        beacon_Behavior_t *byteArrayClass;
         beacon_Behavior_t *stringClass;
         beacon_Behavior_t *symbolClass;
+
         beacon_Behavior_t *sourceCodeClass;
         beacon_Behavior_t *sourcePositionClass;
         beacon_Behavior_t *scannerTokenClass;
+
+        beacon_Behavior_t *parseTreeNodeClass;
+        beacon_Behavior_t *parseTreeLiteralNodeClass;
+        beacon_Behavior_t *parseTreeIdentifierReferenceNodeClass;
+        beacon_Behavior_t *parseTreeMessageSendNodeClass;
+        beacon_Behavior_t *parseTreeMessageCascadeNodeClass;
+        beacon_Behavior_t *parseTreeCascadedMessageNodeClass;
+        beacon_Behavior_t *parseTreeSequenceNodeClass;
+        beacon_Behavior_t *parseTreeReturnNodeClass;
+        beacon_Behavior_t *parseTreeArrayNodeClass;
+        beacon_Behavior_t *parseTreeLiteralArrayNodeClass;
+
     } roots;
 
     beacon_MemoryHeap_t *heap;
