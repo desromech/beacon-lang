@@ -1,6 +1,10 @@
 #include "beacon-lang/Context.h"
+#include "beacon-lang/Scanner.h"
+#include "beacon-lang/SourceCode.h"
 #include <stdio.h>
 #include <string.h>
+
+static beacon_context_t *context;
 
 void printHelp(void)
 {
@@ -12,9 +16,38 @@ void printVersion(void)
     printf("beacon-vm version 0.1\n");
 }
 
+void evaluateSourceCode(beacon_SourceCode_t *sourceCode)
+{
+    beacon_ArrayList_t *scannedSource = beacon_scanSourceCode(context, sourceCode);
+    intptr_t tokenCount = beacon_ArrayList_size(context, scannedSource);
+    for(intptr_t i = 1; i <= tokenCount; ++i)
+    {
+        beacon_ScannerToken_t *token = (beacon_ScannerToken_t *)beacon_ArrayList_at(context, scannedSource, i);
+        beacon_TokenKind_t kind = beacon_decodeSmallInteger(token->kind);
+        if(kind == BeaconTokenError)
+            beacon_exception_scannerError(context, token);
+           
+        //printf("Token %d: %s\n", (int)i, beacon_TokenKind_toString());
+    }
+}
+
+
+void evaluateString(const char *string)
+{
+    beacon_SourceCode_t *sourceCode = beacon_makeSourceCodeFromString(context, "CLI", string);
+    evaluateSourceCode(sourceCode);
+}
+
+void evaluateFileNamed(const char *fileName)
+{
+    beacon_SourceCode_t *sourceCode = beacon_makeSourceCodeFromFileNamed(context, fileName);
+    evaluateSourceCode(sourceCode);
+
+}
+
 int main(int argc, const char **argv)
 {
-    beacon_context_t *context = beacon_context_new();
+    context = beacon_context_new();
     if(!context)
     {
         fprintf(stderr, "Failed to create the Beacon context.\n");
@@ -41,12 +74,12 @@ int main(int argc, const char **argv)
             else if(!strcmp(arg, "-eval"))
             {
                 const char *script = argv[++i];
-                printf("TODO: eval script %s\n", script);
+                evaluateString(script);
             }
         }
         else
         {
-
+            evaluateFileNamed(arg);
         }
     }
 

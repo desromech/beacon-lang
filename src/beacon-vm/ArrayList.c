@@ -49,7 +49,7 @@ intptr_t beacon_ArrayList_size(beacon_context_t *context, beacon_ArrayList_t *co
 beacon_oop_t beacon_ArrayList_at(beacon_context_t *context, beacon_ArrayList_t *collection, intptr_t index)
 {
     intptr_t size = beacon_decodeSmallInteger(collection->size);
-    if(index < 1 || index >= size)
+    if(index < 1 || index > size)
         beacon_exception_error(context, "Index out of bounds.");
 
     return collection->array->elements[index - 1];
@@ -58,7 +58,7 @@ beacon_oop_t beacon_ArrayList_at(beacon_context_t *context, beacon_ArrayList_t *
 void beacon_ArrayList_atPut(beacon_context_t *context, beacon_ArrayList_t *collection, intptr_t index, beacon_oop_t element)
 {
     intptr_t size = beacon_decodeSmallInteger(collection->size);
-    if(index < 1 || index >= size)
+    if(index < 1 || index > size)
         beacon_exception_error(context, "Index out of bounds.");
     collection->array->elements[index - 1] = element;
 }

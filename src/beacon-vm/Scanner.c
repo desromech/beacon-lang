@@ -6,7 +6,7 @@
 #include <stddef.h>
 
 static const char* tokenKindNames[] = {
-#define TokenKindName(name) #name,
+#define TokenKindName(name) "BeaconToken" #name,
 #include "beacon-lang/TokenKind.inc"
 #undef TokenKindName
 };
@@ -475,7 +475,7 @@ beacon_ArrayList_t *beacon_scanSourceCode(beacon_context_t *context, beacon_Sour
             if (beacon_decodeSmallInteger(scannedToken->kind) == BeaconTokenEndOfSource)
                 break;
         }
-    } while (beacon_decodeSmallInteger(scannedToken->kind) == BeaconTokenEndOfSource);
+    } while (beacon_decodeSmallInteger(scannedToken->kind) != BeaconTokenEndOfSource);
 
     return arrayList;
 }
