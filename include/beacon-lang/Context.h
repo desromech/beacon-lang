@@ -36,6 +36,7 @@ struct beacon_context_s
         beacon_Behavior_t *scannerTokenClass;
 
         beacon_Behavior_t *parseTreeNodeClass;
+        beacon_Behavior_t *parseTreeErrorNodeClass;
         beacon_Behavior_t *parseTreeLiteralNodeClass;
         beacon_Behavior_t *parseTreeIdentifierReferenceNodeClass;
         beacon_Behavior_t *parseTreeMessageSendNodeClass;

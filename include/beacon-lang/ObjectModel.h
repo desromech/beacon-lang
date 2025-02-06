@@ -183,6 +183,13 @@ typedef struct beacon_ParseTreeNode_s
     beacon_SourcePosition_t *sourcePosition;
 } beacon_ParseTreeNode_t;
 
+typedef struct beacon_ParseTreeErrorNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_String_t *errorMessage;
+    beacon_ParseTreeNode_t *innerNode;
+} beacon_ParseTreeErrorNode_t;
+
 typedef struct beacon_ParseTreeLiteralNode_s
 {
     beacon_ParseTreeNode_t super;

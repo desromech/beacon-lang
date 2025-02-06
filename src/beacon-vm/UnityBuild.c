@@ -4,4 +4,5 @@
 #include "ArrayList.c"
 #include "SourceCode.c"
 #include "Scanner.c"
+#include "Parser.c"
 #include "Main.c"

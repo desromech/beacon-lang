@@ -68,6 +68,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->roots.scannerTokenClass = beacon_context_createClassAndMetaclass(context, context->roots.scannerTokenClass, "ScannerToken", sizeof(beacon_ScannerToken_t), BeaconObjectKindPointers);
 
     context->roots.parseTreeNodeClass = beacon_context_createClassAndMetaclass(context, context->roots.objectClass, "ParseTreeNode", sizeof(beacon_ParseTreeNode_t), BeaconObjectKindPointers);
+    context->roots.parseTreeErrorNodeClass = beacon_context_createClassAndMetaclass(context, context->roots.parseTreeNodeClass, "ParseTreeErrorNode", sizeof(beacon_ParseTreeErrorNode_t), BeaconObjectKindPointers);
     context->roots.parseTreeLiteralNodeClass = beacon_context_createClassAndMetaclass(context, context->roots.parseTreeNodeClass, "ParseTreeLiteralNode", sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
     context->roots.parseTreeIdentifierReferenceNodeClass = beacon_context_createClassAndMetaclass(context, context->roots.parseTreeNodeClass, "ParseTreeIdentifierReferenceNode", sizeof(beacon_ParseTreeIdentifierReferenceNode_t), BeaconObjectKindPointers);
     context->roots.parseTreeMessageSendNodeClass = beacon_context_createClassAndMetaclass(context, context->roots.parseTreeNodeClass, "ParseTreeMessageSendNode", sizeof(beacon_ParseTreeMessageSendNode_t), BeaconObjectKindPointers);
