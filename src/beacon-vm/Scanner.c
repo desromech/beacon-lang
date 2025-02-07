@@ -349,12 +349,20 @@ beacon_ScannerToken_t *beacon_scanSingleToken(beacon_scannerState_t *state)
         else if(c1 == '\'')
         {
             scannerState_advance(state, 2);
-            while (!scannerState_atEnd(state) && scannerState_peek(state, 0) != '\'')
+            while (!scannerState_atEnd(state))
             {
-                if(scannerState_peek(state, 0) == '\\' && scannerState_peek(state, 1) > 0)
+                if(scannerState_peek(state, 0) == '\'' && scannerState_peek(state, 1) == '\'')
+                {
                     scannerState_advance(state, 2);
+                }
+                if(scannerState_peek(state, 0) == '\'')
+                {
+                    break;
+                }
                 else
+                {   
                     scannerState_advance(state, 1);
+                }
             }
 
             if (scannerState_peek(state, 0) != '\'')
