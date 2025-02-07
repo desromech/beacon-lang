@@ -40,9 +40,17 @@ void beacon_ArrayList_add(beacon_context_t *context, beacon_ArrayList_t *collect
     collection->size = beacon_encodeSmallInteger(size + 1);
 }
 
-intptr_t beacon_ArrayList_size(beacon_context_t *context, beacon_ArrayList_t *collection)
+beacon_Array_t *beacon_ArrayList_asArray(beacon_context_t *context, beacon_ArrayList_t *collection)
 {
-    (void)context;
+    intptr_t size = beacon_ArrayList_size(collection);
+    beacon_Array_t *array = beacon_allocateObjectWithBehavior(context->heap, context->roots.arrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t)*size, BeaconObjectKindPointers);
+    for(intptr_t i = 0; i < size; ++i)
+        array->elements[i] = collection->array->elements[i];
+    return array;
+}
+
+intptr_t beacon_ArrayList_size(beacon_ArrayList_t *collection)
+{
     return beacon_decodeSmallInteger(collection->size);
 }
 

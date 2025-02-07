@@ -111,7 +111,7 @@ beacon_SourcePosition_t *parserState_currentSourcePosition(beacon_parserState_t 
     return token->sourcePosition;
 }
 
-beacon_SourcePosition_t *sparserState_sourcePositionFrom(beacon_parserState_t *state, size_t startingPosition)
+beacon_SourcePosition_t *parserState_sourcePositionFrom(beacon_parserState_t *state, size_t startingPosition)
 {
     assert(startingPosition < state->tokenCount);
     beacon_ScannerToken_t *startingToken = (beacon_ScannerToken_t *)beacon_ArrayList_at(state->context, state->tokens, startingPosition);
@@ -147,4 +147,131 @@ beacon_ParseTreeNode_t *parserState_expectAddingErrorToNode(beacon_parserState_t
     errorNode->errorMessage = beacon_importCString(state->context, "Expected a specific token kind.");
     errorNode->innerNode = node;
     return &errorNode->super;
+}
+
+intptr_t parser_parseIntegerConstant(beacon_ScannerToken_t *token)
+{
+    size_t constantStringSize = beacon_decodeSmallInteger(token->textSize);
+    const char *constantString = (const char*)token->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(token->textPosition);
+    
+    intptr_t result = 0;
+    intptr_t radix = 10;
+    bool hasSeenRadix = false;
+
+    for (size_t i = 0; i < constantStringSize; ++i)
+    {
+        char c = constantString[i];
+        if (!hasSeenRadix && (c == 'r' || c == 'R'))
+        {
+            hasSeenRadix = true;
+            radix = result;
+            result = 0;
+        }
+        else
+        {
+            if ('0' <= c && c <= '9')
+                result = result * radix + (intptr_t)(c - '0');
+            else if ('A' <= c && c <= 'Z')
+                result = result * radix + (intptr_t)(c - 'A' + 10);
+            else if ('a' <= c && c <= 'z')
+                result = result * radix + (intptr_t)(c - 'a' + 10);
+        }
+    }
+
+    return beacon_encodeSmallInteger(result);
+}
+
+beacon_ParseTreeNode_t *parser_parseLiteralInteger(beacon_parserState_t *state)
+{
+    beacon_ScannerToken_t *token = parserState_next(state);
+    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenInteger);
+
+    intptr_t parsedConstant = parser_parseIntegerConstant(token);
+    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+    literal->super.sourcePosition = token->sourcePosition;
+    literal->value = parsedConstant;
+    return &literal->super;
+}
+
+beacon_ParseTreeNode_t *parser_parseLiteral(beacon_parserState_t *state)
+{
+    switch (parserState_peekKind(state, 0))
+    {
+    case BeaconTokenInteger:
+        return parser_parseLiteralInteger(state);
+    /*case BeaconTokenFloat:
+        return parseLiteralFloat(state);
+    case BeaconTokenCharacter:
+        return parseLiteralCharacter(state);
+    case BeaconTokenString:
+        return parseLiteralString(state);
+    case BeaconTokenSymbol:
+        return parseLiteralSymbol(state);*/
+    default:
+        return parserState_advanceWithExpectedError(state, "Expected a literal");
+    }
+}
+
+beacon_ParseTreeNode_t *parser_parseExpression(beacon_parserState_t *state)
+{
+    return parser_parseLiteral(state);
+}
+
+beacon_ArrayList_t *parser_parseExpressionListUntilEndOrDelimiter(beacon_parserState_t *state, beacon_TokenKind_t delimiter)
+{
+    beacon_ArrayList_t *elements = beacon_ArrayList_new(state->context);
+
+    // Leading dots.
+    while (parserState_peekKind(state, 0) == BeaconTokenDot)
+        parserState_advance(state);
+
+    bool expectsExpression = true;
+
+    while (!parserState_atEnd(state) && parserState_peekKind(state, 0) != delimiter)
+    {
+        if (!expectsExpression)
+            beacon_ArrayList_add(state->context, elements, (beacon_oop_t)parserState_makeErrorAtCurrentSourcePosition(state, "Expected dot before expression."));
+
+        beacon_ParseTreeNode_t *expression = parser_parseExpression(state);
+        beacon_ArrayList_add(state->context, elements, (beacon_oop_t)expression);
+
+        // Trailing dots.
+        while (parserState_peekKind(state, 0) == BeaconTokenDot)
+        {
+            expectsExpression = true;
+            parserState_advance(state);
+        }
+    }
+
+    return elements;
+}
+
+beacon_ParseTreeNode_t *parser_parseSequenceUntilEndOrDelimiter(beacon_parserState_t *state, beacon_TokenKind_t delimiter)
+{
+    size_t startingPosition = state->position;
+    beacon_ArrayList_t *expressions = parser_parseExpressionListUntilEndOrDelimiter(state, delimiter);
+    if (beacon_ArrayList_size(expressions) == 1)
+        return (beacon_ParseTreeNode_t*)beacon_ArrayList_at(state->context, expressions, 1);
+
+    beacon_ParseTreeSequenceNode_t *sequenceNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeSequenceNodeClass, sizeof(beacon_ParseTreeSequenceNode_t), BeaconObjectKindPointers);
+    sequenceNode->super.sourcePosition = parserState_sourcePositionFrom(state, startingPosition);
+    sequenceNode->elements = beacon_ArrayList_asArray(state->context, expressions);
+    return &sequenceNode->super;
+}
+
+beacon_ParseTreeNode_t *parser_parseTopLevelExpressions(beacon_parserState_t *state)
+{
+    return parser_parseSequenceUntilEndOrDelimiter(state, BeaconTokenEndOfSource);
+}
+beacon_ParseTreeNode_t *beacon_parseTokenList(beacon_context_t *context, beacon_SourceCode_t *sourceCode, beacon_ArrayList_t *tokenList)
+{
+    beacon_parserState_t state = {
+        .context = context,
+        .sourceCode = sourceCode,
+        .tokenCount = beacon_ArrayList_size(tokenList),
+        .tokens = tokenList,
+        .position = 1,
+    };
+
+    return parser_parseTopLevelExpressions(&state);
 }

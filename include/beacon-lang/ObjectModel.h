@@ -172,7 +172,6 @@ typedef struct beacon_ScannerToken_s
 {
     beacon_oop_t kind;
     beacon_SourcePosition_t *sourcePosition;
-    beacon_String_t *text;
     beacon_String_t *errorMessage;
     beacon_oop_t textPosition;
     beacon_oop_t textSize;
@@ -180,6 +179,7 @@ typedef struct beacon_ScannerToken_s
 
 typedef struct beacon_ParseTreeNode_s
 {
+    beacon_Object_t super;
     beacon_SourcePosition_t *sourcePosition;
 } beacon_ParseTreeNode_t;
 

@@ -1,6 +1,7 @@
 #include "beacon-lang/Context.h"
 #include "beacon-lang/Scanner.h"
 #include "beacon-lang/SourceCode.h"
+#include "beacon-lang/Parser.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -19,7 +20,7 @@ void printVersion(void)
 void evaluateSourceCode(beacon_SourceCode_t *sourceCode)
 {
     beacon_ArrayList_t *scannedSource = beacon_scanSourceCode(context, sourceCode);
-    intptr_t tokenCount = beacon_ArrayList_size(context, scannedSource);
+    intptr_t tokenCount = beacon_ArrayList_size(scannedSource);
     for(intptr_t i = 1; i <= tokenCount; ++i)
     {
         beacon_ScannerToken_t *token = (beacon_ScannerToken_t *)beacon_ArrayList_at(context, scannedSource, i);
@@ -29,6 +30,8 @@ void evaluateSourceCode(beacon_SourceCode_t *sourceCode)
            
         //printf("Token %d: %s\n", (int)i, beacon_TokenKind_toString());
     }
+
+    beacon_ParseTreeNode_t *parseTree = beacon_parseTokenList(context, sourceCode, scannedSource);;
 }
 
 

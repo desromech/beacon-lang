@@ -21,7 +21,12 @@ void beacon_ArrayList_add(beacon_context_t *context, beacon_ArrayList_t *collect
 /**
  * Gets the size of the array list.
  */
-intptr_t beacon_ArrayList_size(beacon_context_t *context, beacon_ArrayList_t *collection);
+beacon_Array_t *beacon_ArrayList_asArray(beacon_context_t *context, beacon_ArrayList_t *collection);
+
+/**
+ * Gets the size of the array list.
+ */
+intptr_t beacon_ArrayList_size(beacon_ArrayList_t *collection);
 
 /**
  * Gets the element at the specified location.
