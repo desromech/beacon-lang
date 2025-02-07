@@ -211,6 +211,19 @@ beacon_ParseTreeNode_t *parser_parseLiteralFloat(beacon_parserState_t *state)
     return &literal->super;
 }
 
+beacon_ParseTreeNode_t *parser_parseLiteralCharacter(beacon_parserState_t *state)
+{
+    beacon_ScannerToken_t *token = parserState_next(state);
+    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenCharacter);
+
+    char parsedConstant = token->sourcePosition->sourceCode->text->data[beacon_decodeSmallInteger(token->textPosition) + 1];
+    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+    literal->super.sourcePosition = token->sourcePosition;
+    literal->value = beacon_encodeCharacter(parsedConstant);
+    return &literal->super;
+}
+
+
 beacon_ParseTreeNode_t *parser_parseLiteral(beacon_parserState_t *state)
 {
     switch (parserState_peekKind(state, 0))
@@ -219,9 +232,9 @@ beacon_ParseTreeNode_t *parser_parseLiteral(beacon_parserState_t *state)
         return parser_parseLiteralInteger(state);
     case BeaconTokenFloat:
         return parser_parseLiteralFloat(state);
-    /*case BeaconTokenCharacter:
-        return parseLiteralCharacter(state);
-    case BeaconTokenString:
+    case BeaconTokenCharacter:
+        return parser_parseLiteralCharacter(state);
+    /*case BeaconTokenString:
         return parseLiteralString(state);
     case BeaconTokenSymbol:
         return parseLiteralSymbol(state);*/

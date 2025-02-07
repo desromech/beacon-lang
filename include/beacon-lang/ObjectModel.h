@@ -31,12 +31,22 @@ static inline beacon_oop_t beacon_isImmediate(beacon_oop_t oop)
     return (oop & ImmediateObjectTag_BitMask) != 0;
 }
 
+static inline intptr_t beacon_decodeSmallInteger(beacon_oop_t oop)
+{
+    return oop >> 3;
+}
+
 static inline beacon_oop_t beacon_encodeSmallInteger(intptr_t smallInteger)
 {
     return (smallInteger << 3) | ImmediateObjectTag_SmallInteger;
 }
 
-static inline intptr_t beacon_decodeSmallInteger(beacon_oop_t oop)
+static inline beacon_oop_t beacon_encodeCharacter(uint32_t character)
+{
+    return (character << 3) | ImmediateObjectTag_Character;
+}
+
+static inline uint32_t beacon_decodeCharacter(beacon_oop_t oop)
 {
     return oop >> 3;
 }

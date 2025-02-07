@@ -394,6 +394,17 @@ beacon_ScannerToken_t *beacon_scanSingleToken(beacon_scannerState_t *state)
         return scannerState_makeTokenStartingFrom(state, BeaconTokenString, &initialState);
     }
 
+    // Characters
+    if(c == '$')
+    {
+        scannerState_advance(state, 1);
+        if(scannerState_atEnd(state))
+            return scannerState_makeErrorTokenStartingFrom(state, "Incomplete character literal.", &initialState);
+        
+        scannerState_advance(state, 1);
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenCharacter, &initialState);
+    }
+
     switch(c)
     {
     case '(':
