@@ -2,6 +2,7 @@
 #include "beacon-lang/Context.h"
 #include "beacon-lang/ArrayList.h"
 #include "beacon-lang/SourceCode.h"
+#include <stdlib.h>
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -193,15 +194,32 @@ beacon_ParseTreeNode_t *parser_parseLiteralInteger(beacon_parserState_t *state)
     return &literal->super;
 }
 
+beacon_ParseTreeNode_t *parser_parseLiteralFloat(beacon_parserState_t *state)
+{
+    beacon_ScannerToken_t *token = parserState_next(state);
+    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenInteger);
+
+    char *literalBuffer = calloc(1, beacon_decodeSmallInteger(token->textSize) + 1);
+    memcpy(literalBuffer, token->sourcePosition->sourceCode->text->data, token->textSize);
+    double value = atof(literalBuffer);
+
+
+    intptr_t parsedConstant = parser_parseIntegerConstant(token);
+    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+    literal->super.sourcePosition = token->sourcePosition;
+    literal->value = beacon_encodeSmallDoubleValue(value);
+    return &literal->super;
+}
+
 beacon_ParseTreeNode_t *parser_parseLiteral(beacon_parserState_t *state)
 {
     switch (parserState_peekKind(state, 0))
     {
     case BeaconTokenInteger:
         return parser_parseLiteralInteger(state);
-    /*case BeaconTokenFloat:
-        return parseLiteralFloat(state);
-    case BeaconTokenCharacter:
+    case BeaconTokenFloat:
+        return parser_parseLiteralFloat(state);
+    /*case BeaconTokenCharacter:
         return parseLiteralCharacter(state);
     case BeaconTokenString:
         return parseLiteralString(state);
@@ -211,6 +229,7 @@ beacon_ParseTreeNode_t *parser_parseLiteral(beacon_parserState_t *state)
         return parserState_advanceWithExpectedError(state, "Expected a literal");
     }
 }
+
 
 beacon_ParseTreeNode_t *parser_parseExpression(beacon_parserState_t *state)
 {

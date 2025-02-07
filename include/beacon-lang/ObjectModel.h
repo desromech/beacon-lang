@@ -2,6 +2,7 @@
 #define BEACON_OBJECT_MODEL_H
 
 #include <stdint.h>
+#include <string.h>
 
 typedef struct beacon_ObjectHeader_s beacon_ObjectHeader_t;
 typedef struct beacon_Behavior_s beacon_Behavior_t;
@@ -19,6 +20,8 @@ typedef enum beacon_ImmediateObjectTagBits_s {
     ImmediateObjectTag_BitCount = 3,
     ImmediateObjectTag_BitMask = (1<<ImmediateObjectTag_BitCount) - 1,
     ImmediateObjectTag_SmallInteger = 1,
+    ImmediateObjectTag_Character = 2,
+    ImmediateObjectTag_SmallFloat = 4,
 } beacon_ImmediateObjectTagBits_s;
 
 typedef intptr_t beacon_oop_t;
@@ -36,6 +39,16 @@ static inline beacon_oop_t beacon_encodeSmallInteger(intptr_t smallInteger)
 static inline intptr_t beacon_decodeSmallInteger(beacon_oop_t oop)
 {
     return oop >> 3;
+}
+
+static inline beacon_oop_t beacon_encodeSmallDoubleValue(double value)
+{
+    // See https://clementbera.wordpress.com/2018/11/09/64-bits-immediate-floats/ for this encoding.
+    uint64_t ieee754 = 0;
+    memcpy(&ieee754, &value, 4);
+    uint64_t ieee754SignRotation = (ieee754 << 1) | (ieee754 >> 63) ;
+    uint64_t withTag = (ieee754SignRotation << 3) | ImmediateObjectTag_SmallFloat;
+    return (beacon_oop_t)withTag;
 }
 
 struct beacon_ObjectHeader_s
