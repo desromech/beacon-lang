@@ -203,8 +203,6 @@ beacon_ParseTreeNode_t *parser_parseLiteralFloat(beacon_parserState_t *state)
     memcpy(literalBuffer, token->sourcePosition->sourceCode->text->data, token->textSize);
     double value = atof(literalBuffer);
 
-
-    intptr_t parsedConstant = parser_parseIntegerConstant(token);
     beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
     literal->super.sourcePosition = token->sourcePosition;
     literal->value = beacon_encodeSmallDoubleValue(value);
@@ -223,6 +221,57 @@ beacon_ParseTreeNode_t *parser_parseLiteralCharacter(beacon_parserState_t *state
     return &literal->super;
 }
 
+beacon_ParseTreeNode_t *parser_parseLiteralString(beacon_parserState_t *state)
+{
+    beacon_ScannerToken_t *token = parserState_next(state);
+    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenString);
+
+    const char *textData = token->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(token->textPosition);
+    size_t textDataSize = beacon_decodeSmallInteger(token->textSize);
+
+    size_t textConstantSize = 0;
+    for(size_t i = 1; i < textDataSize; ++i)
+    {
+        if(textData[i] == '\'')
+        {
+            if(i + 1 < textDataSize && textData[i +1] == '\'')
+            {
+                ++i;
+                ++textConstantSize;
+            }
+        }
+        else
+        {
+            ++textConstantSize;
+        }
+    }
+
+    beacon_String_t *stringLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.stringClass, sizeof(beacon_String_t) + textConstantSize, BeaconObjectKindBytes);
+    size_t destIndex = 0;
+    for(size_t i = 1; i < textDataSize; ++i)
+    {
+        if(textData[i] == '\'')
+        {
+            if(i + 1 < textDataSize && textData[i +1] == '\'')
+            {
+                ++i;
+                stringLiteral->data[destIndex++] = '\'';
+            }
+        }
+        else
+        {   
+            stringLiteral->data[destIndex++] = textData[i];
+            ++textConstantSize;
+        }
+    }
+
+    char parsedConstant = token->sourcePosition->sourceCode->text->data[beacon_decodeSmallInteger(token->textPosition) + 1];
+    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+    literal->super.sourcePosition = token->sourcePosition;
+    literal->value = (beacon_oop_t)stringLiteral;
+    return &literal->super;
+}
+
 
 beacon_ParseTreeNode_t *parser_parseLiteral(beacon_parserState_t *state)
 {
@@ -234,9 +283,9 @@ beacon_ParseTreeNode_t *parser_parseLiteral(beacon_parserState_t *state)
         return parser_parseLiteralFloat(state);
     case BeaconTokenCharacter:
         return parser_parseLiteralCharacter(state);
-    /*case BeaconTokenString:
-        return parseLiteralString(state);
-    case BeaconTokenSymbol:
+    case BeaconTokenString:
+        return parser_parseLiteralString(state);
+    /*case BeaconTokenSymbol:
         return parseLiteralSymbol(state);*/
     default:
         return parserState_advanceWithExpectedError(state, "Expected a literal");
