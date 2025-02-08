@@ -51,6 +51,7 @@ void *beacon_allocateObject(beacon_MemoryHeap_t *heap, size_t size, beacon_Objec
 
 void *beacon_allocateObjectWithBehavior(beacon_MemoryHeap_t *heap, beacon_Behavior_t *behavior, size_t size, beacon_ObjectKind_t kind)
 {
+    assert(size >= sizeof(beacon_ObjectHeader_t));
     size_t allocationSize = sizeof(beacon_MemoryAllocationHeader_t) + size;
     beacon_MemoryAllocationHeader_t *allocation = calloc(1, allocationSize);
     allocation->nextAllocation = heap->lastAllocation;
@@ -60,6 +61,9 @@ void *beacon_allocateObjectWithBehavior(beacon_MemoryHeap_t *heap, beacon_Behavi
     header->behavior = behavior;
     header->objectKind = kind;
     header->gcColor = heap->whiteGCColor;
+    header->slotCount = size - sizeof(beacon_ObjectHeader_t);
+    if(kind != BeaconObjectKindBytes)
+        header->slotCount /= sizeof(beacon_oop_t);
 
     return header;
 }

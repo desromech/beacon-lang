@@ -112,7 +112,7 @@ beacon_Symbol_t *beacon_internCString(beacon_context_t *context, const char *str
 
 beacon_Symbol_t *beacon_internString(beacon_context_t *context, beacon_String_t *string)
 {
-    size_t stringSize = string->super.super.super.super.super.header.slotCount - sizeof(beacon_String_t);
+    size_t stringSize = string->super.super.super.super.super.header.slotCount;
     beacon_Symbol_t *importedSymbol = beacon_allocateObjectWithBehavior(context->heap, context->roots.symbolClass, sizeof(beacon_Symbol_t) + stringSize, BeaconObjectKindBytes);
     memcpy(importedSymbol->data, string->data, stringSize);
     return importedSymbol;
