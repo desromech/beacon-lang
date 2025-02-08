@@ -15,6 +15,9 @@ typedef struct beacon_parserState_s
     size_t position;
 }beacon_parserState_t;
 
+beacon_ParseTreeNode_t *parser_parseExpression(beacon_parserState_t *state);
+beacon_ParseTreeNode_t *parser_parseSequenceUntilEndOrDelimiter(beacon_parserState_t *state, beacon_TokenKind_t delimiter);
+
 bool parserState_atEnd(beacon_parserState_t *state)
 {
     return state->position > state->tokenCount;
@@ -378,15 +381,26 @@ beacon_ParseTreeNode_t *parser_parseIdentifier(beacon_parserState_t *state)
     return &identifierReference->super;
 }
 
+beacon_ParseTreeNode_t *parser_parseParenthesis(beacon_parserState_t *state)
+{
+    beacon_ScannerToken_t *token = parserState_next(state);
+    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenLeftParent);
+    
+    beacon_ParseTreeNode_t *expression = parser_parseSequenceUntilEndOrDelimiter(state, BeaconTokenRightParent);
+    expression = parserState_expectAddingErrorToNode(state, BeaconTokenRightParent, expression);
+    return expression;
+}
+
+
 beacon_ParseTreeNode_t *parser_parseTerm(beacon_parserState_t *state)
 {
     switch (parserState_peekKind(state, 0))
     {
     case BeaconTokenIdentifier:
         return parser_parseIdentifier(state);
-    /*case BeaconTokenLeftParent:
+    case BeaconTokenLeftParent:
         return parser_parseParenthesis(state);
-    case BeaconTokenLeftBracket:
+    /*case BeaconTokenLeftBracket:
         return parser_parseBlock(state);
     case BeaconTokenLeftCurlyBracket:
         return parser_parseArray(state);
@@ -528,7 +542,6 @@ beacon_ParseTreeNode_t *parser_parseCascadedMessage(beacon_parserState_t *state)
     cascadedMessage->arguments = beacon_ArrayList_asArray(state->context, arguments);
 
     return &cascadedMessage->super;
-
 }
 
 beacon_ParseTreeNode_t *parser_parseKeywordMessageSend(beacon_parserState_t *state)
@@ -579,7 +592,7 @@ beacon_ParseTreeNode_t *parser_parseKeywordMessageSend(beacon_parserState_t *sta
 }
 beacon_ParseTreeNode_t *parser_parseExpression(beacon_parserState_t *state)
 {
-    return parser_parseBinaryExpressionSequence(state);
+    return parser_parseKeywordMessageSend(state);
 }
 
 beacon_ArrayList_t *parser_parseExpressionListUntilEndOrDelimiter(beacon_parserState_t *state, beacon_TokenKind_t delimiter)
