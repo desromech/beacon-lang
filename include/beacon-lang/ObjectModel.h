@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 
 typedef struct beacon_ObjectHeader_s beacon_ObjectHeader_t;
 typedef struct beacon_Behavior_s beacon_Behavior_t;
@@ -51,6 +52,16 @@ static inline uint32_t beacon_decodeCharacter(beacon_oop_t oop)
     return oop >> 3;
 }
 
+static inline bool beacon_isNil(beacon_oop_t oop)
+{
+    return oop == 0;
+}
+
+static inline bool beacon_isNotNil(beacon_oop_t oop)
+{
+    return oop != 0;
+}
+
 static inline beacon_oop_t beacon_encodeSmallDoubleValue(double value)
 {
     // See https://clementbera.wordpress.com/2018/11/09/64-bits-immediate-floats/ for this encoding.
@@ -88,6 +99,8 @@ typedef struct beacon_Collection_s
 typedef struct beacon_HashedCollection_s
 {
     beacon_Collection_t super;
+    beacon_oop_t tally;
+    struct beacon_Array_s *array;
 } beacon_HashedCollection_t;
 
 typedef struct beacon_Dictionary_s
@@ -99,6 +112,11 @@ typedef struct beacon_MethodDictionary_s
 {
     beacon_Dictionary_t super;
 } beacon_MethodDictionary_t;
+
+typedef struct beacon_InternedSymbolSet_s
+{
+    beacon_HashedCollection_t super;
+} beacon_InternedSymbolSet_t;
 
 typedef struct beacon_Behavior_s
 {

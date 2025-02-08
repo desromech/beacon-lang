@@ -22,10 +22,10 @@ void beacon_splitFileName(beacon_context_t *context, const char *inFileName, bea
     }
 
 
-    beacon_String_t *directory = beacon_allocateObjectWithBehavior(context->heap, context->roots.stringClass, sizeof(beacon_String_t) + separatorIndex + 2, BeaconObjectKindBytes);
+    beacon_String_t *directory = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_String_t) + separatorIndex + 2, BeaconObjectKindBytes);
     memcpy(directory->data, inFileName, separatorIndex + 1);
 
-    beacon_String_t *basename = beacon_allocateObjectWithBehavior(context->heap, context->roots.stringClass, sizeof(beacon_String_t) + stringSize - separatorIndex + 1, BeaconObjectKindBytes);
+    beacon_String_t *basename = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_String_t) + stringSize - separatorIndex + 1, BeaconObjectKindBytes);
     memcpy(basename->data, inFileName + separatorIndex + 1, stringSize - separatorIndex);
     
     *outDirectory = directory;
@@ -45,7 +45,7 @@ beacon_SourceCode_t *beacon_makeSourceCodeFromFileNamed(beacon_context_t *contex
     size_t fileSize = ftell(file);
     fseek(file, 0, SEEK_SET);
 
-    beacon_String_t *fileData = beacon_allocateObjectWithBehavior(context->heap, context->roots.stringClass, sizeof(beacon_String_t) + fileSize, BeaconObjectKindBytes);
+    beacon_String_t *fileData = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_String_t) + fileSize, BeaconObjectKindBytes);
     if(fread(fileData->data, fileSize, 1, file) != 1)
     {
         perror("Failed to read input file data.");
@@ -53,7 +53,7 @@ beacon_SourceCode_t *beacon_makeSourceCodeFromFileNamed(beacon_context_t *contex
     }
     fclose(file);
 
-    beacon_SourceCode_t *sourceCode = beacon_allocateObjectWithBehavior(context->heap, context->roots.stringClass, sizeof(beacon_SourceCode_t), BeaconObjectKindPointers);
+    beacon_SourceCode_t *sourceCode = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_SourceCode_t), BeaconObjectKindPointers);
     beacon_splitFileName(context, fileName, &sourceCode->directory, &sourceCode->name);
     sourceCode->text = fileData;
     sourceCode->textSize = beacon_encodeSmallInteger(fileSize);
@@ -65,7 +65,7 @@ beacon_SourceCode_t *beacon_makeSourceCodeFromString(beacon_context_t *context, 
     beacon_String_t *importedName = beacon_importCString(context, name);
     beacon_String_t *importedString = beacon_importCString(context, string);
     size_t stringSize = strlen(string);
-    beacon_SourceCode_t *sourceCode = beacon_allocateObjectWithBehavior(context->heap, context->roots.stringClass, sizeof(beacon_SourceCode_t), BeaconObjectKindPointers);
+    beacon_SourceCode_t *sourceCode = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_SourceCode_t), BeaconObjectKindPointers);
     sourceCode->name = importedName;
     sourceCode->text = importedString;
     sourceCode->textSize = beacon_encodeSmallInteger(stringSize);
@@ -74,7 +74,7 @@ beacon_SourceCode_t *beacon_makeSourceCodeFromString(beacon_context_t *context, 
 
 beacon_SourcePosition_t *beacon_sourcePosition_to(beacon_context_t *context, beacon_SourcePosition_t *start, beacon_SourcePosition_t *end)
 {
-    beacon_SourcePosition_t *merged = beacon_allocateObjectWithBehavior(context->heap, context->roots.sourcePositionClass, sizeof(beacon_SourcePosition_t), BeaconObjectKindPointers);
+    beacon_SourcePosition_t *merged = beacon_allocateObjectWithBehavior(context->heap, context->classes.sourcePositionClass, sizeof(beacon_SourcePosition_t), BeaconObjectKindPointers);
     merged->sourceCode  = start->sourceCode;
     merged->startIndex  = start->startIndex;
     merged->startLine   = start->startLine;
@@ -87,7 +87,7 @@ beacon_SourcePosition_t *beacon_sourcePosition_to(beacon_context_t *context, bea
 
 beacon_SourcePosition_t *beacon_sourcePosition_until(beacon_context_t *context, beacon_SourcePosition_t *start, beacon_SourcePosition_t *end)
 {
-    beacon_SourcePosition_t *merged = beacon_allocateObjectWithBehavior(context->heap, context->roots.sourcePositionClass, sizeof(beacon_SourcePosition_t), BeaconObjectKindPointers);
+    beacon_SourcePosition_t *merged = beacon_allocateObjectWithBehavior(context->heap, context->classes.sourcePositionClass, sizeof(beacon_SourcePosition_t), BeaconObjectKindPointers);
     merged->sourceCode  = start->sourceCode;
     merged->startIndex  = start->startIndex;
     merged->startLine   = start->startLine;

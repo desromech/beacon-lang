@@ -6,8 +6,8 @@
 
 beacon_ArrayList_t *beacon_ArrayList_new(beacon_context_t *context)
 {
-    beacon_ArrayList_t *collection = beacon_allocateObjectWithBehavior(context->heap, context->roots.orderedCollectionClass, sizeof(beacon_ArrayList_t), BeaconObjectKindPointers);
-    collection->array = beacon_allocateObjectWithBehavior(context->heap, context->roots.arrayClass, sizeof(beacon_Array_t) + 10*sizeof(beacon_oop_t), BeaconObjectKindPointers);
+    beacon_ArrayList_t *collection = beacon_allocateObjectWithBehavior(context->heap, context->classes.orderedCollectionClass, sizeof(beacon_ArrayList_t), BeaconObjectKindPointers);
+    collection->array = beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t) + 10*sizeof(beacon_oop_t), BeaconObjectKindPointers);
     collection->size = beacon_encodeSmallInteger(0);
     collection->capacity = beacon_encodeSmallInteger(10);
     return collection;
@@ -21,7 +21,7 @@ void beacon_ArrayList_increaseCapacity(beacon_context_t *context, beacon_ArrayLi
         newCapacity = 10;
     
     beacon_Array_t *oldStorage = collection->array;
-    beacon_Array_t *newStorage = collection->array = beacon_allocateObjectWithBehavior(context->heap, context->roots.arrayClass, sizeof(beacon_Array_t) + newCapacity*sizeof(beacon_oop_t), BeaconObjectKindPointers);
+    beacon_Array_t *newStorage = collection->array = beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t) + newCapacity*sizeof(beacon_oop_t), BeaconObjectKindPointers);
     intptr_t size = beacon_decodeSmallInteger(collection->size);
     for(intptr_t i = 0; i < size; ++i)
         newStorage->elements[i] = oldStorage->elements[i];
@@ -43,7 +43,7 @@ void beacon_ArrayList_add(beacon_context_t *context, beacon_ArrayList_t *collect
 beacon_Array_t *beacon_ArrayList_asArray(beacon_context_t *context, beacon_ArrayList_t *collection)
 {
     intptr_t size = beacon_ArrayList_size(collection);
-    beacon_Array_t *array = beacon_allocateObjectWithBehavior(context->heap, context->roots.arrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t)*size, BeaconObjectKindPointers);
+    beacon_Array_t *array = beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t)*size, BeaconObjectKindPointers);
     for(intptr_t i = 0; i < size; ++i)
         array->elements[i] = collection->array->elements[i];
     return array;

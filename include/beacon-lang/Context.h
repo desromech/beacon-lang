@@ -10,7 +10,7 @@ typedef struct beacon_context_s beacon_context_t;
 
 struct beacon_context_s
 {
-    struct ContextGCRoots
+    struct ContextClasses
     {
         beacon_Behavior_t *protoObjectClass;
         beacon_Behavior_t *objectClass;
@@ -47,6 +47,11 @@ struct beacon_context_s
         beacon_Behavior_t *parseTreeArrayNodeClass;
         beacon_Behavior_t *parseTreeLiteralArrayNodeClass;
 
+    } classes;
+
+    struct ContextGCRoots
+    {
+        beacon_InternedSymbolSet_t *internedSymbolSet;
     } roots;
 
     beacon_MemoryHeap_t *heap;
@@ -55,7 +60,10 @@ struct beacon_context_s
 beacon_context_t *beacon_context_new(void);
 void beacon_context_destroy(beacon_context_t *context);
 
+uint32_t beacon_computeStringHash(size_t stringSize, const char *string);
+
 beacon_String_t *beacon_importCString(beacon_context_t *context, const char *string);
+beacon_Symbol_t *beacon_internStringWithSize(beacon_context_t *context, size_t stringSize, const char *string);
 beacon_Symbol_t *beacon_internCString(beacon_context_t *context, const char *string);
 beacon_Symbol_t *beacon_internString(beacon_context_t *context, beacon_String_t *string);
 

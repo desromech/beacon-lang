@@ -66,19 +66,19 @@ beacon_ParseTreeNode_t *parserState_advanceWithExpectedError(beacon_parserState_
     if (parserState_peekKind(state, 0) == BeaconTokenError)
     {
         beacon_ScannerToken_t *errorToken = parserState_next(state);
-        beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeNode_t), BeaconObjectKindBytes);
+        beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeNode_t), BeaconObjectKindBytes);
         errorNode->errorMessage = errorToken->errorMessage;
         return &errorNode->super;
     }
     else if (parserState_atEnd(state))
     {
-        beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeNode_t), BeaconObjectKindBytes);
+        beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeNode_t), BeaconObjectKindBytes);
         errorNode->errorMessage = beacon_importCString(state->context, message);
         return &errorNode->super;
     }
     else
     {
-        beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeNode_t), BeaconObjectKindBytes);
+        beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeNode_t), BeaconObjectKindBytes);
         parserState_advance(state);
         errorNode->errorMessage = beacon_importCString(state->context, message);
         return &errorNode->super;
@@ -134,7 +134,7 @@ beacon_SourcePosition_t *parserState_sourcePositionFrom(beacon_parserState_t *st
 
 beacon_ParseTreeNode_t *parserState_makeErrorAtCurrentSourcePosition(beacon_parserState_t *state, const char *errorMessage)
 {
-    beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeNode_t), BeaconObjectKindBytes);
+    beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeNode_t), BeaconObjectKindBytes);
     errorNode->errorMessage = beacon_importCString(state->context, errorMessage);
     return &errorNode->super;
 }
@@ -147,7 +147,7 @@ beacon_ParseTreeNode_t *parserState_expectAddingErrorToNode(beacon_parserState_t
         return node;
     }
 
-    beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeNode_t), BeaconObjectKindBytes);
+    beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeNode_t), BeaconObjectKindBytes);
     errorNode->errorMessage = beacon_importCString(state->context, "Expected a specific token kind.");
     errorNode->innerNode = node;
     return &errorNode->super;
@@ -191,7 +191,7 @@ beacon_ParseTreeNode_t *parser_parseLiteralInteger(beacon_parserState_t *state)
     assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenInteger);
 
     intptr_t parsedConstant = parser_parseIntegerConstant(token);
-    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
     literal->super.sourcePosition = token->sourcePosition;
     literal->value = parsedConstant;
     return &literal->super;
@@ -206,7 +206,7 @@ beacon_ParseTreeNode_t *parser_parseLiteralFloat(beacon_parserState_t *state)
     memcpy(literalBuffer, token->sourcePosition->sourceCode->text->data, token->textSize);
     double value = atof(literalBuffer);
 
-    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
     literal->super.sourcePosition = token->sourcePosition;
     literal->value = beacon_encodeSmallDoubleValue(value);
     return &literal->super;
@@ -218,7 +218,7 @@ beacon_ParseTreeNode_t *parser_parseLiteralCharacter(beacon_parserState_t *state
     assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenCharacter);
 
     char parsedConstant = token->sourcePosition->sourceCode->text->data[beacon_decodeSmallInteger(token->textPosition) + 1];
-    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
     literal->super.sourcePosition = token->sourcePosition;
     literal->value = beacon_encodeCharacter(parsedConstant);
     return &literal->super;
@@ -249,7 +249,7 @@ beacon_ParseTreeNode_t *parser_parseLiteralString(beacon_parserState_t *state)
         }
     }
 
-    beacon_String_t *stringLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.stringClass, sizeof(beacon_String_t) + textConstantSize, BeaconObjectKindBytes);
+    beacon_String_t *stringLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.stringClass, sizeof(beacon_String_t) + textConstantSize, BeaconObjectKindBytes);
     size_t destIndex = 0;
     for(size_t i = 1; i < textDataSize; ++i)
     {
@@ -267,7 +267,7 @@ beacon_ParseTreeNode_t *parser_parseLiteralString(beacon_parserState_t *state)
         }
     }
 
-    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
     literal->super.sourcePosition = token->sourcePosition;
     literal->value = (beacon_oop_t)stringLiteral;
     return &literal->super;
@@ -296,7 +296,7 @@ beacon_ParseTreeNode_t *parser_parseLiteralStringSymbol(beacon_ScannerToken_t *t
         }
     }
 
-    beacon_String_t *stringLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.stringClass, sizeof(beacon_String_t) + textConstantSize, BeaconObjectKindBytes);
+    beacon_String_t *stringLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.stringClass, sizeof(beacon_String_t) + textConstantSize, BeaconObjectKindBytes);
     size_t destIndex = 0;
     for(size_t i = 2; i < textDataSize; ++i)
     {
@@ -315,7 +315,7 @@ beacon_ParseTreeNode_t *parser_parseLiteralStringSymbol(beacon_ScannerToken_t *t
     }
 
     beacon_Symbol_t *symbolLiteral = beacon_internString(state->context, stringLiteral);
-    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
     literal->super.sourcePosition = token->sourcePosition;
     literal->value = (beacon_oop_t)symbolLiteral;
     return &literal->super;
@@ -332,11 +332,11 @@ beacon_ParseTreeNode_t *parser_parseLiteralSymbol(beacon_parserState_t *state)
         return parser_parseLiteralStringSymbol(token, state);
 
     intptr_t symbolSize = textDataSize - 1;
-    beacon_String_t *stringLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.stringClass, sizeof(beacon_String_t) + symbolSize, BeaconObjectKindBytes);
+    beacon_String_t *stringLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.stringClass, sizeof(beacon_String_t) + symbolSize, BeaconObjectKindBytes);
     memcpy(stringLiteral->data, textData + 1, symbolSize);
     
     beacon_Symbol_t *symbolLiteral = beacon_internString(state->context, stringLiteral);
-    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
     literal->super.sourcePosition = token->sourcePosition;
     literal->value = (beacon_oop_t)symbolLiteral;
     return &literal->super;
@@ -370,12 +370,12 @@ beacon_ParseTreeNode_t *parser_parseIdentifier(beacon_parserState_t *state)
     const char *textData = (const char*)token->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(token->textPosition);
     intptr_t textDataSize = beacon_decodeSmallInteger(token->textSize);
     
-    beacon_String_t *stringLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.stringClass, sizeof(beacon_String_t) + textDataSize, BeaconObjectKindBytes);
+    beacon_String_t *stringLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.stringClass, sizeof(beacon_String_t) + textDataSize, BeaconObjectKindBytes);
     memcpy(stringLiteral->data, textData, textDataSize);
 
     beacon_Symbol_t *symbol = beacon_internString(state->context, stringLiteral);
 
-    beacon_ParseTreeIdentifierReferenceNode_t *identifierReference = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeIdentifierReferenceNodeClass, sizeof(beacon_ParseTreeIdentifierReferenceNode_t), BeaconObjectKindPointers);
+    beacon_ParseTreeIdentifierReferenceNode_t *identifierReference = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeIdentifierReferenceNodeClass, sizeof(beacon_ParseTreeIdentifierReferenceNode_t), BeaconObjectKindPointers);
     identifierReference->super.sourcePosition = token->sourcePosition;
     identifierReference->identifier = (beacon_oop_t)symbol;
     return &identifierReference->super;
@@ -437,17 +437,17 @@ beacon_ParseTreeNode_t *parser_parseUnaryPostfixExpression(beacon_parserState_t 
         const char *textData = (const char*)unaryToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(unaryToken->textPosition);
         intptr_t textDataSize = beacon_decodeSmallInteger(unaryToken->textSize);
 
-        beacon_String_t *stringLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.stringClass, sizeof(beacon_String_t) + textDataSize, BeaconObjectKindBytes);
+        beacon_String_t *stringLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.stringClass, sizeof(beacon_String_t) + textDataSize, BeaconObjectKindBytes);
         memcpy(stringLiteral->data, textData, textDataSize);
 
         beacon_Symbol_t *selectorSymbol = beacon_internString(state->context, stringLiteral);
-        beacon_ParseTreeLiteralNode_t *selectorLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+        beacon_ParseTreeLiteralNode_t *selectorLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
         selectorLiteral->super.sourcePosition = unaryToken->sourcePosition;
         selectorLiteral->value = (beacon_oop_t)selectorSymbol;
 
-        beacon_Array_t *argumentsArray = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.arrayClass, sizeof(beacon_Array_t), BeaconObjectKindPointers);;
+        beacon_Array_t *argumentsArray = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.arrayClass, sizeof(beacon_Array_t), BeaconObjectKindPointers);;
 
-        beacon_ParseTreeMessageSendNode_t *messageSend = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeMessageSendNodeClass, sizeof(beacon_ParseTreeMessageSendNode_t), BeaconObjectKindPointers);
+        beacon_ParseTreeMessageSendNode_t *messageSend = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeMessageSendNodeClass, sizeof(beacon_ParseTreeMessageSendNode_t), BeaconObjectKindPointers);
         messageSend->super.sourcePosition = parserState_sourcePositionFrom(state, startPosition);
         messageSend->receiver = receiver;
         messageSend->selector = &selectorLiteral->super;
@@ -471,19 +471,19 @@ beacon_ParseTreeNode_t *parser_parseBinaryExpressionSequence(beacon_parserState_
         const char *textData = (const char*)operatorToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(operatorToken->textPosition);
         intptr_t textDataSize = beacon_decodeSmallInteger(operatorToken->textSize);
 
-        beacon_String_t *stringLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.stringClass, sizeof(beacon_String_t) + textDataSize, BeaconObjectKindBytes);
+        beacon_String_t *stringLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.stringClass, sizeof(beacon_String_t) + textDataSize, BeaconObjectKindBytes);
         memcpy(stringLiteral->data, textData, textDataSize);
 
         beacon_Symbol_t *operatorSymbol = beacon_internString(state->context, stringLiteral);
-        beacon_ParseTreeLiteralNode_t *operatorLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+        beacon_ParseTreeLiteralNode_t *operatorLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
         operatorLiteral->super.sourcePosition = operatorToken->sourcePosition;
         operatorLiteral->value = (beacon_oop_t)operatorSymbol;
 
         beacon_ParseTreeNode_t *rightOperand = parser_parseUnaryPostfixExpression(state);
-        beacon_Array_t *argumentsArray = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.arrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t), BeaconObjectKindPointers);
+        beacon_Array_t *argumentsArray = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.arrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t), BeaconObjectKindPointers);
         argumentsArray->elements[0] = (beacon_oop_t)rightOperand;
 
-        beacon_ParseTreeMessageSendNode_t *messageSend = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeMessageSendNodeClass, sizeof(beacon_ParseTreeMessageSendNode_t), BeaconObjectKindPointers);
+        beacon_ParseTreeMessageSendNode_t *messageSend = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeMessageSendNodeClass, sizeof(beacon_ParseTreeMessageSendNode_t), BeaconObjectKindPointers);
         messageSend->super.sourcePosition = parserState_sourcePositionFrom(state, startPosition);
         messageSend->receiver = receiver;
         messageSend->selector = &operatorLiteral->super;
@@ -517,7 +517,7 @@ beacon_ParseTreeNode_t *parser_parseCascadedMessage(beacon_parserState_t *state)
     }
 
     // Reconstruct the selector;
-    beacon_String_t *selectorString = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.stringClass, sizeof(beacon_String_t) + selectorSize, BeaconObjectKindBytes);
+    beacon_String_t *selectorString = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.stringClass, sizeof(beacon_String_t) + selectorSize, BeaconObjectKindBytes);
     size_t destIndex = 0;
     intptr_t keywordCount = beacon_ArrayList_size(keywords);
     for(intptr_t i = 1; i <= keywordCount; ++i)
@@ -531,12 +531,12 @@ beacon_ParseTreeNode_t *parser_parseCascadedMessage(beacon_parserState_t *state)
         }
     }
 
-    beacon_ParseTreeLiteralNode_t *selectorLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+    beacon_ParseTreeLiteralNode_t *selectorLiteral = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
     selectorLiteral->super.sourcePosition = parserState_sourcePositionFrom(state, startPosition);
     selectorLiteral->value = (beacon_oop_t)beacon_internString(state->context, selectorString);
 
     // Make the cascaded message.
-    beacon_ParseTreeCascadedMessageNode_t *cascadedMessage = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeCascadedMessageNodeClass, sizeof(beacon_ParseTreeCascadedMessageNode_t), BeaconObjectKindPointers);
+    beacon_ParseTreeCascadedMessageNode_t *cascadedMessage = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeCascadedMessageNodeClass, sizeof(beacon_ParseTreeCascadedMessageNode_t), BeaconObjectKindPointers);
     cascadedMessage->super.sourcePosition = parserState_sourcePositionFrom(state, startPosition);
     cascadedMessage->selector = &selectorLiteral->super;
     cascadedMessage->arguments = beacon_ArrayList_asArray(state->context, arguments);
@@ -566,7 +566,7 @@ beacon_ParseTreeNode_t *parser_parseKeywordMessageSend(beacon_parserState_t *sta
             beacon_ArrayList_add(state->context, cascadedMessages, (beacon_oop_t)cascadedMessage);
         }
 
-        beacon_ParseTreeMessageCascadeNode_t *messageCascade = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeMessageCascadeNodeClass, sizeof(beacon_ParseTreeMessageCascadeNode_t), BeaconObjectKindPointers);
+        beacon_ParseTreeMessageCascadeNode_t *messageCascade = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeMessageCascadeNodeClass, sizeof(beacon_ParseTreeMessageCascadeNode_t), BeaconObjectKindPointers);
         messageCascade->super.sourcePosition = parserState_sourcePositionFrom(state, startPosition);
         messageCascade->receiver = receiver;
         messageCascade->cascadedMessages = beacon_ArrayList_asArray(state->context, cascadedMessages);
@@ -577,7 +577,7 @@ beacon_ParseTreeNode_t *parser_parseKeywordMessageSend(beacon_parserState_t *sta
     {
         beacon_ParseTreeCascadedMessageNode_t *onlyCascadedMessage = (beacon_ParseTreeCascadedMessageNode_t*)firstCascaded;
 
-        beacon_ParseTreeMessageSendNode_t *messageSend = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeMessageSendNodeClass, sizeof(beacon_ParseTreeMessageSendNode_t), BeaconObjectKindPointers);
+        beacon_ParseTreeMessageSendNode_t *messageSend = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeMessageSendNodeClass, sizeof(beacon_ParseTreeMessageSendNode_t), BeaconObjectKindPointers);
         messageSend->super.sourcePosition = parserState_sourcePositionFrom(state, startPosition);
         messageSend->receiver = receiver;
         messageSend->selector = onlyCascadedMessage->selector;
@@ -631,7 +631,7 @@ beacon_ParseTreeNode_t *parser_parseSequenceUntilEndOrDelimiter(beacon_parserSta
     if (beacon_ArrayList_size(expressions) == 1)
         return (beacon_ParseTreeNode_t*)beacon_ArrayList_at(state->context, expressions, 1);
 
-    beacon_ParseTreeSequenceNode_t *sequenceNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.parseTreeSequenceNodeClass, sizeof(beacon_ParseTreeSequenceNode_t), BeaconObjectKindPointers);
+    beacon_ParseTreeSequenceNode_t *sequenceNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeSequenceNodeClass, sizeof(beacon_ParseTreeSequenceNode_t), BeaconObjectKindPointers);
     sequenceNode->super.sourcePosition = parserState_sourcePositionFrom(state, startingPosition);
     sequenceNode->elements = beacon_ArrayList_asArray(state->context, expressions);
     return &sequenceNode->super;

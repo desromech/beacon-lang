@@ -124,7 +124,7 @@ void scannerState_advance(beacon_scannerState_t *state, int count)
 
 beacon_ScannerToken_t *scannerState_makeToken(beacon_scannerState_t *state, beacon_TokenKind_t kind)
 {
-    beacon_SourcePosition_t *sourcePosition = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.sourcePositionClass, sizeof(beacon_SourcePosition_t), BeaconObjectKindPointers);
+    beacon_SourcePosition_t *sourcePosition = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.sourcePositionClass, sizeof(beacon_SourcePosition_t), BeaconObjectKindPointers);
     sourcePosition->sourceCode  = state->sourceCode;
     sourcePosition->startIndex  = beacon_encodeSmallInteger(state->position);
     sourcePosition->startLine   = beacon_encodeSmallInteger(state->line);
@@ -133,7 +133,7 @@ beacon_ScannerToken_t *scannerState_makeToken(beacon_scannerState_t *state, beac
     sourcePosition->endLine     = beacon_encodeSmallInteger(state->line);
     sourcePosition->endColumn   = beacon_encodeSmallInteger(state->column);
 
-    beacon_ScannerToken_t *token = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.scannerTokenClass, sizeof(beacon_ScannerToken_t), BeaconObjectKindPointers);
+    beacon_ScannerToken_t *token = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.scannerTokenClass, sizeof(beacon_ScannerToken_t), BeaconObjectKindPointers);
     token->kind = beacon_encodeSmallInteger(kind);
     token->sourcePosition = sourcePosition;
     return token;
@@ -141,7 +141,7 @@ beacon_ScannerToken_t *scannerState_makeToken(beacon_scannerState_t *state, beac
 
 beacon_ScannerToken_t *scannerState_makeTokenStartingFrom(beacon_scannerState_t *state, beacon_TokenKind_t kind, beacon_scannerState_t *initialState)
 {
-    beacon_SourcePosition_t *sourcePosition = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.sourcePositionClass, sizeof(beacon_SourcePosition_t), BeaconObjectKindPointers);
+    beacon_SourcePosition_t *sourcePosition = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.sourcePositionClass, sizeof(beacon_SourcePosition_t), BeaconObjectKindPointers);
     sourcePosition->sourceCode  = state->sourceCode,
     sourcePosition->startIndex  = beacon_encodeSmallInteger(initialState->position);
     sourcePosition->startLine   = beacon_encodeSmallInteger(initialState->line);
@@ -150,7 +150,7 @@ beacon_ScannerToken_t *scannerState_makeTokenStartingFrom(beacon_scannerState_t 
     sourcePosition->endLine     = beacon_encodeSmallInteger(state->line);
     sourcePosition->endColumn   = beacon_encodeSmallInteger(state->column);
 
-    beacon_ScannerToken_t *token = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.scannerTokenClass, sizeof(beacon_ScannerToken_t), BeaconObjectKindPointers);
+    beacon_ScannerToken_t *token = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.scannerTokenClass, sizeof(beacon_ScannerToken_t), BeaconObjectKindPointers);
     token->kind = beacon_encodeSmallInteger(kind),
     token->sourcePosition = sourcePosition;
     token->textPosition = beacon_encodeSmallInteger(initialState->position);
@@ -160,7 +160,7 @@ beacon_ScannerToken_t *scannerState_makeTokenStartingFrom(beacon_scannerState_t 
 
 beacon_ScannerToken_t *scannerState_makeErrorTokenStartingFrom(beacon_scannerState_t *state, const char *errorMessage, const beacon_scannerState_t *initialState)
 {
-    beacon_SourcePosition_t *sourcePosition = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.sourcePositionClass, sizeof(beacon_SourcePosition_t), BeaconObjectKindPointers);
+    beacon_SourcePosition_t *sourcePosition = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.sourcePositionClass, sizeof(beacon_SourcePosition_t), BeaconObjectKindPointers);
     sourcePosition->sourceCode = state->sourceCode,
     sourcePosition->startIndex  = beacon_encodeSmallInteger(initialState->position);
     sourcePosition->startLine   = beacon_encodeSmallInteger(initialState->line);
@@ -169,7 +169,7 @@ beacon_ScannerToken_t *scannerState_makeErrorTokenStartingFrom(beacon_scannerSta
     sourcePosition->endLine     = beacon_encodeSmallInteger(state->line);
     sourcePosition->endColumn   = beacon_encodeSmallInteger(state->column);
 
-    beacon_ScannerToken_t *token = beacon_allocateObjectWithBehavior(state->context->heap, state->context->roots.scannerTokenClass, sizeof(beacon_ScannerToken_t), BeaconObjectKindPointers);
+    beacon_ScannerToken_t *token = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.scannerTokenClass, sizeof(beacon_ScannerToken_t), BeaconObjectKindPointers);
     token->kind = beacon_encodeSmallInteger(BeaconTokenError);
     token->sourcePosition = sourcePosition;
     token->errorMessage = beacon_importCString(state->context, errorMessage);
