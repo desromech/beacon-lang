@@ -125,11 +125,15 @@ typedef struct beacon_NativeMethod_s
 typedef struct beacon_BytecodeMethod_t
 {
     beacon_Object_t super;
+    beacon_oop_t argumentCount;
+    beacon_Array_t *literals;
+    beacon_ByteArray_t *bytecodes;
 } beacon_BytecodeMethod_t;
 
 typedef struct beacon_CompiledMethod_s
 {
     beacon_Object_t super;
+    beacon_oop_t argumentCount;
     beacon_NativeMethod_t *nativeImplementation;
     beacon_BytecodeMethod_t *bytecodeImplementation;
 } beacon_CompiledMethod_t;
@@ -196,6 +200,14 @@ typedef struct beacon_ArrayList_s
     beacon_oop_t size;
     beacon_oop_t capacity;
 } beacon_ArrayList_t;
+
+typedef struct beacon_ByteArrayList_s
+{
+    beacon_SequenceableCollection_t super;
+    beacon_ByteArray_t *array;
+    beacon_oop_t size;
+    beacon_oop_t capacity;
+} beacon_ByteArrayList_t;
 
 typedef struct beacon_String_s
 {

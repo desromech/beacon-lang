@@ -1,5 +1,5 @@
-#ifndef BEACON_ORDERED_COLLECTION_H
-#define BEACON_ORDERED_COLLECTION_H
+#ifndef BEACON_ARRAY_LIST_H
+#define BEACON_ARRAY_LIST_H
 
 #pragma once
 
@@ -38,4 +38,4 @@ beacon_oop_t beacon_ArrayList_at(beacon_context_t *context, beacon_ArrayList_t *
  */
 void beacon_ArrayList_atPut(beacon_context_t *context, beacon_ArrayList_t *collection, intptr_t index, beacon_oop_t element);
 
-#endif //BEACON_ORDERED_COLLECTION_H
+#endif //BEACON_ARRAY_LIST_H

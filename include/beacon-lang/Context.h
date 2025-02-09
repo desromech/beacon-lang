@@ -24,12 +24,17 @@ struct beacon_context_s
         beacon_Behavior_t *metaclassClass;
 
         beacon_Behavior_t *sequenceableCollectionClass;
-        beacon_Behavior_t *orderedCollectionClass;
+        beacon_Behavior_t *arrayListClass;
+        beacon_Behavior_t *byteArrayListClass;
         beacon_Behavior_t *arrayedCollectionClass;
         beacon_Behavior_t *arrayClass;
         beacon_Behavior_t *byteArrayClass;
         beacon_Behavior_t *stringClass;
         beacon_Behavior_t *symbolClass;
+
+        beacon_Behavior_t *nativeMethodClass;
+        beacon_Behavior_t *bytecodeMethodClass;
+        beacon_Behavior_t *compiledMethodClass;
 
         beacon_Behavior_t *sourceCodeClass;
         beacon_Behavior_t *sourcePositionClass;
