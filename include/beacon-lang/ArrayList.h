@@ -38,4 +38,33 @@ beacon_oop_t beacon_ArrayList_at(beacon_context_t *context, beacon_ArrayList_t *
  */
 void beacon_ArrayList_atPut(beacon_context_t *context, beacon_ArrayList_t *collection, intptr_t index, beacon_oop_t element);
 
+/**
+ * Constructs a new array list.
+ */
+beacon_ByteArrayList_t *beacon_ByteArrayList_new(beacon_context_t *context);
+
+/**
+ * Adds a single element to the array list.
+ */
+void beacon_ByteArrayList_add(beacon_context_t *context, beacon_ByteArrayList_t *collection, uint8_t element);
+
+/**
+ * Gets the size of the array list.
+ */
+beacon_ByteArray_t *beacon_ByteArrayList_asByteArray(beacon_context_t *context, beacon_ByteArrayList_t *collection);
+
+/**
+ * Gets the size of the array list.
+ */
+intptr_t beacon_ByteArrayList_size(beacon_ByteArrayList_t *collection);
+
+/**
+ * Gets the element at the specified location.
+ */
+uint8_t beacon_ByteArrayList_at(beacon_context_t *context, beacon_ByteArrayList_t *collection, intptr_t index);
+
+/**
+ * Sets the element at the specified location.
+ */
+void beacon_ByteArrayList_atPut(beacon_context_t *context, beacon_ByteArrayList_t *collection, intptr_t index, uint8_t element);
 #endif //BEACON_ARRAY_LIST_H

@@ -122,20 +122,12 @@ typedef struct beacon_NativeMethod_s
     beacon_NativeMethodFunction_t nativeFunction;
 } beacon_NativeMethod_t;
 
-typedef struct beacon_BytecodeMethod_t
-{
-    beacon_Object_t super;
-    beacon_oop_t argumentCount;
-    beacon_Array_t *literals;
-    beacon_ByteArray_t *bytecodes;
-} beacon_BytecodeMethod_t;
-
 typedef struct beacon_CompiledMethod_s
 {
     beacon_Object_t super;
     beacon_oop_t argumentCount;
     beacon_NativeMethod_t *nativeImplementation;
-    beacon_BytecodeMethod_t *bytecodeImplementation;
+    struct beacon_BytecodeMethod_s *bytecodeImplementation;
 } beacon_CompiledMethod_t;
 
 typedef struct beacon_InternedSymbolSet_s
@@ -208,6 +200,14 @@ typedef struct beacon_ByteArrayList_s
     beacon_oop_t size;
     beacon_oop_t capacity;
 } beacon_ByteArrayList_t;
+
+typedef struct beacon_BytecodeMethod_s
+{
+    beacon_Object_t super;
+    beacon_oop_t argumentCount;
+    beacon_Array_t *literals;
+    beacon_ByteArray_t *bytecodes;
+} beacon_BytecodeMethod_t;
 
 typedef struct beacon_String_s
 {
@@ -341,5 +341,20 @@ typedef struct beacon_ParseTreeLiteralArrayNode_s
     beacon_ParseTreeNode_t super;
     beacon_Array_t *elements;
 } beacon_ParseTreeLiteralArrayNode_t;
+
+typedef struct beacon_BytecodeMethodBuilderValue_t
+{
+    beacon_Object_t super;
+    beacon_oop_t index;
+} beacon_BytecodeMethodBuilderValue_t;
+
+typedef struct beacon_BytecodeMethodBuilder_t
+{
+    beacon_Object_t super;
+    beacon_ArrayList_t *arguments;
+    beacon_ArrayList_t *temporaries;
+    beacon_ArrayList_t *literals;
+    beacon_ByteArrayList_t *bytecodes;
+} beacon_BytecodeMethodBuilder_t;
 
 #endif // BEACON_OBJECT_MODEL_H

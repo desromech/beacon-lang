@@ -35,6 +35,8 @@ struct beacon_context_s
         beacon_Behavior_t *nativeMethodClass;
         beacon_Behavior_t *bytecodeMethodClass;
         beacon_Behavior_t *compiledMethodClass;
+        beacon_Behavior_t *bytecodeMethodBuilderValueClass;
+        beacon_Behavior_t *bytecodeMethodBuilderClass;
 
         beacon_Behavior_t *sourceCodeClass;
         beacon_Behavior_t *sourcePositionClass;

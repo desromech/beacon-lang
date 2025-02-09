@@ -66,8 +66,10 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.symbolClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "Symbol", sizeof(beacon_Symbol_t), BeaconObjectKindBytes);
 
     context->classes.nativeMethodClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "NativeMethod", sizeof(beacon_NativeMethod_t), BeaconObjectKindBytes);
-    context->classes.bytecodeMethodClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "BytecodeMethod", sizeof(beacon_BytecodeMethod_t), BeaconObjectKindBytes);
-    context->classes.compiledMethodClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "CompiledMethod", sizeof(beacon_CompiledMethod_t), BeaconObjectKindBytes);
+    context->classes.bytecodeMethodClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "BytecodeMethod", sizeof(beacon_BytecodeMethod_t), BeaconObjectKindPointers);
+    context->classes.bytecodeMethodBuilderValueClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "BytecodeMethodBuilderValue", sizeof(beacon_BytecodeMethodBuilderValue_t), BeaconObjectKindPointers);
+    context->classes.bytecodeMethodBuilderClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "BytecodeMethodBuilder", sizeof(beacon_BytecodeMethodBuilder_t), BeaconObjectKindPointers);
+    context->classes.compiledMethodClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "CompiledMethod", sizeof(beacon_CompiledMethod_t), BeaconObjectKindPointers);
 
     context->classes.sourceCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "SourceCode", sizeof(beacon_SourceCode_t), BeaconObjectKindPointers);
     context->classes.sourcePositionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "SourcePosition", sizeof(beacon_SourcePosition_t), BeaconObjectKindPointers);

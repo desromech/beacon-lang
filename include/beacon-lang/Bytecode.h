@@ -1,7 +1,7 @@
 #ifndef BEACON_LANG_BYTECODE_H
 #define BEACON_LANG_BYTECODE_H
 
-#include <stdint.h>
+#include "ObjectModel.h"
 
 typedef enum beacon_BytecodeOpcode_e
 {
