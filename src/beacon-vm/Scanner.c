@@ -441,6 +441,9 @@ beacon_ScannerToken_t *beacon_scanSingleToken(beacon_scannerState_t *state)
     case '}':
         scannerState_advance(state, 1);
         return scannerState_makeTokenStartingFrom(state, BeaconTokenRightCurlyBracket, &initialState);
+    case ':':
+        scannerState_advance(state, 1);
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenColon, &initialState);
     case ';':
         scannerState_advance(state, 1);
         return scannerState_makeTokenStartingFrom(state, BeaconTokenSemicolon, &initialState);

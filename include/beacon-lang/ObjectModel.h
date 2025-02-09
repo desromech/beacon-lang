@@ -72,6 +72,9 @@ static inline beacon_oop_t beacon_encodeSmallDoubleValue(double value)
     return (beacon_oop_t)withTag;
 }
 
+typedef struct beacon_context_s beacon_context_t;
+typedef beacon_oop_t (*beacon_NativeMethodFunction_t)(beacon_context_t *context, size_t argumentCount, beacon_oop_t *arguments);
+
 struct beacon_ObjectHeader_s
 {
     uint8_t objectKind : 2;
@@ -112,6 +115,24 @@ typedef struct beacon_MethodDictionary_s
 {
     beacon_Dictionary_t super;
 } beacon_MethodDictionary_t;
+
+typedef struct beacon_NativeMethod_s
+{
+    beacon_Object_t super;
+    beacon_NativeMethodFunction_t nativeFunction;
+} beacon_NativeMethod_t;
+
+typedef struct beacon_BytecodeMethod_t
+{
+    beacon_Object_t super;
+} beacon_BytecodeMethod_t;
+
+typedef struct beacon_CompiledMethod_s
+{
+    beacon_Object_t super;
+    beacon_NativeMethod_t *nativeImplementation;
+    beacon_BytecodeMethod_t *bytecodeImplementation;
+} beacon_CompiledMethod_t;
 
 typedef struct beacon_InternedSymbolSet_s
 {
@@ -276,6 +297,26 @@ typedef struct beacon_ParseTreeReturnNode_s
     beacon_ParseTreeNode_t super;
     beacon_ParseTreeNode_t *expression;
 } beacon_ParseTreeReturnNode_t;
+
+typedef struct beacon_ParseTreeArgumentDefinitionNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_Symbol_t *name;
+} beacon_ParseTreeArgumentDefinitionNode_t;
+
+typedef struct beacon_ParseTreeLocalVariableDefinitionNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_Symbol_t *name;
+} beacon_ParseTreeLocalVariableDefinitionNode_t;
+
+typedef struct beacon_ParseTreeBlockClosureNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_Array_t *arguments;
+    beacon_Array_t *localVariables;
+    beacon_ParseTreeNode_t *expression;
+} beacon_ParseTreeBlockClosureNode_t;
 
 typedef struct beacon_ParseTreeArrayNode_s
 {

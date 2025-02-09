@@ -24,6 +24,7 @@ TokenKindName(GreaterThan)
 TokenKindName(Bar)
 TokenKindName(Assignment)
 TokenKindName(Semicolon)
+TokenKindName(Colon)
 TokenKindName(Dot)
 
 TokenKindName(ByteArrayStart)

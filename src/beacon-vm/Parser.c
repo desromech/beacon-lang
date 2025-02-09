@@ -391,6 +391,83 @@ beacon_ParseTreeNode_t *parser_parseParenthesis(beacon_parserState_t *state)
     return expression;
 }
 
+beacon_ParseTreeNode_t *parser_parseBlockClosure(beacon_parserState_t *state)
+{
+    size_t startingPosition = state->position;
+    beacon_ScannerToken_t *token = parserState_next(state);
+    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenLeftBracket);
+
+    beacon_ArrayList_t *arguments = beacon_ArrayList_new(state->context);
+    bool hasArguments = false;
+    while (parserState_peekKind(state, 0) == BeaconTokenColon)
+    {
+        hasArguments = true;
+        parserState_advance(state);
+        beacon_ScannerToken_t *argumentNameToken = parserState_next(state);
+        assert(beacon_decodeSmallInteger(argumentNameToken->kind) == BeaconTokenIdentifier);
+        
+        const char *textData = (const char*)argumentNameToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(argumentNameToken->textPosition);
+        intptr_t textDataSize = beacon_decodeSmallInteger(argumentNameToken->textSize);
+        beacon_Symbol_t *argumentName = beacon_internStringWithSize(state->context, textDataSize, textData);
+
+        beacon_ParseTreeArgumentDefinitionNode_t *argumentDefinition = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeArgumentDefinitionNodeClass, sizeof(beacon_ParseTreeArgumentDefinitionNode_t), BeaconObjectKindPointers);
+        argumentDefinition->super.sourcePosition = argumentNameToken->sourcePosition;
+        argumentDefinition->name = argumentName;
+
+        beacon_ArrayList_add(state->context, arguments, (beacon_oop_t)argumentDefinition);
+    }
+
+    if (parserState_peekKind(state, 0) == BeaconTokenBar)
+    {
+        parserState_advance(state);
+    }
+    else if(hasArguments)
+    {
+        beacon_ArrayList_add(state->context, arguments, (beacon_oop_t)parserState_advanceWithExpectedError(state, "Expected a bar | after the argument names"));
+    }
+
+    // Local variables
+    beacon_ArrayList_t *localVariables = beacon_ArrayList_new(state->context);
+    if (parserState_peekKind(state, 0) == BeaconTokenBar)
+    {
+        parserState_advance(state);
+        while (parserState_peekKind(state, 0) == BeaconTokenIdentifier)
+        {
+            beacon_ScannerToken_t *localNameToken = parserState_next(state);
+            const char *textData = (const char*)localNameToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(localNameToken->textPosition);
+            intptr_t textDataSize = beacon_decodeSmallInteger(localNameToken->textSize);
+            beacon_Symbol_t *localName = beacon_internStringWithSize(state->context, textDataSize, textData);
+
+            beacon_ParseTreeLocalVariableDefinitionNode_t *localDefinition = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLocalVariableDefinitionNodeClass, sizeof(beacon_ParseTreeLocalVariableDefinitionNode_t), BeaconObjectKindPointers);
+            localDefinition->super.sourcePosition = localNameToken->sourcePosition;
+            localDefinition->name = localName;
+
+            beacon_ArrayList_add(state->context, localVariables, (beacon_oop_t)localDefinition);
+        }
+
+        if(parserState_peekKind(state, 0) == BeaconTokenBar)
+        {
+            parserState_advance(state);
+        }
+        else
+        {
+            beacon_ArrayList_add(state->context, localVariables, (beacon_oop_t)parserState_advanceWithExpectedError(state, "Expected a bar after the local variable definitions."));
+        }
+    }
+    
+    // Body expression
+    beacon_ParseTreeNode_t *expression = parser_parseSequenceUntilEndOrDelimiter(state, BeaconTokenRightBracket);
+    expression = parserState_expectAddingErrorToNode(state, BeaconTokenRightBracket, expression);
+
+    // Emit the block closure
+    beacon_ParseTreeBlockClosureNode_t *blockClosure = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeBlockClosureNodeClass, sizeof(beacon_ParseTreeBlockClosureNode_t), BeaconObjectKindPointers);
+    blockClosure->super.sourcePosition = parserState_sourcePositionFrom(state, startingPosition);
+    blockClosure->arguments = beacon_ArrayList_asArray(state->context, arguments);
+    blockClosure->localVariables = beacon_ArrayList_asArray(state->context, localVariables);
+    blockClosure->expression = expression;
+
+    return &blockClosure->super;
+}
 
 beacon_ParseTreeNode_t *parser_parseTerm(beacon_parserState_t *state)
 {
@@ -400,9 +477,9 @@ beacon_ParseTreeNode_t *parser_parseTerm(beacon_parserState_t *state)
         return parser_parseIdentifier(state);
     case BeaconTokenLeftParent:
         return parser_parseParenthesis(state);
-    /*case BeaconTokenLeftBracket:
-        return parser_parseBlock(state);
-    case BeaconTokenLeftCurlyBracket:
+    case BeaconTokenLeftBracket:
+        return parser_parseBlockClosure(state);
+    /*case BeaconTokenLeftCurlyBracket:
         return parser_parseArray(state);
     case BeaconTokenByteArrayStart:
         return parser_parseByteArray(state);    */
