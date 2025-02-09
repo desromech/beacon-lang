@@ -32,11 +32,12 @@ struct beacon_context_s
         beacon_Behavior_t *stringClass;
         beacon_Behavior_t *symbolClass;
 
-        beacon_Behavior_t *nativeMethodClass;
-        beacon_Behavior_t *bytecodeMethodClass;
+        beacon_Behavior_t *nativeCodeClass;
+        beacon_Behavior_t *bytecodeCodeClass;
+        beacon_Behavior_t *bytecodeCodeBuilderClass;
+        beacon_Behavior_t *compiledCodeClass;
+        beacon_Behavior_t *compiledBlockClass;
         beacon_Behavior_t *compiledMethodClass;
-        beacon_Behavior_t *bytecodeMethodBuilderValueClass;
-        beacon_Behavior_t *bytecodeMethodBuilderClass;
 
         beacon_Behavior_t *sourceCodeClass;
         beacon_Behavior_t *sourcePositionClass;

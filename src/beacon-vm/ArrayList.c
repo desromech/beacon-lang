@@ -108,6 +108,18 @@ void beacon_ByteArrayList_add(beacon_context_t *context, beacon_ByteArrayList_t 
     collection->size = beacon_encodeSmallInteger(size + 1);
 }
 
+void beacon_ByteArrayList_addInt16(beacon_context_t *context, beacon_ByteArrayList_t *collection, int16_t element)
+{
+    beacon_ByteArrayList_add(context, collection, element & 0xFF);
+    beacon_ByteArrayList_add(context, collection, (element >> 8) & 0xFF);
+}
+
+void beacon_ByteArrayList_addUInt16(beacon_context_t *context, beacon_ByteArrayList_t *collection, uint16_t element)
+{
+    beacon_ByteArrayList_add(context, collection, element & 0xFF);
+    beacon_ByteArrayList_add(context, collection, (element >> 8) & 0xFF);
+}
+
 beacon_ByteArray_t *beacon_ByteArrayList_asByteArray(beacon_context_t *context, beacon_ByteArrayList_t *collection)
 {
     intptr_t size = beacon_ByteArrayList_size(collection);

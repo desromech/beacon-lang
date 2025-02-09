@@ -5,4 +5,5 @@
 #include "SourceCode.c"
 #include "Scanner.c"
 #include "Parser.c"
+#include "Bytecode.c"
 #include "Main.c"
