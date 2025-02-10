@@ -118,6 +118,8 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
     context->roots.trueValue = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.trueClass, sizeof(beacon_True_t), BeaconObjectKindPointers);
     context->roots.falseValue = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.falseClass, sizeof(beacon_False_t), BeaconObjectKindPointers);
     context->roots.doesNotUnderstandSelector = (beacon_oop_t)beacon_internCString(context, "doesNotUnderstand:");
+    context->roots.compileWithEnvironmentAndBytecodeBuilderSelector = (beacon_oop_t)beacon_internCString(context, "compileWithEnvironment:andBytecodeBuilder:");
+    beacon_oop_t nextIntern = (beacon_oop_t)beacon_internCString(context, "compileWithEnvironment:andBytecodeBuilder:");
 }
 
 void beacon_context_registerBasicPrimitives(beacon_context_t *context)
@@ -178,7 +180,7 @@ intptr_t beacon_InternedSymbolSet_scanForString(beacon_InternedSymbolSet_t *symb
     {
         beacon_Symbol_t *storedSymbol = (beacon_Symbol_t *)storage->elements[i];
         if(beacon_isNil((beacon_oop_t)storedSymbol) || (storedSymbol->super.super.super.super.super.header.slotCount == stringSize
-                            && !memcmp(storedSymbol, string, stringSize)))
+                            && !memcmp(storedSymbol->data, string, stringSize)))
             return i;
     }
 
@@ -186,7 +188,7 @@ intptr_t beacon_InternedSymbolSet_scanForString(beacon_InternedSymbolSet_t *symb
     {
         beacon_Symbol_t *storedSymbol = (beacon_Symbol_t *)storage->elements[i];
         if(beacon_isNil((beacon_oop_t)storedSymbol) || (storedSymbol->super.super.super.super.super.header.slotCount == stringSize
-                            && !memcmp(storedSymbol, string, stringSize)))
+                            && !memcmp(storedSymbol->data, string, stringSize)))
             return i;
     }
 

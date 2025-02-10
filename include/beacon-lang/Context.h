@@ -85,6 +85,7 @@ struct beacon_context_s
         beacon_oop_t trueValue;
         beacon_oop_t falseValue;
         beacon_oop_t doesNotUnderstandSelector;
+        beacon_oop_t compileWithEnvironmentAndBytecodeBuilderSelector;
     } roots;
 
     beacon_MemoryHeap_t *heap;
