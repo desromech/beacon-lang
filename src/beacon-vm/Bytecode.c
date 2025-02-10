@@ -268,6 +268,9 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
         beacon_oop_t instructionExecutionResult = 0;
         switch(opcode)
         {
+        case BeaconBytecodeNop:
+            // Nothing is required here.
+            break;
         case BeaconBytecodeSendMessage:
             assert(writesToTemporary);
             instructionExecutionResult = beacon_performWithArguments(context, bytecodeDecodedArguments[0], bytecodeDecodedArguments[1], instructionArgumentCount - 2, bytecodeDecodedArguments + 2);
