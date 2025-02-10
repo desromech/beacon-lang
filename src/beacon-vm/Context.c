@@ -300,6 +300,8 @@ beacon_oop_t beacon_performWithArguments(beacon_context_t *context, beacon_oop_t
         (beacon_oop_t)message
     };
     
+    beacon_Symbol_t *selectorSymbol = (beacon_Symbol_t*)selector;
+    fprintf(stderr, "Not understood: #%.*s", selectorSymbol->super.super.super.super.super.header.slotCount, selectorSymbol->data);
     return beacon_performWithArguments(context, receiver, context->roots.doesNotUnderstandSelector, 1, dnuArguments);
 
 }
@@ -407,12 +409,46 @@ static beacon_oop_t beacon_UndefinedObject_printString(beacon_context_t *context
 
 static beacon_oop_t beacon_SmallInteger_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
-    (void)receiver;
     (void)arguments;
     assert(argumentCount == 0);
     char buffer[64];
     snprintf(buffer, sizeof(buffer), "%lld", (long long int)beacon_decodeSmallInteger(receiver));
     return (beacon_oop_t)beacon_importCString(context, buffer);
+}
+
+static beacon_oop_t beacon_SmallInteger_plus(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    assert(argumentCount == 1);
+    return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) + beacon_decodeSmallInteger(arguments[0]));
+}
+
+static beacon_oop_t beacon_SmallInteger_minus(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    assert(argumentCount == 1);
+    return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) - beacon_decodeSmallInteger(arguments[0]));
+}
+
+static beacon_oop_t beacon_SmallInteger_times(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    assert(argumentCount == 1);
+    return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) * beacon_decodeSmallInteger(arguments[0]));
+}
+
+static beacon_oop_t beacon_SmallInteger_integerDivision(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    assert(argumentCount == 1);
+    return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) / beacon_decodeSmallInteger(arguments[0]));
+}
+
+static beacon_oop_t beacon_SmallInteger_integerModulo(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    assert(argumentCount == 1);
+    return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) % beacon_decodeSmallInteger(arguments[0]));
 }
 
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
@@ -428,4 +464,9 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.undefinedObjectClass, "printString", 0, beacon_UndefinedObject_printString);
 
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "printString", 0, beacon_SmallInteger_printString);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "+", 0, beacon_SmallInteger_plus);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "-", 0, beacon_SmallInteger_minus);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "*", 0, beacon_SmallInteger_times);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "//", 0, beacon_SmallInteger_integerDivision);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "\\", 0, beacon_SmallInteger_integerModulo);
 }

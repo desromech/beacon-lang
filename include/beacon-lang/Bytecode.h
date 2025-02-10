@@ -27,6 +27,8 @@ typedef enum beacon_BytecodeArgumentType_e
     BytecodeArgumentTypeCapture
 } beacon_BytecodeValueType_t;
 
+#define BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS 32
+
 typedef uint16_t beacon_BytecodeValue_t;
 
 static inline beacon_BytecodeOpcode_t beacon_getBytecodeOpcode(uint8_t bytecode)
@@ -69,6 +71,9 @@ beacon_BytecodeCode_t *beacon_BytecodeCodeBuilder_finish(beacon_context_t *conte
 // Add a literal value.
 beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_addLiteral(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, beacon_oop_t literal);
 
+// New temporary
+beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_newTemporary(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, beacon_oop_t optionalNameSymbol);
+
 // Bytecode assembly label.
 uint16_t beacon_BytecodeCodeBuilder_label(beacon_BytecodeCodeBuilder_t *methodBuilder);
 
@@ -96,12 +101,12 @@ void beacon_BytecodeCodeBuilder_jumpIfFalse(beacon_context_t *context, beacon_By
 /**
  * Send a message.
  */
-void beacon_BytecodeCodeBuilder_sendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t receiver, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments);
+void beacon_BytecodeCodeBuilder_sendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t receiver, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments);
 
 /**
  * Send a message to the superclass
  */
-void beacon_BytecodeCodeBuilder_superSendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t receiver, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments);
+void beacon_BytecodeCodeBuilder_superSendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t receiver, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments);
 
 /**
  * Local return
@@ -116,12 +121,12 @@ void beacon_BytecodeCodeBuilder_nonLocalReturn(beacon_context_t *context, beacon
 /**
  * Makes an array.
  */
-void beacon_BytecodeCodeBuilder_makeArray(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, size_t elementCount, beacon_BytecodeValue_t *arguments);
+void beacon_BytecodeCodeBuilder_makeArray(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, size_t elementCount, beacon_BytecodeValue_t *arguments);
 
 /**
  * Makes a closure instance
  */
-void beacon_BytecodeCodeBuilder_makeClosureInstance(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t closure, size_t captureCount, beacon_BytecodeValue_t *captures);
+void beacon_BytecodeCodeBuilder_makeClosureInstance(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t closure, size_t captureCount, beacon_BytecodeValue_t *captures);
 
 /**
  * Bytecode interpretation.

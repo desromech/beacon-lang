@@ -40,7 +40,7 @@ beacon_oop_t evaluateSourceCode(beacon_SourceCode_t *sourceCode)
 
 void printObject(beacon_oop_t object)
 {
-    beacon_String_t *printedObject = beacon_perform(context, object, beacon_internCString(context, "printString"));
+    beacon_String_t *printedObject = (beacon_String_t *)beacon_perform(context, object, (beacon_oop_t)beacon_internCString(context, "printString"));
     assert(printedObject);
     size_t stringSize = printedObject->super.super.super.super.super.header.slotCount;
     printf("%.*s\n", (int)stringSize, printedObject->data);
