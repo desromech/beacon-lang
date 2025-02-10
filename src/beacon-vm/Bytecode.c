@@ -173,6 +173,7 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
     uint8_t extendedArgumentCount = 0;
 
     beacon_oop_t bytecodeDecodedArguments[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS];
+    memset(bytecodeDecodedArguments, 0, sizeof(bytecodeDecodedArguments));
     beacon_oop_t temporaryStorage[temporaryCount];
     memset(temporaryStorage, 0, sizeof(temporaryStorage));
     
