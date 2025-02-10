@@ -301,7 +301,6 @@ beacon_oop_t beacon_performWithArguments(beacon_context_t *context, beacon_oop_t
     };
     
     beacon_Symbol_t *selectorSymbol = (beacon_Symbol_t*)selector;
-    fprintf(stderr, "Not understood: #%.*s", selectorSymbol->super.super.super.super.super.header.slotCount, selectorSymbol->data);
     return beacon_performWithArguments(context, receiver, context->roots.doesNotUnderstandSelector, 1, dnuArguments);
 
 }

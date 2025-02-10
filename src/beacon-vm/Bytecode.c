@@ -176,6 +176,28 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
     memset(bytecodeDecodedArguments, 0, sizeof(bytecodeDecodedArguments));
     beacon_oop_t temporaryStorage[temporaryCount];
     memset(temporaryStorage, 0, sizeof(temporaryStorage));
+
+    beacon_StackFrameRecord_t stackFrameRecord = {
+        .kind = StackFrameBytecodeMethodRecord,
+        .previousContext = NULL,
+        .bytecodeMethodStackRecord = {
+            .code = method,
+            .argumentCount = argumentCount,
+            .arguments = arguments,
+            .temporaryCount = temporaryCount,
+            .temporaries = temporaryStorage,
+            .decodedArgumentsTemporaryZoneSize = BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS,
+            .decodedArgumentsTemporaryZone = bytecodeDecodedArguments,
+        }
+    };
+
+    if(setjmp(stackFrameRecord.bytecodeMethodStackRecord.nonLocalReturnJumpBuffer))
+    {
+        beacon_popStackFrameRecord(&stackFrameRecord);
+        return stackFrameRecord.bytecodeMethodStackRecord.returnResultValue;
+    }
+
+    beacon_pushStackFrameRecord(&stackFrameRecord);
     
     while(pc < bytecodesSize)
     {
@@ -252,7 +274,9 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
             break;
         case BeaconBytecodeLocalReturn:
             assert(instructionArgumentCount == 1);
-            return bytecodeDecodedArguments[0];
+            stackFrameRecord.bytecodeMethodStackRecord.returnResultValue = bytecodeDecodedArguments[0];
+            beacon_popStackFrameRecord(&stackFrameRecord);
+            return stackFrameRecord.bytecodeMethodStackRecord.returnResultValue;
         default:
             fprintf(stderr, "Unsupported bytecode with opcode %x.\n", opcode);
             abort();

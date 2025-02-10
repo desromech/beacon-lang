@@ -5,6 +5,7 @@
 
 #include "ObjectModel.h"
 #include <stddef.h>
+#include <setjmp.h>
 
 typedef struct beacon_context_s beacon_context_t;
 
@@ -24,6 +25,37 @@ typedef struct beacon_MemoryHeap_s
     int gcDisableCount;
     beacon_context_t *context;
 } beacon_MemoryHeap_t;
+
+typedef enum beacon_StackFrameRecordKind_e
+{
+    StackFrameBytecodeMethodRecord = 0,
+} beacon_StackFrameRecordKind_t;
+
+typedef struct beacon_StackFrameRecord_s
+{
+    struct beacon_StackFrameRecord_s *previousContext;
+    beacon_StackFrameRecordKind_t kind;
+    union
+    {
+        struct
+        {
+            beacon_CompiledCode_t *code;
+            size_t argumentCount;
+            size_t temporaryCount;
+            size_t decodedArgumentsTemporaryZoneSize;
+            beacon_oop_t *arguments;
+            beacon_oop_t *temporaries;
+            beacon_oop_t *decodedArgumentsTemporaryZone;
+
+            beacon_oop_t returnResultValue;
+            jmp_buf nonLocalReturnJumpBuffer;
+        } bytecodeMethodStackRecord;
+    };
+} beacon_StackFrameRecord_t;
+
+beacon_StackFrameRecord_t *beacon_getTopStackFrameRecord();
+void beacon_pushStackFrameRecord(beacon_StackFrameRecord_t *record);
+void beacon_popStackFrameRecord(beacon_StackFrameRecord_t *record);
 
 beacon_MemoryHeap_t *beacon_createMemoryHeap(beacon_context_t *context);
 void beacon_destroyMemoryHeap(beacon_MemoryHeap_t *heap);

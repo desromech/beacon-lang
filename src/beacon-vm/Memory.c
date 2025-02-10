@@ -1,6 +1,25 @@
 #include "beacon-lang/Memory.h"
 //#include <stdlib.h>
 #include <assert.h>
+#include <threads.h>
+
+thread_local beacon_StackFrameRecord_t *beaconCurrentTopStackFrameRecord = 0;
+
+beacon_StackFrameRecord_t *beacon_getTopStackFrameRecord()
+{
+    return beaconCurrentTopStackFrameRecord;
+}
+
+void beacon_pushStackFrameRecord(beacon_StackFrameRecord_t *record)
+{
+    record->previousContext = beaconCurrentTopStackFrameRecord;
+    beaconCurrentTopStackFrameRecord = record;
+}
+
+void beacon_popStackFrameRecord(beacon_StackFrameRecord_t *record)
+{
+    beaconCurrentTopStackFrameRecord = record->previousContext;
+}
 
 beacon_MemoryHeap_t *beacon_createMemoryHeap(beacon_context_t *context)
 {

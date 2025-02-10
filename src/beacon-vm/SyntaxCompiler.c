@@ -80,8 +80,7 @@ static beacon_oop_t beacon_SyntaxCompiler_messageSend(beacon_context_t *context,
 }
 
 void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *context)
-{
-    
+{   
     beacon_addPrimitiveToClass(context, context->classes.parseTreeNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_node);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeLiteralNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_literal);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeMessageSendNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_messageSend);
