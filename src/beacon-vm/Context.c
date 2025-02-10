@@ -5,6 +5,8 @@
 #include <string.h>
 #include <assert.h>
 
+void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *context);
+
 static beacon_Behavior_t *beacon_context_createClassAndMetaclass(beacon_context_t *context, beacon_Behavior_t *superclassBehavior, const char *name, size_t instanceSize, beacon_ObjectKind_t objectKind)
 {
     assert(instanceSize >= sizeof(beacon_ObjectHeader_t));
@@ -65,6 +67,13 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.stringClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "String", sizeof(beacon_String_t), BeaconObjectKindBytes);
     context->classes.symbolClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "Symbol", sizeof(beacon_Symbol_t), BeaconObjectKindBytes);
 
+    context->classes.undefinedObjectClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "UndefinedObject", sizeof(beacon_UndefinedObject_t), BeaconObjectKindImmediate);
+    context->classes.magnitudeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Magnitude", sizeof(beacon_Magnitude_t), BeaconObjectKindPointers);
+    context->classes.numberClass = beacon_context_createClassAndMetaclass(context, context->classes.magnitudeClass, "Number", sizeof(beacon_Number_t), BeaconObjectKindPointers);
+    context->classes.smallIntegerClass = beacon_context_createClassAndMetaclass(context, context->classes.numberClass, "SmallInteger", sizeof(beacon_SmallInteger_t), BeaconObjectKindImmediate);
+    context->classes.characterClass = beacon_context_createClassAndMetaclass(context, context->classes.magnitudeClass, "Character", sizeof(beacon_Character_t), BeaconObjectKindImmediate);
+    context->classes.smallFloatClass = beacon_context_createClassAndMetaclass(context, context->classes.numberClass, "SmallFloat", sizeof(beacon_SmallFloat_t), BeaconObjectKindImmediate);
+
     context->classes.nativeCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "NativeCode", sizeof(beacon_NativeCode_t), BeaconObjectKindBytes);
     context->classes.bytecodeCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "BytecodeCode", sizeof(beacon_BytecodeCode_t), BeaconObjectKindPointers);
     context->classes.bytecodeCodeBuilderClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "BytecodeCodeBuilder", sizeof(beacon_BytecodeCodeBuilder_t), BeaconObjectKindPointers);
@@ -92,6 +101,11 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.parseTreeBlockClosureNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeBlockClosureNode", sizeof(beacon_ParseTreeBlockClosureNode_t), BeaconObjectKindPointers);
 }
 
+void beacon_context_registerBasicPrimitives(beacon_context_t *context)
+{
+    beacon_context_registerParseTreeCompilationPrimitives(context);
+}
+
 beacon_context_t *beacon_context_new(void)
 {
     beacon_context_t *context = calloc(1, sizeof(beacon_context_t));
@@ -100,6 +114,7 @@ beacon_context_t *beacon_context_new(void)
     context->roots.internedSymbolSet->super.array = beacon_allocateObject(context->heap, sizeof(beacon_Array_t) + sizeof(beacon_oop_t)*1024, BeaconObjectKindPointers);
     context->roots.internedSymbolSet->super.tally = beacon_encodeSmallInteger(0);
     beacon_context_createBaseClassHierarchy(context);
+    beacon_context_registerBasicPrimitives(context);
     return context;
 }
 
@@ -191,4 +206,55 @@ beacon_Symbol_t *beacon_internString(beacon_context_t *context, beacon_String_t 
 {
     size_t stringSize = string->super.super.super.super.super.header.slotCount;
     return beacon_internStringWithSize(context, stringSize, (const char *)string->data);
+}
+
+beacon_Behavior_t *beacon_getClass(beacon_context_t *context, beacon_oop_t receiver)
+{
+    beacon_oop_t tagBits = receiver & 7;
+    if(!receiver || tagBits != 0)
+    {
+        switch(tagBits)
+        {
+        case 0: return context->classes.undefinedObjectClass;
+        case ImmediateObjectTag_SmallInteger: return context->classes.smallIntegerClass;
+        case ImmediateObjectTag_Character: return context->classes.characterClass;
+        case ImmediateObjectTag_SmallFloat: return context->classes.smallFloatClass;
+        }
+    }
+}
+
+beacon_oop_t beacon_performWithArguments(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_Behavior_t *behavior = beacon_getClass(context, receiver);
+    while(behavior)
+    {
+        if(behavior->methodDict)
+        {
+            beacon_CompiledCode_t *method = beacon_MethodDictionary_atOrNil(context, behavior->methodDict, selector);
+            if(method)
+                return beacon_runMethodWithArguments(context, method, receiver, selector, argumentCount, arguments);
+        }
+
+        behavior = behavior->superclass;
+    }
+
+    fprintf(stderr, "TODO: Message not understood");
+    abort();
+}
+
+beacon_oop_t beacon_performWith(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, beacon_oop_t firstArgument)
+{
+    beacon_oop_t *arguments[] = {
+        firstArgument
+    };
+    return beacon_performWithArguments(context, receiver, selector, 1, arguments);
+}
+
+beacon_oop_t beacon_performWithWith(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, beacon_oop_t firstArgument, beacon_oop_t secondArgument)
+{
+    beacon_oop_t *arguments[] = {
+        firstArgument,
+        secondArgument
+    };
+    return beacon_performWithArguments(context, receiver, selector, 2, arguments);
 }

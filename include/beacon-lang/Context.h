@@ -32,6 +32,13 @@ struct beacon_context_s
         beacon_Behavior_t *stringClass;
         beacon_Behavior_t *symbolClass;
 
+        beacon_Behavior_t *undefinedObjectClass;
+        beacon_Behavior_t *magnitudeClass;
+        beacon_Behavior_t *numberClass;
+        beacon_Behavior_t *smallIntegerClass;
+        beacon_Behavior_t *characterClass;
+        beacon_Behavior_t *smallFloatClass;
+
         beacon_Behavior_t *nativeCodeClass;
         beacon_Behavior_t *bytecodeCodeClass;
         beacon_Behavior_t *bytecodeCodeBuilderClass;
@@ -77,6 +84,12 @@ beacon_String_t *beacon_importCString(beacon_context_t *context, const char *str
 beacon_Symbol_t *beacon_internStringWithSize(beacon_context_t *context, size_t stringSize, const char *string);
 beacon_Symbol_t *beacon_internCString(beacon_context_t *context, const char *string);
 beacon_Symbol_t *beacon_internString(beacon_context_t *context, beacon_String_t *string);
+
+beacon_Behavior_t *beacon_getClass(beacon_context_t *context, beacon_oop_t receiver);
+
+beacon_oop_t beacon_performWithArguments(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, size_t argumentCount, beacon_oop_t *arguments);
+beacon_oop_t beacon_performWith(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, beacon_oop_t firstArgument);
+beacon_oop_t beacon_performWithWith(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, beacon_oop_t firstArgument, beacon_oop_t secondArgument);
 
 
 #endif // BEACON_CONTEXT_H

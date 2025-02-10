@@ -6,4 +6,5 @@
 #include "Scanner.c"
 #include "Parser.c"
 #include "Bytecode.c"
+#include "SyntaxCompiler.c"
 #include "Main.c"

@@ -15,6 +15,7 @@ typedef enum beacon_ObjectKind_e {
     BeaconObjectKindPointers = 0,
     BeaconObjectKindWeakPointers,
     BeaconObjectKindBytes,
+    BeaconObjectKindImmediate,
 } beacon_ObjectKind_t;
 
 typedef enum beacon_ImmediateObjectTagBits_s {
@@ -149,7 +150,7 @@ typedef struct beacon_Behavior_s
 {
     beacon_Object_t super;
     beacon_Behavior_t *superclass;
-    beacon_MethodDictionary_t methodDict;
+    beacon_MethodDictionary_t *methodDict;
     beacon_oop_t instSize;
     beacon_oop_t objectKind;
 } beacon_Behavior_t;
@@ -230,6 +231,36 @@ typedef struct beacon_Symbol_s
     beacon_ArrayedCollection_t super;
     uint8_t data[];
 } beacon_Symbol_t;
+
+typedef struct beacon_Magnitude_s
+{
+    beacon_Object_t super;
+} beacon_Magnitude_t;
+
+typedef struct beacon_Number_s
+{
+    beacon_Magnitude_t super;
+} beacon_Number_t;
+
+typedef struct beacon_UndefinedObject_s
+{
+    beacon_Object_t super;
+} beacon_UndefinedObject_t;
+
+typedef struct beacon_SmallInteger_s
+{
+    beacon_Number_t super;
+} beacon_SmallInteger_t;
+
+typedef struct beacon_Character_s
+{
+    beacon_Magnitude_t super;
+} beacon_Character_t;
+
+typedef struct beacon_SmallFloat_s
+{
+    beacon_Number_t super;
+} beacon_SmallFloat_t;
 
 typedef struct beacon_SourceCode_s
 {
