@@ -1,7 +1,7 @@
 #include "beacon-lang/SyntaxCompiler.h"
 #include "beacon-lang/Context.h"
 
-beacon_CompiledMethod_t *beacon_compileWorkspaceSyntax(beacon_context_t *context, beacon_ParseTreeNode_t *parseTree)
+beacon_CompiledMethod_t *beacon_compileReplSyntax(beacon_context_t *context, beacon_ParseTreeNode_t *parseTree)
 {
     beacon_EmptyCompilationEnvironment_t *emptyEnvironment = beacon_allocateObjectWithBehavior(context->heap, context->classes.emptyCompilationEnvironmentClass, sizeof(beacon_EmptyCompilationEnvironment_t), BeaconObjectKindPointers);
     beacon_SystemCompilationEnvironment_t *systemEnvironment = beacon_allocateObjectWithBehavior(context->heap, context->classes.systemCompilationEnvironmentClass, sizeof(beacon_SystemCompilationEnvironment_t), BeaconObjectKindPointers);
@@ -13,6 +13,9 @@ beacon_CompiledMethod_t *beacon_compileWorkspaceSyntax(beacon_context_t *context
     
     beacon_BytecodeCodeBuilder_t *bytecodeBuilder = beacon_BytecodeCodeBuilder_new(context);
     beacon_BytecodeValue_t lastValue = beacon_decodeSmallInteger(beacon_performWithWith(context, (beacon_oop_t)parseTree, context->roots.compileWithEnvironmentAndBytecodeBuilderSelector, (beacon_oop_t)lexicalEnvironment, (beacon_oop_t)bytecodeBuilder));
+
+    // Ensure that we are returning at least a value.
+    beacon_BytecodeCodeBuilder_localReturn(context, bytecodeBuilder, lastValue);
 
     beacon_BytecodeCode_t *bytecode = beacon_BytecodeCodeBuilder_finish(context, bytecodeBuilder);
 
@@ -35,8 +38,8 @@ static beacon_oop_t beacon_SyntaxCompiler_literal(beacon_context_t *context, bea
     beacon_ParseTreeLiteralNode_t *literalNode = (beacon_ParseTreeLiteralNode_t *)receiver;
     beacon_BytecodeCodeBuilder_t *bytecodeBuilder = (beacon_BytecodeCodeBuilder_t *)arguments[1];
 
-    fprintf(stderr, "TODO");
-    abort();   
+    beacon_BytecodeValue_t value = beacon_BytecodeCodeBuilder_addLiteral(context, bytecodeBuilder, literalNode->value);
+    return beacon_encodeSmallInteger(value);
 }
 
 void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *context)

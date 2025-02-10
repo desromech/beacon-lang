@@ -33,8 +33,9 @@ void evaluateSourceCode(beacon_SourceCode_t *sourceCode)
     }
 
     beacon_ParseTreeNode_t *parseTree = beacon_parseTokenList(context, sourceCode, scannedSource);
-    beacon_CompiledMethod_t *compiledMethod = beacon_compileWorkspaceSyntax(context, parseTree);
+    beacon_CompiledMethod_t *compiledMethod = beacon_compileReplSyntax(context, parseTree);
     beacon_oop_t result =  beacon_runMethodWithArguments(context, compiledMethod, 0, (beacon_oop_t)beacon_internCString(context, "DoIt"), 0, NULL);
+    abort();
 }
 
 

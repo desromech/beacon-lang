@@ -1,6 +1,7 @@
 #include "beacon-lang/Context.h"
 #include "beacon-lang/Memory.h"
 #include "beacon-lang/Dictionary.h"
+#include "beacon-lang/Bytecode.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -259,10 +260,11 @@ beacon_oop_t beacon_runMethodWithArguments(beacon_context_t *context, beacon_Com
 {
     (void)selector;
     if(method->nativeImplementation)
-    {
         return method->nativeImplementation->nativeFunction(context, receiver, argumentCount, arguments);
-    }
-    fprintf(stderr, "TODO: beacon_runMethodWithArguments");
+    else if(method->bytecodeImplementation)
+        return beacon_interpretBytecodeMethod(context, method, receiver, selector, argumentCount, arguments);
+
+    fprintf(stderr, "Error: Cannot evaluate a method without any kind of implementation.");
     abort();
 }
 
