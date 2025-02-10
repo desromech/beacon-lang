@@ -1,5 +1,21 @@
 #include "beacon-lang/Bytecode.h"
 #include "beacon-lang/ArrayList.h"
+#include <stdlib.h>
+#include <stdio.h>
+
+static inline bool beacon_bytecodeWritesToTemporary(beacon_BytecodeOpcode_t opcode)
+{
+    switch(opcode)
+    {
+    case BeaconBytecodeSendMessage:
+    case BeaconBytecodeSuperSendMessage:
+    case BeaconBytecodeMakeArray:
+    case BeaconBytecodeMakeClosureInstance:
+        return true;
+    default:
+        return false;
+    }
+}
 
 beacon_BytecodeCodeBuilder_t *beacon_BytecodeCodeBuilder_new(beacon_context_t *context)
 {
@@ -29,12 +45,12 @@ beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_addLiteral(beacon_context_t *c
     {
         beacon_oop_t existingLiteral = beacon_ArrayList_at(context, codeBuilder->literals, i);
         if(existingLiteral == literal)
-            return beacon_BytecodeValue_encode(i - 1, BytecodeArgumentTypeLiteral);
+            return beacon_BytecodeValue_encode(i, BytecodeArgumentTypeLiteral);
 
     }
 
     beacon_ArrayList_add(context, codeBuilder->literals, literal);
-    return beacon_BytecodeValue_encode(beacon_ArrayList_size(codeBuilder->literals) - 1, BytecodeArgumentTypeLiteral);
+    return beacon_BytecodeValue_encode(beacon_ArrayList_size(codeBuilder->literals), BytecodeArgumentTypeLiteral);
 }
 
 uint16_t beacon_BytecodeCodeBuilder_label(beacon_BytecodeCodeBuilder_t *methodBuilder)
@@ -134,6 +150,8 @@ void beacon_BytecodeCodeBuilder_makeClosureInstance(beacon_context_t *context, b
 
 beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_CompiledCode_t *method, beacon_oop_t receiver, beacon_oop_t selector, size_t argumentCount, beacon_oop_t *arguments)
 {
+    static const size_t MaxSupportedBytecodeArguments = 32;
+
     beacon_BytecodeCode_t *code = method->bytecodeImplementation;
     assert(beacon_decodeSmallInteger(code->argumentCount) == (intptr_t)argumentCount);
     intptr_t temporaryCount = beacon_decodeSmallInteger(code->temporaryCount);
@@ -144,11 +162,91 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
     size_t bytecodesSize = code->bytecodes->super.super.super.super.super.header.slotCount;
     uint8_t extendedArgumentCount = 0;
 
+    beacon_oop_t bytecodeDecodedArguments[MaxSupportedBytecodeArguments];
+    beacon_oop_t temporaryStorage[temporaryCount];
+    memset(temporaryStorage, 0, sizeof(temporaryStorage));
+    
     while(pc < bytecodesSize)
     {
         uint32_t instructionPC = pc;
+        uint32_t branchDestinationPC = instructionPC;
+        uint8_t instruction = bytecodes[pc++];
 
-        abort();
+        uint8_t instructionArgumentCount = (extendedArgumentCount << 4) | beacon_getBytecodeArgumentCount(instruction);
+        assert(instructionArgumentCount <= MaxSupportedBytecodeArguments);
+        beacon_BytecodeOpcode_t opcode = beacon_getBytecodeOpcode(instruction);
+
+        // Special opcode.
+        if(opcode == BeaconBytecodeExtendArguments)
+        {
+            extendedArgumentCount = instructionArgumentCount;
+            continue;
+        }
+
+        // Decode the result destination.
+        bool writesToTemporary = beacon_bytecodeWritesToTemporary(opcode);
+        size_t resultTemporaryIndex = 0;
+        if(writesToTemporary)
+        {
+            beacon_BytecodeValue_t bytecodeResultTemporary = bytecodes[pc++];
+            bytecodeResultTemporary |= (bytecodes[pc++]) << 8;
+            assert(beacon_BytecodeValue_getType(bytecodeResultTemporary) == BytecodeArgumentTypeTemporary);
+            resultTemporaryIndex = beacon_BytecodeValue_getIndex(bytecodeResultTemporary);
+        }
+
+        // Fetch all of the instruction arguments.
+        for(uint8_t i = 0; i < instructionArgumentCount; ++i)
+        {
+            beacon_BytecodeValue_t bytecodeArgument = bytecodes[pc++];
+            bytecodeArgument |= (bytecodes[pc++]) << 8;
+
+            uint16_t bytecodeArgumentIndex = beacon_BytecodeValue_getIndex(bytecodeArgument);
+            int16_t bytecodeArgumentSignedIndex = beacon_BytecodeValue_getSignedIndex(bytecodeArgument);
+            beacon_oop_t *currentDecodedArgument = bytecodeDecodedArguments + i;
+
+            switch(beacon_BytecodeValue_getType(bytecodeArgument))
+            {
+            case BytecodeArgumentTypeArgument:
+                assert(bytecodeArgumentIndex <= argumentCount);
+                if(bytecodeArgumentIndex == 0)
+                    *currentDecodedArgument = receiver;
+                else
+                    *currentDecodedArgument = arguments[bytecodeArgumentIndex - 1];
+                break;
+            case BytecodeArgumentTypeLiteral:
+                assert(bytecodeArgumentIndex <= code->literals->super.super.super.super.super.header.slotCount);
+                *currentDecodedArgument = bytecodeArgumentIndex == 0 ? NULL : code->literals->elements[bytecodeArgumentIndex - 1];
+                break;
+            case BytecodeArgumentTypeTemporary:
+                assert(bytecodeArgumentIndex <= temporaryCount);
+                *currentDecodedArgument = bytecodeArgumentIndex == 0 ? NULL : temporaryStorage[bytecodeArgumentIndex - 1];
+                break;
+            case BytecodeArgumentTypeJumpDelta:
+                branchDestinationPC += bytecodeArgumentSignedIndex;
+                break;
+            case BytecodeArgumentTypeCapture:
+            default:
+                fprintf(stderr, "Invalid bytecode value type");
+                abort();
+            }
+        }
+
+        // Execute the instruction.
+        beacon_oop_t instructionExecutionResult = 0;
+        switch(opcode)
+        {
+        case BeaconBytecodeLocalReturn:
+            assert(instructionArgumentCount == 1);
+            return bytecodeDecodedArguments[0];
+        default:
+            fprintf(stderr, "Unsupported bytecode with opcode %x.\n", opcode);
+            abort();
+            break;
+        }
+
+        // Write back the result.
+        if(writesToTemporary && resultTemporaryIndex > 0)
+            temporaryStorage[resultTemporaryIndex - 1] = instructionExecutionResult;
     }
     abort();
 }

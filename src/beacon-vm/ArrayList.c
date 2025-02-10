@@ -123,7 +123,7 @@ void beacon_ByteArrayList_addUInt16(beacon_context_t *context, beacon_ByteArrayL
 beacon_ByteArray_t *beacon_ByteArrayList_asByteArray(beacon_context_t *context, beacon_ByteArrayList_t *collection)
 {
     intptr_t size = beacon_ByteArrayList_size(collection);
-    beacon_ByteArray_t *byteArray = beacon_allocateObjectWithBehavior(context->heap, context->classes.byteArrayClass, sizeof(beacon_ByteArray_t) + size, BeaconObjectKindPointers);
+    beacon_ByteArray_t *byteArray = beacon_allocateObjectWithBehavior(context->heap, context->classes.byteArrayClass, sizeof(beacon_ByteArray_t) + size, BeaconObjectKindBytes);
     memcpy(byteArray->elements, collection->array->elements, size);
     return byteArray;
 }

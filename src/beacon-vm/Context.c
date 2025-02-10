@@ -120,7 +120,6 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
     context->roots.falseValue = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.falseClass, sizeof(beacon_False_t), BeaconObjectKindPointers);
     context->roots.doesNotUnderstandSelector = (beacon_oop_t)beacon_internCString(context, "doesNotUnderstand:");
     context->roots.compileWithEnvironmentAndBytecodeBuilderSelector = (beacon_oop_t)beacon_internCString(context, "compileWithEnvironment:andBytecodeBuilder:");
-    beacon_oop_t nextIntern = (beacon_oop_t)beacon_internCString(context, "compileWithEnvironment:andBytecodeBuilder:");
 }
 
 void beacon_context_registerBasicPrimitives(beacon_context_t *context)
@@ -305,6 +304,11 @@ beacon_oop_t beacon_performWithArguments(beacon_context_t *context, beacon_oop_t
 
 }
 
+beacon_oop_t beacon_perform(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector)
+{
+    return beacon_performWithArguments(context, receiver, selector, 0, NULL);
+}
+
 beacon_oop_t beacon_performWith(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, beacon_oop_t firstArgument)
 {
     beacon_oop_t arguments[] = {
@@ -369,10 +373,59 @@ static beacon_oop_t beacon_ProtoObjectPrimitive_identityNotEquals(beacon_context
         return context->roots.falseValue;
 }
 
+static beacon_oop_t beacon_ObjectPrimitive_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)receiver;
+    (void)arguments;
+    assert(argumentCount == 0);
+    return (beacon_oop_t)beacon_importCString(context, "an Object");
+}
+
+static beacon_oop_t beacon_True_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)receiver;
+    (void)arguments;
+    assert(argumentCount == 0);
+    return (beacon_oop_t)beacon_importCString(context, "true");
+}
+
+static beacon_oop_t beacon_False_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)receiver;
+    (void)arguments;
+    assert(argumentCount == 0);
+    return (beacon_oop_t)beacon_importCString(context, "false");
+}
+
+static beacon_oop_t beacon_UndefinedObject_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)receiver;
+    (void)arguments;
+    assert(argumentCount == 0);
+    return (beacon_oop_t)beacon_importCString(context, "nil");
+}
+
+static beacon_oop_t beacon_SmallInteger_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)receiver;
+    (void)arguments;
+    assert(argumentCount == 0);
+    char buffer[64];
+    snprintf(buffer, sizeof(buffer), "%lld", (long long int)beacon_decodeSmallInteger(receiver));
+    return (beacon_oop_t)beacon_importCString(context, buffer);
+}
+
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
 {
     beacon_addPrimitiveToClass(context, context->classes.protoObjectClass, "class", 0, beacon_ProtoObjectPrimitive_getClass);
     beacon_addPrimitiveToClass(context, context->classes.protoObjectClass, "identityHash", 0, beacon_ProtoObjectPrimitive_getIdentityHash);
     beacon_addPrimitiveToClass(context, context->classes.protoObjectClass, "==", 1, beacon_ProtoObjectPrimitive_identityEquals);
     beacon_addPrimitiveToClass(context, context->classes.protoObjectClass, "~~", 1, beacon_ProtoObjectPrimitive_identityNotEquals);
+
+    beacon_addPrimitiveToClass(context, context->classes.objectClass, "printString", 0, beacon_ObjectPrimitive_printString);
+    beacon_addPrimitiveToClass(context, context->classes.trueClass, "printString", 0, beacon_True_printString);
+    beacon_addPrimitiveToClass(context, context->classes.falseClass, "printString", 0, beacon_False_printString);
+    beacon_addPrimitiveToClass(context, context->classes.undefinedObjectClass, "printString", 0, beacon_UndefinedObject_printString);
+
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "printString", 0, beacon_SmallInteger_printString);
 }

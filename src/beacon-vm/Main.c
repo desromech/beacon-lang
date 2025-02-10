@@ -18,7 +18,7 @@ void printVersion(void)
     printf("beacon-vm version 0.1\n");
 }
 
-void evaluateSourceCode(beacon_SourceCode_t *sourceCode)
+beacon_oop_t evaluateSourceCode(beacon_SourceCode_t *sourceCode)
 {
     beacon_ArrayList_t *scannedSource = beacon_scanSourceCode(context, sourceCode);
     intptr_t tokenCount = beacon_ArrayList_size(scannedSource);
@@ -34,22 +34,29 @@ void evaluateSourceCode(beacon_SourceCode_t *sourceCode)
 
     beacon_ParseTreeNode_t *parseTree = beacon_parseTokenList(context, sourceCode, scannedSource);
     beacon_CompiledMethod_t *compiledMethod = beacon_compileReplSyntax(context, parseTree);
-    beacon_oop_t result =  beacon_runMethodWithArguments(context, compiledMethod, 0, (beacon_oop_t)beacon_internCString(context, "DoIt"), 0, NULL);
-    abort();
+    return beacon_runMethodWithArguments(context, &compiledMethod->super, 0, (beacon_oop_t)beacon_internCString(context, "DoIt"), 0, NULL);
 }
 
 
-void evaluateString(const char *string)
+void printObject(beacon_oop_t object)
+{
+    beacon_String_t *printedObject = beacon_perform(context, object, beacon_internCString(context, "printString"));
+    assert(printedObject);
+    size_t stringSize = printedObject->super.super.super.super.super.header.slotCount;
+    printf("%.*s\n", (int)stringSize, printedObject->data);
+}
+
+void evaluateStringAndPrint(const char *string)
 {
     beacon_SourceCode_t *sourceCode = beacon_makeSourceCodeFromString(context, "CLI", string);
-    evaluateSourceCode(sourceCode);
+    beacon_oop_t result = evaluateSourceCode(sourceCode);
+    printObject(result);
 }
 
 void evaluateFileNamed(const char *fileName)
 {
     beacon_SourceCode_t *sourceCode = beacon_makeSourceCodeFromFileNamed(context, fileName);
     evaluateSourceCode(sourceCode);
-
 }
 
 int main(int argc, const char **argv)
@@ -81,7 +88,7 @@ int main(int argc, const char **argv)
             else if(!strcmp(arg, "-eval"))
             {
                 const char *script = argv[++i];
-                evaluateString(script);
+                evaluateStringAndPrint(script);
             }
         }
         else
