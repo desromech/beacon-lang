@@ -2,6 +2,7 @@
 #include "beacon-lang/Scanner.h"
 #include "beacon-lang/SourceCode.h"
 #include "beacon-lang/Parser.h"
+#include "beacon-lang/SyntaxCompiler.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -31,7 +32,9 @@ void evaluateSourceCode(beacon_SourceCode_t *sourceCode)
         //printf("Token %d: %s\n", (int)i, beacon_TokenKind_toString());
     }
 
-    beacon_ParseTreeNode_t *parseTree = beacon_parseTokenList(context, sourceCode, scannedSource);;
+    beacon_ParseTreeNode_t *parseTree = beacon_parseTokenList(context, sourceCode, scannedSource);
+    beacon_CompiledMethod_t *compiledMethod = beacon_compileWorkspaceSyntax(context, parseTree);
+    beacon_oop_t result =  beacon_runMethodWithArguments(context, compiledMethod, 0, (beacon_oop_t)beacon_internCString(context, "DoIt"), 0, NULL);
 }
 
 

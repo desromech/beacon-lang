@@ -11,6 +11,16 @@ beacon_BytecodeCodeBuilder_t *beacon_BytecodeCodeBuilder_new(beacon_context_t *c
     return builder;
 }
 
+beacon_BytecodeCode_t *beacon_BytecodeCodeBuilder_finish(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *builder)
+{
+    beacon_BytecodeCode_t *code = beacon_allocateObjectWithBehavior(context->heap, context->classes.bytecodeCodeClass, sizeof(beacon_BytecodeCode_t), BeaconObjectKindPointers);
+    code->argumentCount = beacon_encodeSmallInteger(beacon_ArrayList_size(builder->arguments));
+    code->temporaryCount = beacon_encodeSmallInteger(beacon_ArrayList_size(builder->temporaries));
+    code->literals = beacon_ArrayList_asArray(context, builder->literals);
+    code->bytecodes = beacon_ByteArrayList_asByteArray(context, builder->bytecodes);
+    return code;
+}
+
 uint16_t beacon_BytecodeCodeBuilder_label(beacon_BytecodeCodeBuilder_t *methodBuilder)
 {
     return beacon_ByteArrayList_size(methodBuilder->bytecodes);

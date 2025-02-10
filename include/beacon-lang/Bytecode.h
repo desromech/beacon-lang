@@ -60,7 +60,15 @@ static inline int16_t beacon_BytecodeValue_encode(uint16_t index, beacon_Bytecod
 }
 
 beacon_BytecodeCodeBuilder_t *beacon_BytecodeCodeBuilder_new(beacon_context_t *context);
+
+/**
+ * Finishes the construction of a bytecode method.
+ */
+beacon_BytecodeCode_t *beacon_BytecodeCodeBuilder_finish(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *builder);
+
+// Bytecode assembly label.
 uint16_t beacon_BytecodeCodeBuilder_label(beacon_BytecodeCodeBuilder_t *methodBuilder);
+
 
 /**
  * No operation.

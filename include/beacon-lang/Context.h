@@ -32,7 +32,11 @@ struct beacon_context_s
         beacon_Behavior_t *stringClass;
         beacon_Behavior_t *symbolClass;
 
+        beacon_Behavior_t *booleanClass;
+        beacon_Behavior_t *trueClass;
+        beacon_Behavior_t *falseClass;
         beacon_Behavior_t *undefinedObjectClass;
+
         beacon_Behavior_t *magnitudeClass;
         beacon_Behavior_t *numberClass;
         beacon_Behavior_t *smallIntegerClass;
@@ -45,6 +49,7 @@ struct beacon_context_s
         beacon_Behavior_t *compiledCodeClass;
         beacon_Behavior_t *compiledBlockClass;
         beacon_Behavior_t *compiledMethodClass;
+        beacon_Behavior_t *messageClass;
 
         beacon_Behavior_t *sourceCodeClass;
         beacon_Behavior_t *sourcePositionClass;
@@ -65,11 +70,21 @@ struct beacon_context_s
         beacon_Behavior_t *parseTreeLocalVariableDefinitionNodeClass;
         beacon_Behavior_t *parseTreeBlockClosureNodeClass;
 
+        beacon_Behavior_t *abstractCompilationEnvironmentClass;
+        beacon_Behavior_t *emptyCompilationEnvironmentClass;
+        beacon_Behavior_t *systemCompilationEnvironmentClass;
+        beacon_Behavior_t *lexicalCompilationEnvironmentClass;
+
     } classes;
 
     struct ContextGCRoots
     {
         beacon_InternedSymbolSet_t *internedSymbolSet;
+        beacon_MethodDictionary_t *systemDictionary;
+        beacon_oop_t nilValue;
+        beacon_oop_t trueValue;
+        beacon_oop_t falseValue;
+        beacon_oop_t doesNotUnderstandSelector;
     } roots;
 
     beacon_MemoryHeap_t *heap;
@@ -79,6 +94,7 @@ beacon_context_t *beacon_context_new(void);
 void beacon_context_destroy(beacon_context_t *context);
 
 uint32_t beacon_computeStringHash(size_t stringSize, const char *string);
+uint32_t beacon_computeIdentityHash(beacon_oop_t oop);
 
 beacon_String_t *beacon_importCString(beacon_context_t *context, const char *string);
 beacon_Symbol_t *beacon_internStringWithSize(beacon_context_t *context, size_t stringSize, const char *string);
@@ -91,5 +107,8 @@ beacon_oop_t beacon_performWithArguments(beacon_context_t *context, beacon_oop_t
 beacon_oop_t beacon_performWith(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, beacon_oop_t firstArgument);
 beacon_oop_t beacon_performWithWith(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, beacon_oop_t firstArgument, beacon_oop_t secondArgument);
 
+beacon_oop_t beacon_runMethodWithArguments(beacon_context_t *context, beacon_CompiledCode_t *method, beacon_oop_t receiver, beacon_oop_t selector, size_t argumentCount, beacon_oop_t *arguments);
+
+void beacon_addPrimitiveToClass(beacon_context_t *context, beacon_Behavior_t *behavior, const char *selector, size_t argumentCount, beacon_NativeCodeFunction_t primitive);
 
 #endif // BEACON_CONTEXT_H

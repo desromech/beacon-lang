@@ -74,7 +74,7 @@ static inline beacon_oop_t beacon_encodeSmallDoubleValue(double value)
 }
 
 typedef struct beacon_context_s beacon_context_t;
-typedef beacon_oop_t (*beacon_NativeCodeFunction_t)(beacon_context_t *context, size_t argumentCount, beacon_oop_t *arguments);
+typedef beacon_oop_t (*beacon_NativeCodeFunction_t)(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments);
 
 struct beacon_ObjectHeader_s
 {
@@ -140,6 +140,13 @@ typedef struct beacon_CompiledBlock_s
 {
     beacon_CompiledCode_t super;
 } beacon_CompiledBlock_t;
+
+typedef struct beacon_Message_s
+{
+    beacon_Dictionary_t super;
+    beacon_oop_t selector;
+    beacon_oop_t arguments;
+} beacon_Message_t;
 
 typedef struct beacon_InternedSymbolSet_s
 {
@@ -216,6 +223,7 @@ typedef struct beacon_BytecodeCode_s
 {
     beacon_Object_t super;
     beacon_oop_t argumentCount;
+    beacon_oop_t temporaryCount;
     beacon_Array_t *literals;
     beacon_ByteArray_t *bytecodes;
 } beacon_BytecodeCode_t;
@@ -241,6 +249,21 @@ typedef struct beacon_Number_s
 {
     beacon_Magnitude_t super;
 } beacon_Number_t;
+
+typedef struct beacon_Boolean_s
+{
+    beacon_Object_t super;
+} beacon_Boolean_t;
+
+typedef struct beacon_True_s
+{
+    beacon_Boolean_t super;
+} beacon_True_t;
+
+typedef struct beacon_False_s
+{
+    beacon_Boolean_t super;
+} beacon_False_t;
 
 typedef struct beacon_UndefinedObject_s
 {
@@ -391,5 +414,29 @@ typedef struct beacon_BytecodeCodeBuilder_t
     beacon_ArrayList_t *literals;
     beacon_ByteArrayList_t *bytecodes;
 } beacon_BytecodeCodeBuilder_t;
+
+typedef struct beacon_AbstractCompilationEnvironment_s
+{
+    beacon_Object_t super;
+} beacon_AbstractCompilationEnvironment_t;
+
+typedef struct beacon_EmptyCompilationEnvironment_s
+{
+    beacon_AbstractCompilationEnvironment_t super;
+} beacon_EmptyCompilationEnvironment_t;
+
+typedef struct beacon_SystemCompilationEnvironment_s
+{
+    beacon_AbstractCompilationEnvironment_t super;
+    beacon_AbstractCompilationEnvironment_t *parent;
+    beacon_MethodDictionary_t *systemDictionary;
+} beacon_SystemCompilationEnvironment_t;
+
+typedef struct beacon_LexicalCompilationEnvironment_s
+{
+    beacon_AbstractCompilationEnvironment_t super;
+    beacon_AbstractCompilationEnvironment_t *parent;
+    beacon_MethodDictionary_t dictionary;
+} beacon_LexicalCompilationEnvironment_t;
 
 #endif // BEACON_OBJECT_MODEL_H

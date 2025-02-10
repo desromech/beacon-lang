@@ -2,6 +2,7 @@
 #include "Exceptions.c"
 #include "Memory.c"
 #include "ArrayList.c"
+#include "Dictionary.c"
 #include "SourceCode.c"
 #include "Scanner.c"
 #include "Parser.c"
