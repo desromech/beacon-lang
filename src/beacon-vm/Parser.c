@@ -613,7 +613,7 @@ beacon_ParseTreeNode_t *parser_parseCascadedMessage(beacon_parserState_t *state)
         selectorNode->value = (beacon_oop_t)selector;
 
         beacon_ParseTreeNode_t *argument = parser_parseBinaryExpressionSequence(state);
-        beacon_Array_t *arguments = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.arrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t), BeaconObjectKindBytes);
+        beacon_Array_t *arguments = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.arrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t), BeaconObjectKindPointers);
         arguments->elements[0] = (beacon_oop_t)argument;
 
         beacon_ParseTreeCascadedMessageNode_t *cascadedMessage = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeCascadedMessageNodeClass, sizeof(beacon_ParseTreeCascadedMessageNode_t), BeaconObjectKindPointers);
