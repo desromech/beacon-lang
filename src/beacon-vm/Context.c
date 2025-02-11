@@ -135,6 +135,10 @@ void beacon_context_createSystemDictionary(beacon_context_t *context)
         if(globalClass->name)
             beacon_MethodDictionary_atPut(context, context->roots.systemDictionary, globalClass->name, (beacon_oop_t)globalClass);
     }
+
+    beacon_MethodDictionary_atPut(context, context->roots.systemDictionary, beacon_internCString(context, "nil"), context->roots.nilValue);
+    beacon_MethodDictionary_atPut(context, context->roots.systemDictionary, beacon_internCString(context, "true"), context->roots.trueValue);
+    beacon_MethodDictionary_atPut(context, context->roots.systemDictionary, beacon_internCString(context, "false"), context->roots.falseValue);
 }
 
 void beacon_context_registerBasicPrimitives(beacon_context_t *context)
@@ -447,6 +451,14 @@ static beacon_oop_t beacon_SmallInteger_printString(beacon_context_t *context, b
     return (beacon_oop_t)beacon_importCString(context, buffer);
 }
 
+static beacon_oop_t beacon_SmallInteger_negated(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)arguments;
+    assert(argumentCount == 0);
+    return beacon_encodeSmallInteger(-beacon_decodeSmallInteger(receiver));
+}
+
 static beacon_oop_t beacon_SmallInteger_plus(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)context;
@@ -497,9 +509,10 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.classClass, "printString", 0, beacon_Class_printString);
 
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "printString", 0, beacon_SmallInteger_printString);
-    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "+", 0, beacon_SmallInteger_plus);
-    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "-", 0, beacon_SmallInteger_minus);
-    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "*", 0, beacon_SmallInteger_times);
-    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "//", 0, beacon_SmallInteger_integerDivision);
-    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "\\", 0, beacon_SmallInteger_integerModulo);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "negated", 0, beacon_SmallInteger_negated);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "+", 1, beacon_SmallInteger_plus);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "-", 1, beacon_SmallInteger_minus);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "*", 1, beacon_SmallInteger_times);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "//", 1, beacon_SmallInteger_integerDivision);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "\\", 1, beacon_SmallInteger_integerModulo);
 }
