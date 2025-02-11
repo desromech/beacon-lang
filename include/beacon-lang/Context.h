@@ -86,6 +86,8 @@ struct beacon_context_s
         beacon_oop_t falseValue;
         beacon_oop_t doesNotUnderstandSelector;
         beacon_oop_t compileWithEnvironmentAndBytecodeBuilderSelector;
+        beacon_oop_t lookupSymbolRecursivelyWithBytecodeBuilderSelector;
+        beacon_oop_t emptyArray;
     } roots;
 
     beacon_MemoryHeap_t *heap;

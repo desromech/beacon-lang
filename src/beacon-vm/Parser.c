@@ -574,13 +574,55 @@ beacon_ParseTreeNode_t *parser_parseBinaryExpressionSequence(beacon_parserState_
 
 beacon_ParseTreeNode_t *parser_parseCascadedMessage(beacon_parserState_t *state)
 {
-    if(parserState_peekKind(state, 0) != BeaconTokenKeyword)
-       return parserState_advanceWithExpectedError(state, "Expecteda keyword or cascaded message.");
+    if(parserState_peekKind(state, 0) != BeaconTokenKeyword 
+    && parserState_peekKind(state, 0) != BeaconTokenIdentifier
+    && !parser_isBinaryExpressionOperator(parserState_peekKind(state, 0)))
+       return parserState_advanceWithExpectedError(state, "Expected a keyword or cascaded message.");
 
     size_t startPosition = state->position;
     beacon_ArrayList_t *keywords = beacon_ArrayList_new(state->context);
     beacon_ArrayList_t *arguments = beacon_ArrayList_new(state->context);
     size_t selectorSize = 0;
+
+    // Parse unary
+    if(parserState_peekKind(state, 0) == BeaconTokenIdentifier)
+    {
+        beacon_ScannerToken_t *unaryToken = parserState_next(state);
+        beacon_Symbol_t *selector = beacon_internStringWithSize(state->context, (size_t)beacon_decodeSmallInteger(unaryToken->textSize), (char*)unaryToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(unaryToken->textPosition));
+
+        beacon_ParseTreeLiteralNode_t *selectorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+        selectorNode->super.sourcePosition = unaryToken->sourcePosition;
+        selectorNode->value = (beacon_oop_t)selector;
+
+        beacon_ParseTreeCascadedMessageNode_t *cascadedMessage = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeCascadedMessageNodeClass, sizeof(beacon_ParseTreeCascadedMessageNode_t), BeaconObjectKindPointers);
+        cascadedMessage->super.sourcePosition = parserState_sourcePositionFrom(state, startPosition);
+        cascadedMessage->selector = &selectorNode->super;
+        cascadedMessage->arguments = (beacon_Array_t*)state->context->roots.emptyArray;
+
+        return &cascadedMessage->super;
+    }
+
+    // Parse binary
+    if(parser_isBinaryExpressionOperator(parserState_peekKind(state, 0)))
+    {
+        beacon_ScannerToken_t *operatorToken = parserState_next(state);
+        beacon_Symbol_t *selector = beacon_internStringWithSize(state->context, (size_t)beacon_decodeSmallInteger(operatorToken->textSize), (char*)operatorToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(operatorToken->textPosition));
+
+        beacon_ParseTreeLiteralNode_t *selectorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+        selectorNode->super.sourcePosition = operatorToken->sourcePosition;
+        selectorNode->value = (beacon_oop_t)selector;
+
+        beacon_ParseTreeNode_t *argument = parser_parseBinaryExpressionSequence(state);
+        beacon_Array_t *arguments = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.arrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t), BeaconObjectKindBytes);
+        arguments->elements[0] = (beacon_oop_t)argument;
+
+        beacon_ParseTreeCascadedMessageNode_t *cascadedMessage = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeCascadedMessageNodeClass, sizeof(beacon_ParseTreeCascadedMessageNode_t), BeaconObjectKindPointers);
+        cascadedMessage->super.sourcePosition = parserState_sourcePositionFrom(state, startPosition);
+        cascadedMessage->selector = &selectorNode->super;
+        cascadedMessage->arguments = arguments;
+
+        return &cascadedMessage->super;
+    }
 
     // Parse the keywords and arguments.
     while(parserState_peekKind(state, 0) == BeaconTokenKeyword)
@@ -635,7 +677,8 @@ beacon_ParseTreeNode_t *parser_parseKeywordMessageSend(beacon_parserState_t *sta
     if (parserState_peekKind(state, 0) == BeaconTokenSemicolon)
     {
         beacon_ArrayList_t *cascadedMessages = beacon_ArrayList_new(state->context);
-        beacon_ArrayList_add(state->context, cascadedMessages, (beacon_oop_t)firstCascaded);
+        if(firstCascaded)
+            beacon_ArrayList_add(state->context, cascadedMessages, (beacon_oop_t)firstCascaded);
         while (parserState_peekKind(state, 0) == BeaconTokenSemicolon)
         {
             parserState_advance(state);

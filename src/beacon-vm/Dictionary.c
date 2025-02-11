@@ -95,3 +95,13 @@ beacon_oop_t beacon_MethodDictionary_atOrNil(beacon_context_t *context, beacon_M
 
     return dictionary->super.super.array->elements[slotIndex*2 + 1];
 }
+
+bool beacon_MethodDictionary_includesKey(beacon_context_t *context, beacon_MethodDictionary_t *dictionary, beacon_Symbol_t *symbol)
+{
+    (void)context;
+    int slotIndex = beacon_MethodDictionary_scanFor(dictionary, (beacon_oop_t)symbol);
+    if(slotIndex < 0)
+        return 0;
+
+    return dictionary->super.super.array->elements[slotIndex*2] != 0;
+}

@@ -436,7 +436,7 @@ typedef struct beacon_LexicalCompilationEnvironment_s
 {
     beacon_AbstractCompilationEnvironment_t super;
     beacon_AbstractCompilationEnvironment_t *parent;
-    beacon_MethodDictionary_t dictionary;
+    beacon_MethodDictionary_t *dictionary;
 } beacon_LexicalCompilationEnvironment_t;
 
 #endif // BEACON_OBJECT_MODEL_H

@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "typeinfo": "c",
+        "scanner.h": "c",
+        "context.h": "c",
+        "orderedcollection.h": "c",
+        "stdbool.h": "c",
+        "vector": "c",
+        "*.inc": "c",
+        "arraylist.h": "c",
+        "span": "c",
+        "type_traits": "c",
+        "syntaxcompiler.h": "c",
+        "ratio": "c",
+        "functional": "c"
+    }
+}

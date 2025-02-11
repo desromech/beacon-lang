@@ -22,4 +22,9 @@ void beacon_MethodDictionary_atPut(beacon_context_t *context, beacon_MethodDicti
  */
 beacon_oop_t beacon_MethodDictionary_atOrNil(beacon_context_t *context, beacon_MethodDictionary_t *dictionary, beacon_Symbol_t *symbol);
 
+/**
+ * Checks for the inclusion of a key
+ */
+bool beacon_MethodDictionary_includesKey(beacon_context_t *context, beacon_MethodDictionary_t *dictionary, beacon_Symbol_t *symbol);
+
 #endif //BEACON_LANG_DICTIONARY_H

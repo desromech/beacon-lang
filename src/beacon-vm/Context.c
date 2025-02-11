@@ -120,6 +120,8 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
     context->roots.falseValue = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.falseClass, sizeof(beacon_False_t), BeaconObjectKindPointers);
     context->roots.doesNotUnderstandSelector = (beacon_oop_t)beacon_internCString(context, "doesNotUnderstand:");
     context->roots.compileWithEnvironmentAndBytecodeBuilderSelector = (beacon_oop_t)beacon_internCString(context, "compileWithEnvironment:andBytecodeBuilder:");
+    context->roots.lookupSymbolRecursivelyWithBytecodeBuilderSelector = (beacon_oop_t)beacon_internCString(context, "lookupSymbolRecursively:withBytecodeBuilder:");
+    context->roots.emptyArray = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t), BeaconObjectKindPointers);
 }
 
 void beacon_context_createSystemDictionary(beacon_context_t *context)
@@ -400,6 +402,15 @@ static beacon_oop_t beacon_ProtoObjectPrimitive_identityNotEquals(beacon_context
         return context->roots.falseValue;
 }
 
+static beacon_oop_t beacon_ObjectPrimitive_yourself(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)receiver;
+    (void)arguments;
+    assert(argumentCount == 0);
+    return receiver;
+}
+
 static beacon_oop_t beacon_ObjectPrimitive_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)receiver;
@@ -501,6 +512,8 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.protoObjectClass, "identityHash", 0, beacon_ProtoObjectPrimitive_getIdentityHash);
     beacon_addPrimitiveToClass(context, context->classes.protoObjectClass, "==", 1, beacon_ProtoObjectPrimitive_identityEquals);
     beacon_addPrimitiveToClass(context, context->classes.protoObjectClass, "~~", 1, beacon_ProtoObjectPrimitive_identityNotEquals);
+
+    beacon_addPrimitiveToClass(context, context->classes.objectClass, "yourself", 0, beacon_ObjectPrimitive_yourself);
 
     beacon_addPrimitiveToClass(context, context->classes.objectClass, "printString", 0, beacon_ObjectPrimitive_printString);
     beacon_addPrimitiveToClass(context, context->classes.trueClass, "printString", 0, beacon_True_printString);
