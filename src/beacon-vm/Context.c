@@ -122,6 +122,21 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
     context->roots.compileWithEnvironmentAndBytecodeBuilderSelector = (beacon_oop_t)beacon_internCString(context, "compileWithEnvironment:andBytecodeBuilder:");
 }
 
+void beacon_context_createSystemDictionary(beacon_context_t *context)
+{
+    if(!context->roots.systemDictionary)
+        context->roots.systemDictionary = beacon_MethodDictionary_new(context);
+    
+    beacon_Class_t **globalClassList = (beacon_Class_t **)&context->classes;
+    size_t globalClassListSize = sizeof(context->classes) / sizeof(beacon_Class_t *);
+    for(size_t i = 0; i < globalClassListSize; ++i)
+    {
+        beacon_Class_t *globalClass = globalClassList[i];
+        if(globalClass->name)
+            beacon_MethodDictionary_atPut(context, context->roots.systemDictionary, globalClass->name, (beacon_oop_t)globalClass);
+    }
+}
+
 void beacon_context_registerBasicPrimitives(beacon_context_t *context)
 {
     beacon_context_registerObjectBasicPrimitives(context);
@@ -137,6 +152,7 @@ beacon_context_t *beacon_context_new(void)
     context->roots.internedSymbolSet->super.tally = beacon_encodeSmallInteger(0);
     beacon_context_createBaseClassHierarchy(context);
     beacon_context_createImportantRoots(context);
+    beacon_context_createSystemDictionary(context);
     beacon_context_registerBasicPrimitives(context);
     return context;
 }
@@ -164,6 +180,13 @@ uint32_t beacon_computeIdentityHash(beacon_oop_t oop)
 beacon_String_t *beacon_importCString(beacon_context_t *context, const char *string)
 {
     size_t stringSize = strlen(string);
+    beacon_String_t *importedString = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_String_t) + stringSize, BeaconObjectKindBytes);
+    memcpy(importedString->data, string, stringSize);
+    return importedString;
+}
+
+beacon_String_t *beacon_importStringWithSize(beacon_context_t *context, size_t stringSize, const char *string)
+{
     beacon_String_t *importedString = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_String_t) + stringSize, BeaconObjectKindBytes);
     memcpy(importedString->data, string, stringSize);
     return importedString;
@@ -300,7 +323,6 @@ beacon_oop_t beacon_performWithArguments(beacon_context_t *context, beacon_oop_t
         (beacon_oop_t)message
     };
     
-    beacon_Symbol_t *selectorSymbol = (beacon_Symbol_t*)selector;
     return beacon_performWithArguments(context, receiver, context->roots.doesNotUnderstandSelector, 1, dnuArguments);
 
 }
@@ -406,6 +428,16 @@ static beacon_oop_t beacon_UndefinedObject_printString(beacon_context_t *context
     return (beacon_oop_t)beacon_importCString(context, "nil");
 }
 
+static beacon_oop_t beacon_Class_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    assert(argumentCount == 0);
+    (void)arguments;
+    beacon_Class_t *clazz = (beacon_Class_t *)receiver;
+    if(clazz->name)
+        return (beacon_oop_t)beacon_importStringWithSize(context, clazz->name->super.super.super.super.super.header.slotCount, (const char *)clazz->name->data);
+    return (beacon_oop_t)beacon_importCString(context, "A Class");
+}
+
 static beacon_oop_t beacon_SmallInteger_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)arguments;
@@ -450,6 +482,7 @@ static beacon_oop_t beacon_SmallInteger_integerModulo(beacon_context_t *context,
     return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) % beacon_decodeSmallInteger(arguments[0]));
 }
 
+
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
 {
     beacon_addPrimitiveToClass(context, context->classes.protoObjectClass, "class", 0, beacon_ProtoObjectPrimitive_getClass);
@@ -461,6 +494,7 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.trueClass, "printString", 0, beacon_True_printString);
     beacon_addPrimitiveToClass(context, context->classes.falseClass, "printString", 0, beacon_False_printString);
     beacon_addPrimitiveToClass(context, context->classes.undefinedObjectClass, "printString", 0, beacon_UndefinedObject_printString);
+    beacon_addPrimitiveToClass(context, context->classes.classClass, "printString", 0, beacon_Class_printString);
 
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "printString", 0, beacon_SmallInteger_printString);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "+", 0, beacon_SmallInteger_plus);

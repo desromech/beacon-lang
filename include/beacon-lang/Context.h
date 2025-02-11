@@ -98,6 +98,7 @@ uint32_t beacon_computeStringHash(size_t stringSize, const char *string);
 uint32_t beacon_computeIdentityHash(beacon_oop_t oop);
 
 beacon_String_t *beacon_importCString(beacon_context_t *context, const char *string);
+beacon_String_t *beacon_importStringWithSize(beacon_context_t *context, size_t stringSize, const char *string);
 beacon_Symbol_t *beacon_internStringWithSize(beacon_context_t *context, size_t stringSize, const char *string);
 beacon_Symbol_t *beacon_internCString(beacon_context_t *context, const char *string);
 beacon_Symbol_t *beacon_internString(beacon_context_t *context, beacon_String_t *string);

@@ -37,8 +37,26 @@ int beacon_MethodDictionary_scanFor(beacon_MethodDictionary_t * dictionary, beac
 
 void beacon_MethodDictionary_incrementCapacity(beacon_context_t *context, beacon_MethodDictionary_t *dictionary)
 {
-    fprintf(stderr, "TODO: Increment method dictionary capacity");
-    abort();
+    beacon_Array_t *oldStorage = dictionary->super.super.array;
+    size_t oldCapacity = 0;
+    if(oldStorage)
+        oldCapacity = oldStorage->super.super.super.super.super.header.slotCount / 2;
+
+    size_t newCapacity = oldCapacity*2;
+    if(newCapacity < 16)
+        newCapacity = 16;
+
+    beacon_Array_t *newStorage = beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t)*newCapacity*2, BeaconObjectKindPointers);
+    dictionary->super.super.array = newStorage;
+    dictionary->super.super.tally = beacon_encodeSmallInteger(0);
+
+    for(size_t i = 0; i < oldCapacity; ++i)
+    {
+        beacon_Symbol_t *key = (beacon_Symbol_t *)oldStorage->elements[i*2];
+        beacon_oop_t value = oldStorage->elements[i*2 + 1];
+        if(key)
+            beacon_MethodDictionary_atPut(context, dictionary, key, value);
+    }
 }
 
 void beacon_MethodDictionary_atPut(beacon_context_t *context, beacon_MethodDictionary_t *dictionary, beacon_Symbol_t *symbol, beacon_oop_t element)
@@ -54,7 +72,7 @@ void beacon_MethodDictionary_atPut(beacon_context_t *context, beacon_MethodDicti
         intptr_t newDictionarySize = beacon_decodeSmallInteger(dictionary->super.super.tally) + 1;
         dictionary->super.super.tally = beacon_encodeSmallInteger(newDictionarySize);
 
-        size_t capacity = storage->super.super.super.super.super.header.slotCount;
+        size_t capacity = storage->super.super.super.super.super.header.slotCount / 2;
         size_t targetCapacity = capacity *80/100;
         if(newDictionarySize > (intptr_t)targetCapacity)
             beacon_MethodDictionary_incrementCapacity(context, dictionary);
@@ -70,6 +88,7 @@ void beacon_MethodDictionary_atPut(beacon_context_t *context, beacon_MethodDicti
 
 beacon_oop_t beacon_MethodDictionary_atOrNil(beacon_context_t *context, beacon_MethodDictionary_t *dictionary, beacon_Symbol_t *symbol)
 {
+    (void)context;
     int slotIndex = beacon_MethodDictionary_scanFor(dictionary, (beacon_oop_t)symbol);
     if(slotIndex < 0)
         return 0;
