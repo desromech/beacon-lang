@@ -201,7 +201,8 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
 
     beacon_StackFrameRecord_t stackFrameRecord = {
         .kind = StackFrameBytecodeMethodRecord,
-        .previousContext = NULL,
+        .context = context,
+        .previousRecord = NULL,
         .bytecodeMethodStackRecord = {
             .code = method,
             .argumentCount = argumentCount,

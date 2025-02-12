@@ -88,6 +88,8 @@ struct beacon_context_s
         beacon_Behavior_t *nonBooleanReceiverClass;
         beacon_Behavior_t *unhandledExceptionClass;
         beacon_Behavior_t *unhandledErrorClass;
+        
+        beacon_Behavior_t *weakTombstoneClass;
     } classes;
 
     struct ContextGCRoots
@@ -104,6 +106,7 @@ struct beacon_context_s
         beacon_oop_t evaluateWithEnvironmentSelector;
         beacon_oop_t addCompiledMethodSelector;
         beacon_oop_t emptyArray;
+        beacon_oop_t weakTombstone;
     } roots;
 
     beacon_MemoryHeap_t *heap;

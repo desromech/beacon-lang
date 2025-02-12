@@ -126,6 +126,8 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.nonBooleanReceiverClass = beacon_context_createClassAndMetaclass(context, context->classes.errorClass, "NonBooleanReceiver", sizeof(beacon_NonBooleanReceiver_t), BeaconObjectKindPointers);
     context->classes.unhandledExceptionClass = beacon_context_createClassAndMetaclass(context, context->classes.exceptionClass, "UnhandledException", sizeof(beacon_UnhandledException_t), BeaconObjectKindPointers);
     context->classes.unhandledErrorClass = beacon_context_createClassAndMetaclass(context, context->classes.unhandledExceptionClass, "UnhandledError", sizeof(beacon_UnhandledError_t), BeaconObjectKindPointers);
+
+    context->classes.weakTombstoneClass = beacon_context_createClassAndMetaclass(context, context->classes.unhandledExceptionClass, "WeakTombstone", sizeof(beacon_WeakTombstone_t), BeaconObjectKindPointers);
 }
 
 void beacon_context_createImportantRoots(beacon_context_t *context)
@@ -140,6 +142,7 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
     context->roots.addCompiledMethodSelector = (beacon_oop_t)beacon_internCString(context, "addCompiledMethod:");
 
     context->roots.emptyArray = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t), BeaconObjectKindPointers);
+    context->roots.weakTombstone = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.weakTombstoneClass, sizeof(beacon_WeakTombstone_t), BeaconObjectKindPointers);
 }
 
 void beacon_context_createSystemDictionary(beacon_context_t *context)

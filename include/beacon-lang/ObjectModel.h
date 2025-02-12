@@ -30,7 +30,7 @@ typedef intptr_t beacon_oop_t;
 
 static inline beacon_oop_t beacon_isImmediate(beacon_oop_t oop)
 {
-    return (oop & ImmediateObjectTag_BitMask) != 0;
+    return !oop || (oop & ImmediateObjectTag_BitMask) != 0;
 }
 
 static inline intptr_t beacon_decodeSmallInteger(beacon_oop_t oop)
@@ -527,5 +527,10 @@ typedef struct beacon_UnhandledError_s
 {
     beacon_UnhandledException_t super;
 } beacon_UnhandledError_t;
+
+typedef struct beacon_WeakTombstone_s
+{
+    beacon_Object_t super;
+} beacon_WeakTombstone_t;
 
 #endif // BEACON_OBJECT_MODEL_H
