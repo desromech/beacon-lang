@@ -27,5 +27,6 @@ TokenKindName(Semicolon)
 TokenKindName(Colon)
 TokenKindName(Dot)
 
+TokenKindName(BangLeftBracket)
 TokenKindName(ByteArrayStart)
 TokenKindName(LiteralArrayStart)

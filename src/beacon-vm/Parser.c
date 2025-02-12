@@ -17,6 +17,7 @@ typedef struct beacon_parserState_s
 
 beacon_ParseTreeNode_t *parser_parseExpression(beacon_parserState_t *state);
 beacon_ParseTreeNode_t *parser_parseSequenceUntilEndOrDelimiter(beacon_parserState_t *state, beacon_TokenKind_t delimiter);
+beacon_ParseTreeNode_t *parser_parseMethodSyntaxWithDelimiter(beacon_parserState_t *state, beacon_TokenKind_t delimiter);
 
 bool parserState_atEnd(beacon_parserState_t *state)
 {
@@ -117,7 +118,7 @@ beacon_SourcePosition_t *parserState_currentSourcePosition(beacon_parserState_t 
 
 beacon_SourcePosition_t *parserState_sourcePositionFrom(beacon_parserState_t *state, size_t startingPosition)
 {
-    assert(startingPosition < state->tokenCount);
+    assert(startingPosition <= state->tokenCount);
     beacon_ScannerToken_t *startingToken = (beacon_ScannerToken_t *)beacon_ArrayList_at(state->context, state->tokens, startingPosition);
     beacon_SourcePosition_t *startSourcePosition = startingToken->sourcePosition;
     if (state->position > 0)
@@ -391,6 +392,42 @@ beacon_ParseTreeNode_t *parser_parseParenthesis(beacon_parserState_t *state)
     return expression;
 }
 
+beacon_Array_t *parser_parseDelimitedListOfTemporaries(beacon_parserState_t *state)
+{
+    if(parserState_peekKind(state, 0) != BeaconTokenBar)
+        return (beacon_Array_t*)state->context->roots.emptyArray;
+
+    beacon_ArrayList_t *localVariables = beacon_ArrayList_new(state->context);
+    if (parserState_peekKind(state, 0) == BeaconTokenBar)
+    {
+        parserState_advance(state);
+        while (parserState_peekKind(state, 0) == BeaconTokenIdentifier)
+        {
+            beacon_ScannerToken_t *localNameToken = parserState_next(state);
+            const char *textData = (const char*)localNameToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(localNameToken->textPosition);
+            intptr_t textDataSize = beacon_decodeSmallInteger(localNameToken->textSize);
+            beacon_Symbol_t *localName = beacon_internStringWithSize(state->context, textDataSize, textData);
+
+            beacon_ParseTreeLocalVariableDefinitionNode_t *localDefinition = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLocalVariableDefinitionNodeClass, sizeof(beacon_ParseTreeLocalVariableDefinitionNode_t), BeaconObjectKindPointers);
+            localDefinition->super.sourcePosition = localNameToken->sourcePosition;
+            localDefinition->name = localName;
+
+            beacon_ArrayList_add(state->context, localVariables, (beacon_oop_t)localDefinition);
+        }
+
+        if(parserState_peekKind(state, 0) == BeaconTokenBar)
+        {
+            parserState_advance(state);
+        }
+        else
+        {
+            beacon_ArrayList_add(state->context, localVariables, (beacon_oop_t)parserState_advanceWithExpectedError(state, "Expected a bar after the local variable definitions."));
+        }
+    }
+
+    return beacon_ArrayList_asArray(state->context, localVariables);
+}
+
 beacon_ParseTreeNode_t *parser_parseBlockClosure(beacon_parserState_t *state)
 {
     size_t startingPosition = state->position;
@@ -427,33 +464,7 @@ beacon_ParseTreeNode_t *parser_parseBlockClosure(beacon_parserState_t *state)
     }
 
     // Local variables
-    beacon_ArrayList_t *localVariables = beacon_ArrayList_new(state->context);
-    if (parserState_peekKind(state, 0) == BeaconTokenBar)
-    {
-        parserState_advance(state);
-        while (parserState_peekKind(state, 0) == BeaconTokenIdentifier)
-        {
-            beacon_ScannerToken_t *localNameToken = parserState_next(state);
-            const char *textData = (const char*)localNameToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(localNameToken->textPosition);
-            intptr_t textDataSize = beacon_decodeSmallInteger(localNameToken->textSize);
-            beacon_Symbol_t *localName = beacon_internStringWithSize(state->context, textDataSize, textData);
-
-            beacon_ParseTreeLocalVariableDefinitionNode_t *localDefinition = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLocalVariableDefinitionNodeClass, sizeof(beacon_ParseTreeLocalVariableDefinitionNode_t), BeaconObjectKindPointers);
-            localDefinition->super.sourcePosition = localNameToken->sourcePosition;
-            localDefinition->name = localName;
-
-            beacon_ArrayList_add(state->context, localVariables, (beacon_oop_t)localDefinition);
-        }
-
-        if(parserState_peekKind(state, 0) == BeaconTokenBar)
-        {
-            parserState_advance(state);
-        }
-        else
-        {
-            beacon_ArrayList_add(state->context, localVariables, (beacon_oop_t)parserState_advanceWithExpectedError(state, "Expected a bar after the local variable definitions."));
-        }
-    }
+    beacon_Array_t *localVariables = parser_parseDelimitedListOfTemporaries(state);
     
     // Body expression
     beacon_ParseTreeNode_t *expression = parser_parseSequenceUntilEndOrDelimiter(state, BeaconTokenRightBracket);
@@ -463,10 +474,24 @@ beacon_ParseTreeNode_t *parser_parseBlockClosure(beacon_parserState_t *state)
     beacon_ParseTreeBlockClosureNode_t *blockClosure = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeBlockClosureNodeClass, sizeof(beacon_ParseTreeBlockClosureNode_t), BeaconObjectKindPointers);
     blockClosure->super.sourcePosition = parserState_sourcePositionFrom(state, startingPosition);
     blockClosure->arguments = beacon_ArrayList_asArray(state->context, arguments);
-    blockClosure->localVariables = beacon_ArrayList_asArray(state->context, localVariables);
+    blockClosure->localVariables = localVariables;
     blockClosure->expression = expression;
 
     return &blockClosure->super;
+}
+
+beacon_ParseTreeNode_t *parser_parseMethodBlock(beacon_parserState_t *state)
+{
+    size_t startingPosition = state->position;
+    beacon_ScannerToken_t *token = parserState_next(state);
+    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenBangLeftBracket);
+
+
+    beacon_ParseTreeNode_t *methodNode = parser_parseMethodSyntaxWithDelimiter(state, BeaconTokenRightBracket);
+    methodNode = parserState_expectAddingErrorToNode(state, BeaconTokenRightBracket, methodNode);
+
+    methodNode->sourcePosition = parserState_sourcePositionFrom(state, startingPosition);
+    return methodNode;
 }
 
 beacon_ParseTreeNode_t *parser_parseTerm(beacon_parserState_t *state)
@@ -479,6 +504,8 @@ beacon_ParseTreeNode_t *parser_parseTerm(beacon_parserState_t *state)
         return parser_parseParenthesis(state);
     case BeaconTokenLeftBracket:
         return parser_parseBlockClosure(state);
+    case BeaconTokenBangLeftBracket:
+        return parser_parseMethodBlock(state);
     /*case BeaconTokenLeftCurlyBracket:
         return parser_parseArray(state);
     case BeaconTokenByteArrayStart:
@@ -710,9 +737,27 @@ beacon_ParseTreeNode_t *parser_parseKeywordMessageSend(beacon_parserState_t *sta
     }
 
 }
+
+beacon_ParseTreeNode_t *parser_assignmentExpression(beacon_parserState_t *state)
+{
+    size_t startingPosition = state->position;
+    beacon_ParseTreeNode_t *storage = parser_parseKeywordMessageSend(state);
+    if(parserState_peekKind(state, 0) != BeaconTokenAssignment)
+        return storage;
+    parserState_advance(state);
+
+    beacon_ParseTreeNode_t *value = parser_assignmentExpression(state);
+
+    beacon_ParseTreeAssignment_t *assignment = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeAssignmentNodeClass, sizeof(beacon_ParseTreeAssignment_t), BeaconObjectKindPointers);
+    assignment->super.sourcePosition = parserState_sourcePositionFrom(state, startingPosition);
+    assignment->storage = storage;
+    assignment->valueToStore = value;
+    return &assignment->super;
+}
+
 beacon_ParseTreeNode_t *parser_parseExpression(beacon_parserState_t *state)
 {
-    return parser_parseKeywordMessageSend(state);
+    return parser_assignmentExpression(state);
 }
 
 beacon_ArrayList_t *parser_parseExpressionListUntilEndOrDelimiter(beacon_parserState_t *state, beacon_TokenKind_t delimiter)
@@ -757,17 +802,126 @@ beacon_ParseTreeNode_t *parser_parseSequenceUntilEndOrDelimiter(beacon_parserSta
     return &sequenceNode->super;
 }
 
-beacon_ParseTreeNode_t *parser_parseTopLevelExpressions(beacon_parserState_t *state)
+beacon_ParseTreeMethodNode_t *parser_parseMethodHeader(beacon_parserState_t *state)
 {
-    return parser_parseSequenceUntilEndOrDelimiter(state, BeaconTokenEndOfSource);
+
+    size_t startPosition = state->position;
+
+    // Parse unary
+    if(parserState_peekKind(state, 0) == BeaconTokenIdentifier)
+    {
+        beacon_ScannerToken_t *unaryToken = parserState_next(state);
+        beacon_Symbol_t *selector = beacon_internStringWithSize(state->context, (size_t)beacon_decodeSmallInteger(unaryToken->textSize), (char*)unaryToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(unaryToken->textPosition));
+
+        beacon_ParseTreeMethodNode_t *methodNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeMethodNode, sizeof(beacon_ParseTreeMethodNode_t), BeaconObjectKindPointers);
+        methodNode->selector = selector;
+        methodNode->arguments = (beacon_Array_t*)state->context->roots.emptyArray;
+        methodNode->localVariables = (beacon_Array_t*)state->context->roots.emptyArray;
+        methodNode->super.sourcePosition = parserState_sourcePositionFrom(state, startPosition);
+        return methodNode;
+    }
+
+    // Parse binary
+    if(parser_isBinaryExpressionOperator(parserState_peekKind(state, 0)))
+    {
+        beacon_ScannerToken_t *operatorToken = parserState_next(state);
+        beacon_Symbol_t *selector = beacon_internStringWithSize(state->context, (size_t)beacon_decodeSmallInteger(operatorToken->textSize), (char*)operatorToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(operatorToken->textPosition));
+
+        beacon_ScannerToken_t *argumentNameToken = parserState_next(state);
+        assert(beacon_decodeSmallInteger(argumentNameToken->kind) == BeaconTokenIdentifier);
+        
+        const char *textData = (const char*)argumentNameToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(argumentNameToken->textPosition);
+        intptr_t textDataSize = beacon_decodeSmallInteger(argumentNameToken->textSize);
+        beacon_Symbol_t *argumentName = beacon_internStringWithSize(state->context, textDataSize, textData);
+
+        beacon_ParseTreeArgumentDefinitionNode_t *argumentDefinition = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeArgumentDefinitionNodeClass, sizeof(beacon_ParseTreeArgumentDefinitionNode_t), BeaconObjectKindPointers);
+        argumentDefinition->super.sourcePosition = argumentNameToken->sourcePosition;
+        argumentDefinition->name = argumentName;
+
+        beacon_Array_t *argumentDefinitionArray = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.arrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t), BeaconObjectKindPointers);
+        argumentDefinitionArray->elements[0] = (beacon_oop_t)argumentDefinition;
+
+        beacon_ParseTreeMethodNode_t *methodNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeMethodNode, sizeof(beacon_ParseTreeMethodNode_t), BeaconObjectKindPointers);
+        methodNode->selector = selector;
+        methodNode->arguments = argumentDefinitionArray;
+        methodNode->localVariables = (beacon_Array_t*)state->context->roots.emptyArray;
+        methodNode->super.sourcePosition = parserState_sourcePositionFrom(state, startPosition);
+        return methodNode;
+    }
+
+    // Parse the keywords and arguments.
+    beacon_ArrayList_t *keywords = beacon_ArrayList_new(state->context);
+    beacon_ArrayList_t *arguments = beacon_ArrayList_new(state->context);
+    size_t selectorSize = 0;
+
+    while(parserState_peekKind(state, 0) == BeaconTokenKeyword)
+    {
+        beacon_ScannerToken_t *keywordToken = parserState_next(state);
+        selectorSize += beacon_decodeSmallInteger(keywordToken->textSize);
+        beacon_ArrayList_add(state->context, keywords, (beacon_oop_t)keywordToken);
+
+        beacon_ScannerToken_t *argumentNameToken = parserState_next(state);
+        assert(beacon_decodeSmallInteger(argumentNameToken->kind) == BeaconTokenIdentifier);
+        
+        const char *textData = (const char*)argumentNameToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(argumentNameToken->textPosition);
+        intptr_t textDataSize = beacon_decodeSmallInteger(argumentNameToken->textSize);
+        beacon_Symbol_t *argumentName = beacon_internStringWithSize(state->context, textDataSize, textData);
+
+        beacon_ParseTreeArgumentDefinitionNode_t *argumentDefinition = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeArgumentDefinitionNodeClass, sizeof(beacon_ParseTreeArgumentDefinitionNode_t), BeaconObjectKindPointers);
+        argumentDefinition->super.sourcePosition = argumentNameToken->sourcePosition;
+        argumentDefinition->name = argumentName;
+
+        beacon_ArrayList_add(state->context, arguments,  (beacon_oop_t)argumentDefinition);
+    }
+
+    // Reconstruct the selector.
+    beacon_String_t *selectorString = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.stringClass, sizeof(beacon_String_t) + selectorSize, BeaconObjectKindBytes);
+    size_t destIndex = 0;
+    intptr_t keywordCount = beacon_ArrayList_size(keywords);
+    for(intptr_t i = 1; i <= keywordCount; ++i)
+    {
+        beacon_ScannerToken_t *keywordToken = (beacon_ScannerToken_t*)beacon_ArrayList_at(state->context, keywords, i);
+        intptr_t keywordSize = beacon_decodeSmallInteger(keywordToken->textSize);
+        for(intptr_t j = 0; j < keywordSize; ++j)
+        {
+            char c = keywordToken->sourcePosition->sourceCode->text->data[j];
+            selectorString->data[destIndex++] = c;
+        }
+    }
+
+    beacon_ParseTreeMethodNode_t *methodNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeMethodNode, sizeof(beacon_ParseTreeMethodNode_t), BeaconObjectKindPointers);
+    methodNode->selector = beacon_internString(state->context, selectorString);
+    methodNode->arguments = beacon_ArrayList_asArray(state->context, arguments);
+    methodNode->localVariables = (beacon_Array_t*)state->context->roots.emptyArray;
+    methodNode->super.sourcePosition = parserState_sourcePositionFrom(state, startPosition);
+    return methodNode;
 }
 
-typedef struct beacon_ParseTreeWorkspaceScriptNode_s
+beacon_ParseTreeNode_t *parser_parseMethodSyntaxWithDelimiter(beacon_parserState_t *state, beacon_TokenKind_t delimiter)
 {
-    beacon_ParseTreeNode_t super;
-    beacon_Array_t *declaredVariables;
-    beacon_oop_t expression;
-} beacon_ParseTreeWorkspaceScriptNode_t;
+    if(parserState_peekKind(state, 0) != BeaconTokenKeyword 
+    && parserState_peekKind(state, 0) != BeaconTokenIdentifier
+    && !parser_isBinaryExpressionOperator(parserState_peekKind(state, 0)))
+       return parserState_advanceWithExpectedError(state, "Expected a keyword, binary or unary message description.");
+
+    beacon_ParseTreeMethodNode_t *methodNode = parser_parseMethodHeader(state);
+    methodNode->localVariables = parser_parseDelimitedListOfTemporaries(state);
+
+    beacon_ParseTreeNode_t *expression = parser_parseSequenceUntilEndOrDelimiter(state, delimiter);
+    methodNode->expression = expression;
+    return &methodNode->super;
+
+}
+
+beacon_ParseTreeNode_t *parser_parseWorkspaceScript(beacon_parserState_t *state)
+{
+    size_t startingPosition = state->position;
+    beacon_ParseTreeWorkspaceScriptNode_t *script= beacon_allocateObjectWithBehavior(state->context->heap,state->context->classes.parseTreeWorkspaceScriptNode, sizeof(beacon_ParseTreeWorkspaceScriptNode_t), BeaconObjectKindPointers);
+    script->localVariables = parser_parseDelimitedListOfTemporaries(state);
+    script->expression = parser_parseSequenceUntilEndOrDelimiter(state, BeaconTokenEndOfSource);
+    script->super.sourcePosition = parserState_sourcePositionFrom(state, startingPosition);
+    return &script->super;
+}
 
 beacon_ParseTreeNode_t *beacon_parseWorkspaceTokenList(beacon_context_t *context, beacon_SourceCode_t *sourceCode, beacon_ArrayList_t *tokenList)
 {
@@ -779,5 +933,18 @@ beacon_ParseTreeNode_t *beacon_parseWorkspaceTokenList(beacon_context_t *context
         .position = 1,
     };
 
-    return parser_parseTopLevelExpressions(&state);
+    return parser_parseWorkspaceScript(&state);
+}
+
+beacon_ParseTreeNode_t *beacon_parseMethodTokenList(beacon_context_t *context, beacon_SourceCode_t *sourceCode, beacon_ArrayList_t *tokenList)
+{
+    beacon_parserState_t state = {
+        .context = context,
+        .sourceCode = sourceCode,
+        .tokenCount = beacon_ArrayList_size(tokenList),
+        .tokens = tokenList,
+        .position = 1,
+    };
+
+    return parser_parseMethodSyntaxWithDelimiter(&state, BeaconTokenEndOfSource);
 }

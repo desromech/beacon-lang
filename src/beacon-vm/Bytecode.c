@@ -10,6 +10,7 @@ static inline bool beacon_bytecodeWritesToTemporary(beacon_BytecodeOpcode_t opco
     {
     case BeaconBytecodeSendMessage:
     case BeaconBytecodeSuperSendMessage:
+    case BeaconBytecodeStoreValue:
     case BeaconBytecodeMakeArray:
     case BeaconBytecodeMakeClosureInstance:
         return true;
@@ -126,6 +127,13 @@ void beacon_BytecodeCodeBuilder_superSendMessage(beacon_context_t *context, beac
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, selector);
     for(size_t i = 0; i < argumentCount; ++i)
         beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, arguments[i]);
+}
+
+void beacon_BytecodeCodeBuilder_storeValue(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t valueToStore)
+{
+    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, 0x10 | BeaconBytecodeStoreValue);
+    beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultTemporary);
+    beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, valueToStore);
 }
 
 void beacon_BytecodeCodeBuilder_localReturn(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultValue)
@@ -274,6 +282,10 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
         case BeaconBytecodeSendMessage:
             assert(writesToTemporary);
             instructionExecutionResult = beacon_performWithArguments(context, bytecodeDecodedArguments[0], bytecodeDecodedArguments[1], instructionArgumentCount - 2, bytecodeDecodedArguments + 2);
+            break;
+        case BeaconBytecodeStoreValue:
+            assert(writesToTemporary);
+            instructionExecutionResult = bytecodeDecodedArguments[0];
             break;
         case BeaconBytecodeLocalReturn:
             assert(instructionArgumentCount == 1);

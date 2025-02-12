@@ -383,6 +383,17 @@ beacon_ScannerToken_t *beacon_scanSingleToken(beacon_scannerState_t *state)
         }
     }
 
+    // Bang-Method
+    if(c == '!')
+    {
+        int c1 = scannerState_peek(state, 1);
+        if(c1 == '[')
+        {
+            scannerState_advance(state, 2);
+            return scannerState_makeTokenStartingFrom(state, BeaconTokenBangLeftBracket, &initialState);
+        }
+    }
+
     // Strings
     if(c == '\'')
     {
@@ -443,6 +454,11 @@ beacon_ScannerToken_t *beacon_scanSingleToken(beacon_scannerState_t *state)
         return scannerState_makeTokenStartingFrom(state, BeaconTokenRightCurlyBracket, &initialState);
     case ':':
         scannerState_advance(state, 1);
+        if(scannerState_peek(state, 0) == '=')
+        {
+            scannerState_advance(state, 1);
+            return scannerState_makeTokenStartingFrom(state, BeaconTokenAssignment, &initialState);
+        }
         return scannerState_makeTokenStartingFrom(state, BeaconTokenColon, &initialState);
     case ';':
         scannerState_advance(state, 1);

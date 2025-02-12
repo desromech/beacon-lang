@@ -328,11 +328,20 @@ typedef struct beacon_ParseTreeErrorNode_s
     beacon_ParseTreeNode_t *innerNode;
 } beacon_ParseTreeErrorNode_t;
 
+typedef struct beacon_ParseTreeMethodNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_Symbol_t *selector;
+    beacon_Array_t *arguments;
+    beacon_Array_t *localVariables;
+    beacon_ParseTreeNode_t * expression;
+} beacon_ParseTreeMethodNode_t;
+
 typedef struct beacon_ParseTreeWorkspaceScriptNode_s
 {
     beacon_ParseTreeNode_t super;
-    beacon_Array_t *declaredVariables;
-    beacon_oop_t expression;
+    beacon_Array_t *localVariables;
+    beacon_ParseTreeNode_t *expression;
 } beacon_ParseTreeWorkspaceScriptNode_t;
 
 typedef struct beacon_ParseTreeLiteralNode_s
@@ -380,6 +389,13 @@ typedef struct beacon_ParseTreeReturnNode_s
     beacon_ParseTreeNode_t super;
     beacon_ParseTreeNode_t *expression;
 } beacon_ParseTreeReturnNode_t;
+
+typedef struct beacon_ParseTreeAssignment_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_ParseTreeNode_t *storage;
+    beacon_ParseTreeNode_t *valueToStore;
+} beacon_ParseTreeAssignment_t;
 
 typedef struct beacon_ParseTreeArgumentDefinitionNode_s
 {

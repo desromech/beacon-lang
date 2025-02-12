@@ -32,7 +32,7 @@ beacon_oop_t evaluateSourceCode(beacon_SourceCode_t *sourceCode)
         //printf("Token %d: %s\n", (int)i, beacon_TokenKind_toString());
     }
 
-    beacon_ParseTreeWorkspaceScriptNode_t *parseTree = beacon_parseWorkspaceTokenList(context, sourceCode, scannedSource);
+    beacon_ParseTreeNode_t *parseTree = beacon_parseWorkspaceTokenList(context, sourceCode, scannedSource);
     beacon_CompiledMethod_t *compiledMethod = beacon_compileReplSyntax(context, parseTree);
     return beacon_runMethodWithArguments(context, &compiledMethod->super, 0, (beacon_oop_t)beacon_internCString(context, "DoIt"), 0, NULL);
 }

@@ -13,6 +13,7 @@ typedef enum beacon_BytecodeOpcode_e
     BeaconBytecodeNonLocalReturn,
     BeaconBytecodeSendMessage,
     BeaconBytecodeSuperSendMessage,
+    BeaconBytecodeStoreValue,
     BeaconBytecodeMakeArray,
     BeaconBytecodeMakeClosureInstance,
     BeaconBytecodeExtendArguments,
@@ -107,6 +108,11 @@ void beacon_BytecodeCodeBuilder_sendMessage(beacon_context_t *context, beacon_By
  * Send a message to the superclass
  */
 void beacon_BytecodeCodeBuilder_superSendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t receiver, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments);
+
+/**
+ * Stores the given value
+ */
+void beacon_BytecodeCodeBuilder_storeValue(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t valueToStore);
 
 /**
  * Local return

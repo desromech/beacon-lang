@@ -64,11 +64,14 @@ struct beacon_context_s
         beacon_Behavior_t *parseTreeCascadedMessageNodeClass;
         beacon_Behavior_t *parseTreeSequenceNodeClass;
         beacon_Behavior_t *parseTreeReturnNodeClass;
+        beacon_Behavior_t *parseTreeAssignmentNodeClass;
         beacon_Behavior_t *parseTreeArrayNodeClass;
         beacon_Behavior_t *parseTreeLiteralArrayNodeClass;
         beacon_Behavior_t *parseTreeArgumentDefinitionNodeClass;
         beacon_Behavior_t *parseTreeLocalVariableDefinitionNodeClass;
         beacon_Behavior_t *parseTreeBlockClosureNodeClass;
+        beacon_Behavior_t *parseTreeMethodNode;
+        beacon_Behavior_t *parseTreeWorkspaceScriptNode;
 
         beacon_Behavior_t *abstractCompilationEnvironmentClass;
         beacon_Behavior_t *emptyCompilationEnvironmentClass;

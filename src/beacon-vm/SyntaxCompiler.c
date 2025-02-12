@@ -21,12 +21,9 @@ beacon_CompiledMethod_t *beacon_compileReplSyntax(beacon_context_t *context, bea
     systemEnvironment->parent = &emptyEnvironment->super;
     systemEnvironment->systemDictionary = context->roots.systemDictionary;
 
-    beacon_LexicalCompilationEnvironment_t *lexicalEnvironment = beacon_allocateObjectWithBehavior(context->heap, context->classes.lexicalCompilationEnvironmentClass, sizeof(beacon_LexicalCompilationEnvironment_t), BeaconObjectKindPointers);
-    lexicalEnvironment->parent = &systemEnvironment->super;
-    
     beacon_BytecodeCodeBuilder_t *bytecodeBuilder = beacon_BytecodeCodeBuilder_new(context);
     
-    beacon_BytecodeValue_t lastValue = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, parseTree, &lexicalEnvironment->super, bytecodeBuilder);
+    beacon_BytecodeValue_t lastValue = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, parseTree, &systemEnvironment->super, bytecodeBuilder);
 
     // Ensure that we are returning at least a value.
     beacon_BytecodeCodeBuilder_localReturn(context, bytecodeBuilder, lastValue);
@@ -45,8 +42,49 @@ static beacon_oop_t beacon_SyntaxCompiler_node(beacon_context_t *context, beacon
     (void)receiver;
     (void)arguments;
     assert(argumentCount == 2);
-    fprintf(stderr, "TODO: Subclass responsibility");
+    fprintf(stderr, "TODO: Subclass responsibility.\n");
+    beacon_Class_t *class = (beacon_Class_t *) beacon_getClass(context, receiver);
+    fprintf(stderr, "%.*s\n", class->name->super.super.super.super.super.header.slotCount, class->name->data);
+
     abort();   
+}
+
+static beacon_oop_t beacon_SyntaxCompiler_error(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    beacon_ParseTreeErrorNode_t *errorNode = (beacon_ParseTreeErrorNode_t*)receiver;
+    (void)arguments;
+    assert(argumentCount == 2);
+    fprintf(stderr, "Parse error %.*s\n", errorNode->errorMessage->super.super.super.super.super.header.slotCount, errorNode->errorMessage->data);
+    abort();   
+}
+
+
+static beacon_oop_t beacon_SyntaxCompiler_workspaceScript(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    assert(argumentCount == 2);
+    beacon_ParseTreeWorkspaceScriptNode_t *scriptNode = (beacon_ParseTreeWorkspaceScriptNode_t *)receiver;
+    beacon_AbstractCompilationEnvironment_t *environment = (beacon_AbstractCompilationEnvironment_t*)arguments[0];
+    beacon_BytecodeCodeBuilder_t *builder = (beacon_BytecodeCodeBuilder_t *)arguments[1];
+
+    beacon_LexicalCompilationEnvironment_t *lexicalEnvironment = beacon_allocateObjectWithBehavior(context->heap, context->classes.lexicalCompilationEnvironmentClass, sizeof(beacon_LexicalCompilationEnvironment_t), BeaconObjectKindPointers);
+    lexicalEnvironment->parent = environment;
+
+    size_t localVariableCount = scriptNode->localVariables->super.super.super.super.super.header.slotCount;
+    for(size_t i = 0; i < localVariableCount; ++i)
+    {
+        beacon_ParseTreeLocalVariableDefinitionNode_t *definition = (beacon_ParseTreeLocalVariableDefinitionNode_t*)scriptNode->localVariables->elements[i];
+        beacon_BytecodeValue_t temporaryValue = beacon_BytecodeCodeBuilder_newTemporary(context, builder, (beacon_oop_t)definition->name);
+
+        if(!lexicalEnvironment->dictionary)
+            lexicalEnvironment->dictionary = beacon_MethodDictionary_new(context);
+        
+        beacon_MethodDictionary_atPut(context, lexicalEnvironment->dictionary, definition->name, beacon_encodeSmallInteger(temporaryValue));        
+    }
+
+    beacon_BytecodeValue_t resultValue = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, scriptNode->expression, &lexicalEnvironment->super, builder);
+
+    return beacon_encodeSmallInteger(resultValue);
 }
 
 static beacon_oop_t beacon_SyntaxCompiler_literal(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -130,6 +168,25 @@ static beacon_oop_t beacon_SyntaxCompiler_identifierReference(beacon_context_t *
     return result;
 }
 
+static beacon_oop_t beacon_SyntaxCompiler_temporaryAssignment(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    assert(argumentCount == 2);
+    beacon_ParseTreeAssignment_t *assignmentNode = (beacon_ParseTreeAssignment_t *)receiver;
+    beacon_AbstractCompilationEnvironment_t *environment = (beacon_AbstractCompilationEnvironment_t*)arguments[0];
+    beacon_BytecodeCodeBuilder_t *builder = (beacon_BytecodeCodeBuilder_t *)arguments[1];
+
+    beacon_BytecodeValue_t valueToStore = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, assignmentNode->valueToStore, environment, builder);
+    beacon_BytecodeValue_t storage = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, assignmentNode->storage, environment, builder);
+    if(beacon_BytecodeValue_getType(storage) != BytecodeArgumentTypeTemporary)
+    {
+        fprintf(stderr, "Cannot assign to no temporary variable.");
+        abort();
+    }
+
+    beacon_BytecodeCodeBuilder_storeValue(context, builder, storage, valueToStore);
+    return beacon_encodeSmallInteger(valueToStore);
+}
+
 static beacon_oop_t beacon_SyntaxCompiler_sequenceNode(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     assert(argumentCount == 2);
@@ -209,17 +266,18 @@ void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *con
     beacon_addPrimitiveToClass(context, context->classes.lexicalCompilationEnvironmentClass, "lookupSymbolRecursively:withBytecodeBuilder:", 2, beacon_LexicalCompilationEnvironment_lookupSymbolRecursively);
 
     beacon_addPrimitiveToClass(context, context->classes.parseTreeNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_node);
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeErrorNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_error);
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeWorkspaceScriptNode, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_workspaceScript);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeLiteralNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_literal);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeMessageSendNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_messageSend);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeMessageCascadeNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_messageCascade);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeIdentifierReferenceNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_identifierReference);
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeAssignmentNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_temporaryAssignment);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeReturnNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_returnNode);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeSequenceNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_sequenceNode);
         /*
         beacon_Behavior_t *parseTreeErrorNodeClass;
         
-        beacon_Behavior_t *parseTreeMessageCascadeNodeClass;
-        beacon_Behavior_t *parseTreeCascadedMessageNodeClass;
         beacon_Behavior_t *parseTreeArrayNodeClass;
         beacon_Behavior_t *parseTreeLiteralArrayNodeClass;
         beacon_Behavior_t *parseTreeArgumentDefinitionNodeClass;
