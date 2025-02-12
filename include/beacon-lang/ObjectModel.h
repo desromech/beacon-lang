@@ -484,4 +484,45 @@ typedef struct beacon_BehaviorCompilationEnvironment_s
     beacon_Behavior_t *behavior;
 } beacon_BehaviorCompilationEnvironment_t;
 
+typedef struct beacon_Exception_s
+{
+    beacon_Object_t super;
+    beacon_String_t *messageText;
+} beacon_Exception_t;
+
+typedef struct beacon_Abort_s
+{
+    beacon_Exception_t super;
+} beacon_Abort_t;
+
+typedef struct beacon_Error_s
+{
+    beacon_Exception_t super;
+} beacon_Error_t;
+
+typedef struct beacon_AssertionFailure_s
+{
+    beacon_Error_t super;
+} beacon_AssertionFailure_t;
+
+typedef struct beacon_MessageNotUnderstood_s
+{
+    beacon_Error_t super;
+} beacon_MessageNotUnderstood_t;
+
+typedef struct beacon_NonBooleanReceiver_s
+{
+    beacon_Error_t super;
+} beacon_NonBooleanReceiver_t;
+
+typedef struct beacon_UnhandledException_s
+{
+    beacon_Exception_t super;
+} beacon_UnhandledException_t;
+
+typedef struct beacon_UnhandledError_s
+{
+    beacon_UnhandledException_t super;
+} beacon_UnhandledError_t;
+
 #endif // BEACON_OBJECT_MODEL_H

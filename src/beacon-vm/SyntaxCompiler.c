@@ -485,8 +485,6 @@ void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *con
 
         beacon_Behavior_t *parseTreeArrayNodeClass;
         beacon_Behavior_t *parseTreeLiteralArrayNodeClass;
-        beacon_Behavior_t *parseTreeArgumentDefinitionNodeClass;
-        beacon_Behavior_t *parseTreeLocalVariableDefinitionNodeClass;
         beacon_Behavior_t *parseTreeBlockClosureNodeClass;
         */
 

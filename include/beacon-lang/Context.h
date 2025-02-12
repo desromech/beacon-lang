@@ -80,6 +80,14 @@ struct beacon_context_s
         beacon_Behavior_t *lexicalCompilationEnvironmentClass;
         beacon_Behavior_t *methodCompilationEnvironmentClass;
         beacon_Behavior_t *behaviorCompilationEnvironmentClass;
+
+        beacon_Behavior_t *exceptionClass;
+        beacon_Behavior_t *errorClass;
+        beacon_Behavior_t *assertionFailureClass;
+        beacon_Behavior_t *messageNotUnderstoodClass;
+        beacon_Behavior_t *nonBooleanReceiverClass;
+        beacon_Behavior_t *unhandledExceptionClass;
+        beacon_Behavior_t *unhandledErrorClass;
     } classes;
 
     struct ContextGCRoots
