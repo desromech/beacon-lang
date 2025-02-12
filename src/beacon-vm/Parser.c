@@ -761,7 +761,15 @@ beacon_ParseTreeNode_t *parser_parseTopLevelExpressions(beacon_parserState_t *st
 {
     return parser_parseSequenceUntilEndOrDelimiter(state, BeaconTokenEndOfSource);
 }
-beacon_ParseTreeNode_t *beacon_parseTokenList(beacon_context_t *context, beacon_SourceCode_t *sourceCode, beacon_ArrayList_t *tokenList)
+
+typedef struct beacon_ParseTreeWorkspaceScriptNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_Array_t *declaredVariables;
+    beacon_oop_t expression;
+} beacon_ParseTreeWorkspaceScriptNode_t;
+
+beacon_ParseTreeNode_t *beacon_parseWorkspaceTokenList(beacon_context_t *context, beacon_SourceCode_t *sourceCode, beacon_ArrayList_t *tokenList)
 {
     beacon_parserState_t state = {
         .context = context,

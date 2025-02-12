@@ -4,6 +4,7 @@
 #include "ObjectModel.h"
 #include "Scanner.h"
 
-beacon_ParseTreeNode_t *beacon_parseTokenList(beacon_context_t *context, beacon_SourceCode_t *sourceCode, beacon_ArrayList_t *tokenList);
+beacon_ParseTreeNode_t *beacon_parseWorkspaceTokenList(beacon_context_t *context, beacon_SourceCode_t *sourceCode, beacon_ArrayList_t *tokenList);
+beacon_ParseTreeNode_t *beacon_parseMethodTokenList(beacon_context_t *context, beacon_SourceCode_t *sourceCode, beacon_ArrayList_t *tokenList);
 
 #endif //BEACON_LANG_PARSER_H

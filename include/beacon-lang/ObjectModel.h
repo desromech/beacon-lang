@@ -328,6 +328,13 @@ typedef struct beacon_ParseTreeErrorNode_s
     beacon_ParseTreeNode_t *innerNode;
 } beacon_ParseTreeErrorNode_t;
 
+typedef struct beacon_ParseTreeWorkspaceScriptNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_Array_t *declaredVariables;
+    beacon_oop_t expression;
+} beacon_ParseTreeWorkspaceScriptNode_t;
+
 typedef struct beacon_ParseTreeLiteralNode_s
 {
     beacon_ParseTreeNode_t super;
