@@ -70,6 +70,7 @@ struct beacon_context_s
         beacon_Behavior_t *parseTreeArgumentDefinitionNodeClass;
         beacon_Behavior_t *parseTreeLocalVariableDefinitionNodeClass;
         beacon_Behavior_t *parseTreeBlockClosureNodeClass;
+        beacon_Behavior_t *parseTreeAddMethodNodeClass;
         beacon_Behavior_t *parseTreeMethodNode;
         beacon_Behavior_t *parseTreeWorkspaceScriptNode;
 

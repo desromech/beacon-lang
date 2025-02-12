@@ -337,6 +337,13 @@ typedef struct beacon_ParseTreeMethodNode_s
     beacon_ParseTreeNode_t * expression;
 } beacon_ParseTreeMethodNode_t;
 
+typedef struct beacon_ParseTreeAddMethod_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_ParseTreeNode_t *behavior;
+    beacon_ParseTreeNode_t *method;
+} beacon_ParseTreeAddMethod_t;
+
 typedef struct beacon_ParseTreeWorkspaceScriptNode_s
 {
     beacon_ParseTreeNode_t super;

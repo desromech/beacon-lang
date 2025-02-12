@@ -534,8 +534,20 @@ beacon_ParseTreeNode_t *parser_parseUnaryPostfixExpression(beacon_parserState_t 
     size_t startPosition = state->position;
     beacon_ParseTreeNode_t *receiver = parser_parseTerm(state);
 
-    while(parserState_peekKind(state, 0) == BeaconTokenIdentifier)
+    while(parserState_peekKind(state, 0) == BeaconTokenIdentifier ||
+        parserState_peekKind(state, 0) == BeaconTokenBangLeftBracket)
     {
+        if(parserState_peekKind(state, 0) == BeaconTokenBangLeftBracket)
+        {
+            beacon_ParseTreeNode_t *method = parser_parseMethodBlock(state);
+            beacon_ParseTreeAddMethod_t *addMethod = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeAddMethodNodeClass, sizeof(beacon_ParseTreeAddMethod_t), BeaconObjectKindPointers);
+            addMethod->super.sourcePosition = parserState_sourcePositionFrom(state, startPosition);
+            addMethod->behavior = receiver;
+            addMethod->method = method;
+            receiver = &addMethod->super;
+            continue;            
+        }
+
         beacon_ScannerToken_t *unaryToken = parserState_next(state);
         
         const char *textData = (const char*)unaryToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(unaryToken->textPosition);
