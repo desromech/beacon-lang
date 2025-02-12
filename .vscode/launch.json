@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Debug",
             "program": "${workspaceFolder}/build/dist/beacon-vm",
-            "args": ["-eval", "Object ![test 42]"],
+            "args": ["-eval", "Object ![test 42]. 5 test"],
             "cwd": "${workspaceFolder}"
         }
     ]

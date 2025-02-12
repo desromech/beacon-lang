@@ -1,6 +1,7 @@
 #include "beacon-lang/Context.h"
 #include "beacon-lang/Memory.h"
 #include "beacon-lang/Dictionary.h"
+#include "beacon-lang/Exceptions.h"
 #include "beacon-lang/Bytecode.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -310,8 +311,8 @@ beacon_oop_t beacon_runMethodWithArguments(beacon_context_t *context, beacon_Com
     else if(method->bytecodeImplementation)
         return beacon_interpretBytecodeMethod(context, method, receiver, selector, argumentCount, arguments);
 
-    fprintf(stderr, "Error: Cannot evaluate a method without any kind of implementation.");
-    abort();
+    beacon_exception_error(context, "Cannot evaluate a method without any kind of implementation.");
+    return 0;
 }
 
 beacon_oop_t beacon_performWithArguments(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, size_t argumentCount, beacon_oop_t *arguments)
@@ -331,8 +332,13 @@ beacon_oop_t beacon_performWithArguments(beacon_context_t *context, beacon_oop_t
 
     if(selector == context->roots.doesNotUnderstandSelector)
     {
-        fprintf(stderr, "Error: Message not understood. Aborting execution\n");
-        abort();
+        assert(argumentCount == 1);
+        beacon_MessageNotUnderstood_t *exception = beacon_allocateObjectWithBehavior(context->heap, context->classes.messageNotUnderstoodClass, sizeof(beacon_MessageNotUnderstood_t), BeaconObjectKindPointers);
+        exception->message = (beacon_Message_t*)arguments[0];
+        exception->receiver = receiver;
+        exception->super.super.messageText = beacon_importCString(context, "Message not understood.");
+        beacon_exception_signal(context, &exception->super.super);
+        return 0;
     }
 
     beacon_Array_t *argumentsArray = beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t) + (sizeof(beacon_oop_t)*argumentCount), BeaconObjectKindPointers);

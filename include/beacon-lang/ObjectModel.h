@@ -508,6 +508,9 @@ typedef struct beacon_AssertionFailure_s
 typedef struct beacon_MessageNotUnderstood_s
 {
     beacon_Error_t super;
+    beacon_Message_t *message;
+    beacon_oop_t receiver;
+    beacon_oop_t reachedDefaultHandler;
 } beacon_MessageNotUnderstood_t;
 
 typedef struct beacon_NonBooleanReceiver_s

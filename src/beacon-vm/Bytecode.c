@@ -1,6 +1,7 @@
 #include "beacon-lang/Bytecode.h"
 #include "beacon-lang/Context.h"
 #include "beacon-lang/ArrayList.h"
+#include "beacon-lang/Exceptions.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -280,8 +281,8 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
                 break;
             case BytecodeArgumentTypeCapture:
             default:
-                fprintf(stderr, "Invalid bytecode value type");
-                abort();
+                beacon_exception_error(context, "Invalid bytecode value type");
+                break;
             }
         }
 
@@ -306,8 +307,11 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
             beacon_popStackFrameRecord(&stackFrameRecord);
             return stackFrameRecord.bytecodeMethodStackRecord.returnResultValue;
         default:
-            fprintf(stderr, "Unsupported bytecode with opcode %x.\n", opcode);
-            abort();
+            {
+                char buffer[64];
+                snprintf(buffer, sizeof(buffer), "Unsupported bytecode with opcode %x.\n", opcode);
+                beacon_exception_error(context, buffer);
+            }
             break;
         }
 
@@ -315,5 +319,6 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
         if(writesToTemporary && resultTemporaryIndex > 0)
             temporaryStorage[resultTemporaryIndex - 1] = instructionExecutionResult;
     }
-    abort();
+
+    return 0;
 }

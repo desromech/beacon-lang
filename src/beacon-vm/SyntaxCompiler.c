@@ -1,6 +1,7 @@
 #include "beacon-lang/SyntaxCompiler.h"
 #include "beacon-lang/Context.h"
 #include "beacon-lang/Dictionary.h"
+#include "beacon-lang/Exceptions.h"
 #include <stdio.h>
 #include <assert.h>
 
@@ -42,11 +43,8 @@ static beacon_oop_t beacon_SyntaxCompiler_evaluateNode(beacon_context_t *context
     (void)receiver;
     (void)arguments;
     assert(argumentCount == 1);
-    fprintf(stderr, "TODO: Subclass responsibility.\n");
-    beacon_Class_t *class = (beacon_Class_t *) beacon_getClass(context, receiver);
-    fprintf(stderr, "%.*s\n", class->name->super.super.super.super.super.header.slotCount, class->name->data);
-
-    abort();   
+    beacon_exception_subclassResponsibility(context, receiver, context->roots.evaluateWithEnvironmentSelector);
+    return 0;
 }
 
 static beacon_oop_t beacon_SyntaxCompiler_evaluateLiteralNode(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -76,11 +74,8 @@ static beacon_oop_t beacon_SyntaxCompiler_node(beacon_context_t *context, beacon
     (void)receiver;
     (void)arguments;
     assert(argumentCount == 2);
-    fprintf(stderr, "TODO: Subclass responsibility.\n");
-    beacon_Class_t *class = (beacon_Class_t *) beacon_getClass(context, receiver);
-    fprintf(stderr, "%.*s\n", class->name->super.super.super.super.super.header.slotCount, class->name->data);
-
-    abort();   
+    beacon_exception_subclassResponsibility(context, receiver, context->roots.compileWithEnvironmentAndBytecodeBuilderSelector);
+    return 0;
 }
 
 static beacon_oop_t beacon_SyntaxCompiler_error(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -89,8 +84,10 @@ static beacon_oop_t beacon_SyntaxCompiler_error(beacon_context_t *context, beaco
     beacon_ParseTreeErrorNode_t *errorNode = (beacon_ParseTreeErrorNode_t*)receiver;
     (void)arguments;
     assert(argumentCount == 2);
-    fprintf(stderr, "Parse error %.*s\n", errorNode->errorMessage->super.super.super.super.super.header.slotCount, errorNode->errorMessage->data);
-    abort();   
+    char buffer[256];
+    snprintf(buffer, sizeof(buffer), "Parse error %.*s\n", errorNode->errorMessage->super.super.super.super.super.header.slotCount, errorNode->errorMessage->data);
+    beacon_exception_error(context, buffer);
+    return 0;
 }
 
 
@@ -194,10 +191,7 @@ static beacon_oop_t beacon_SyntaxCompiler_identifierReference(beacon_context_t *
 
     beacon_oop_t result = beacon_performWithWith(context, (beacon_oop_t)environment, context->roots.lookupSymbolRecursivelyWithBytecodeBuilderSelector, identifierReference->identifier, (beacon_oop_t)builder);
     if(result == 0)
-    {
-        fprintf(stderr, "Symbol binding not found.");
-        abort();
-    }
+        beacon_exception_error(context, "Symbol binding not found.");
 
     return result;
 }
@@ -212,10 +206,7 @@ static beacon_oop_t beacon_SyntaxCompiler_temporaryAssignment(beacon_context_t *
     beacon_BytecodeValue_t valueToStore = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, assignmentNode->valueToStore, environment, builder);
     beacon_BytecodeValue_t storage = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, assignmentNode->storage, environment, builder);
     if(beacon_BytecodeValue_getType(storage) != BytecodeArgumentTypeTemporary)
-    {
-        fprintf(stderr, "Cannot assign to no temporary variable.");
-        abort();
-    }
+        beacon_exception_error(context, "Cannot assign to non temporary variable.");
 
     beacon_BytecodeCodeBuilder_storeValue(context, builder, storage, valueToStore);
     return beacon_encodeSmallInteger(valueToStore);
