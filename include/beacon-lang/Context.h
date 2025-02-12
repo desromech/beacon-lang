@@ -78,7 +78,8 @@ struct beacon_context_s
         beacon_Behavior_t *emptyCompilationEnvironmentClass;
         beacon_Behavior_t *systemCompilationEnvironmentClass;
         beacon_Behavior_t *lexicalCompilationEnvironmentClass;
-
+        beacon_Behavior_t *methodCompilationEnvironmentClass;
+        beacon_Behavior_t *behaviorCompilationEnvironmentClass;
     } classes;
 
     struct ContextGCRoots
@@ -90,7 +91,10 @@ struct beacon_context_s
         beacon_oop_t falseValue;
         beacon_oop_t doesNotUnderstandSelector;
         beacon_oop_t compileWithEnvironmentAndBytecodeBuilderSelector;
+        beacon_oop_t lookupSymbolRecursivelySelector;
         beacon_oop_t lookupSymbolRecursivelyWithBytecodeBuilderSelector;
+        beacon_oop_t evaluateWithEnvironmentSelector;
+        beacon_oop_t addCompiledMethodSelector;
         beacon_oop_t emptyArray;
     } roots;
 

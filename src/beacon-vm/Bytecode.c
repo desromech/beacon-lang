@@ -61,6 +61,19 @@ beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_newTemporary(beacon_context_t 
     return beacon_BytecodeValue_encode(beacon_ArrayList_size(codeBuilder->temporaries), BytecodeArgumentTypeTemporary);
 }
 
+beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_getOrCreateSelf(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder)
+{
+    (void)context;
+    (void)codeBuilder;
+    return beacon_BytecodeValue_encode(0, BytecodeArgumentTypeArgument);
+}
+
+beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_newArgument(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, beacon_oop_t optionalNameSymbol)
+{
+    beacon_ArrayList_add(context, codeBuilder->arguments, optionalNameSymbol);
+    return beacon_BytecodeValue_encode(beacon_ArrayList_size(codeBuilder->arguments), BytecodeArgumentTypeArgument);
+}
+
 uint16_t beacon_BytecodeCodeBuilder_label(beacon_BytecodeCodeBuilder_t *methodBuilder)
 {
     return beacon_ByteArrayList_size(methodBuilder->bytecodes);

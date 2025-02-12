@@ -36,6 +36,40 @@ beacon_CompiledMethod_t *beacon_compileReplSyntax(beacon_context_t *context, bea
     return compiledMethod;
 }
 
+static beacon_oop_t beacon_SyntaxCompiler_evaluateNode(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)receiver;
+    (void)arguments;
+    assert(argumentCount == 1);
+    fprintf(stderr, "TODO: Subclass responsibility.\n");
+    beacon_Class_t *class = (beacon_Class_t *) beacon_getClass(context, receiver);
+    fprintf(stderr, "%.*s\n", class->name->super.super.super.super.super.header.slotCount, class->name->data);
+
+    abort();   
+}
+
+static beacon_oop_t beacon_SyntaxCompiler_evaluateLiteralNode(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)arguments;
+    assert(argumentCount == 1);
+    beacon_ParseTreeLiteralNode_t *literalNode = (beacon_ParseTreeLiteralNode_t *)receiver;
+    return literalNode->value;
+}
+
+static beacon_oop_t beacon_SyntaxCompiler_evaluateIdentifierReference(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)arguments;
+    assert(argumentCount == 1);
+    beacon_AbstractCompilationEnvironment_t *environment = (beacon_AbstractCompilationEnvironment_t*)arguments[0];
+
+    beacon_ParseTreeIdentifierReferenceNode_t *identifierReferenceNode = (beacon_ParseTreeIdentifierReferenceNode_t*)receiver;
+    beacon_oop_t result = beacon_performWith(context, (beacon_oop_t)environment, context->roots.lookupSymbolRecursivelySelector, identifierReferenceNode->identifier);
+    return result;
+}
+
 static beacon_oop_t beacon_SyntaxCompiler_node(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)context;
@@ -214,7 +248,88 @@ static beacon_oop_t beacon_SyntaxCompiler_returnNode(beacon_context_t *context, 
     return  beacon_encodeSmallInteger(0);
 }
 
-static beacon_oop_t beacon_EmptyCompilationEnvironment_lookupSymbolRecursively(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+static beacon_CompiledMethod_t *beacon_SyntaxCompiler_compileMethodNode(beacon_context_t *context, beacon_ParseTreeMethodNode_t *methodNode, beacon_AbstractCompilationEnvironment_t *environment)
+{
+    beacon_MethodCompilationEnvironment_t *methodEnvironment = beacon_allocateObjectWithBehavior(context->heap, context->classes.methodCompilationEnvironmentClass, sizeof(beacon_MethodCompilationEnvironment_t), BeaconObjectKindPointers);
+    methodEnvironment->parent = environment;
+    methodEnvironment->dictionary = beacon_MethodDictionary_new(context);
+
+    beacon_BytecodeCodeBuilder_t *methodBuilder = beacon_BytecodeCodeBuilder_new(context);
+
+    // Method receiver.
+    beacon_BytecodeValue_t self = beacon_BytecodeCodeBuilder_getOrCreateSelf(context, methodBuilder);
+    beacon_MethodDictionary_atPut(context, methodEnvironment->dictionary, beacon_internCString(context, "self"), beacon_encodeSmallInteger(self));
+
+    // Method arguments
+    size_t methodArgumentCount = methodNode->arguments->super.super.super.super.super.header.slotCount;
+    for(size_t i = 0; i < methodArgumentCount; ++i)
+    {
+        beacon_ParseTreeArgumentDefinitionNode_t* argumentDefinition = (beacon_ParseTreeArgumentDefinitionNode_t*) methodNode->arguments->elements[i];
+        beacon_BytecodeValue_t argumentValue = beacon_BytecodeCodeBuilder_newArgument(context, methodBuilder, (beacon_oop_t)argumentDefinition->name);
+        if(argumentDefinition->name)
+            beacon_MethodDictionary_atPut(context, methodEnvironment->dictionary, argumentDefinition->name, beacon_encodeSmallInteger(argumentValue));
+    }
+    
+    // Method local variables
+    size_t localVariableCount = methodNode->localVariables->super.super.super.super.super.header.slotCount;
+    for(size_t i = 0; i < localVariableCount; ++i)
+    {
+        beacon_ParseTreeLocalVariableDefinitionNode_t *definition = (beacon_ParseTreeLocalVariableDefinitionNode_t*)methodNode->localVariables->elements[i];
+        beacon_BytecodeValue_t temporaryValue = beacon_BytecodeCodeBuilder_newTemporary(context, methodBuilder, (beacon_oop_t)definition->name);
+        beacon_MethodDictionary_atPut(context, methodEnvironment->dictionary, definition->name, beacon_encodeSmallInteger(temporaryValue));        
+    }
+
+    beacon_BytecodeValue_t lastValue = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, methodNode->expression, &methodEnvironment->super, methodBuilder);
+
+    // Ensure that we are at least returning the receiver.
+    beacon_BytecodeCodeBuilder_localReturn(context, methodBuilder, lastValue);
+
+    beacon_BytecodeCode_t *bytecode = beacon_BytecodeCodeBuilder_finish(context, methodBuilder);
+
+    beacon_CompiledMethod_t *compiledMethod = beacon_allocateObjectWithBehavior(context->heap, context->classes.compiledMethodClass, sizeof(beacon_CompiledMethod_t), BeaconObjectKindPointers);
+    compiledMethod->name = methodNode->selector;
+    compiledMethod->super.argumentCount = bytecode->argumentCount;
+    compiledMethod->super.bytecodeImplementation = bytecode;
+
+    return compiledMethod;
+}
+
+static beacon_oop_t beacon_SyntaxCompiler_methodNode(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    assert(argumentCount == 2);
+    beacon_AbstractCompilationEnvironment_t *environment = (beacon_AbstractCompilationEnvironment_t*)arguments[0];
+    beacon_BytecodeCodeBuilder_t *parentBuilder = (beacon_BytecodeCodeBuilder_t *)arguments[1];
+
+    beacon_CompiledMethod_t *compiledMethod = beacon_SyntaxCompiler_compileMethodNode(context, (beacon_ParseTreeMethodNode_t*)receiver, environment);
+    beacon_BytecodeValue_t compiledMethodLiteralValue = beacon_BytecodeCodeBuilder_addLiteral(context, parentBuilder, (beacon_oop_t)compiledMethod);
+    return beacon_encodeSmallInteger(compiledMethodLiteralValue);
+}
+
+static beacon_oop_t beacon_SyntaxCompiler_addMethodNode(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    assert(argumentCount == 2);
+    beacon_ParseTreeAddMethod_t *addMethodNode = (beacon_ParseTreeAddMethod_t *)receiver;
+
+    beacon_AbstractCompilationEnvironment_t *environment = (beacon_AbstractCompilationEnvironment_t*)arguments[0];
+    beacon_BytecodeCodeBuilder_t *builder = (beacon_BytecodeCodeBuilder_t *)arguments[1];
+
+    beacon_oop_t behavior = beacon_performWith(context, (beacon_oop_t)addMethodNode->behavior, context->roots.evaluateWithEnvironmentSelector, (beacon_oop_t)environment);
+    // TODO: Assert for behavior.
+
+    beacon_BehaviorCompilationEnvironment_t *behaviorEnvironment = beacon_allocateObjectWithBehavior(context->heap, context->classes.behaviorCompilationEnvironmentClass, sizeof(beacon_BehaviorCompilationEnvironment_t), BeaconObjectKindPointers);
+    behaviorEnvironment->behavior = (beacon_Behavior_t*)behavior;
+
+    beacon_CompiledMethod_t *compiledMethod = beacon_SyntaxCompiler_compileMethodNode(context, (beacon_ParseTreeMethodNode_t*)addMethodNode->method, &behaviorEnvironment->super);
+    beacon_Behavior_t *targetBehavior = (beacon_Behavior_t *)behavior;
+    if(!targetBehavior->methodDict)
+        targetBehavior->methodDict = beacon_MethodDictionary_new(context);
+    beacon_MethodDictionary_atPut(context, targetBehavior->methodDict, compiledMethod->name, (beacon_oop_t)compiledMethod);
+
+    return beacon_BytecodeCodeBuilder_addLiteral(context, builder, behavior);
+}
+
+
+static beacon_oop_t beacon_EmptyCompilationEnvironment_lookupSymbolRecursivelyWithCodeBuilder(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)context;
     (void)receiver;
@@ -223,7 +338,7 @@ static beacon_oop_t beacon_EmptyCompilationEnvironment_lookupSymbolRecursively(b
     return 0;
 }
 
-static beacon_oop_t beacon_SystemCompilationEnvironment_lookupSymbolRecursively(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+static beacon_oop_t beacon_SystemCompilationEnvironment_lookupSymbolRecursivelyWithCodeBuilder(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     assert(argumentCount == 2);
     beacon_SystemCompilationEnvironment_t *environment = (beacon_SystemCompilationEnvironment_t*)receiver;
@@ -241,7 +356,7 @@ static beacon_oop_t beacon_SystemCompilationEnvironment_lookupSymbolRecursively(
     return beacon_performWithWith(context, (beacon_oop_t)environment->parent, context->roots.lookupSymbolRecursivelyWithBytecodeBuilderSelector, (beacon_oop_t)symbolToSearch, (beacon_oop_t)bytecodeBuilder);
 }
 
-static beacon_oop_t beacon_LexicalCompilationEnvironment_lookupSymbolRecursively(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+static beacon_oop_t beacon_LexicalCompilationEnvironment_lookupSymbolRecursivelyWithCodeBuilder(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     assert(argumentCount == 2);
     beacon_LexicalCompilationEnvironment_t *environment = (beacon_LexicalCompilationEnvironment_t*)receiver;
@@ -259,11 +374,95 @@ static beacon_oop_t beacon_LexicalCompilationEnvironment_lookupSymbolRecursively
     return beacon_performWithWith(context, (beacon_oop_t)environment->parent, context->roots.lookupSymbolRecursivelyWithBytecodeBuilderSelector, (beacon_oop_t)symbolToSearch, (beacon_oop_t)bytecodeBuilder);
 }
 
+static beacon_oop_t beacon_MethodCompilationEnvironment_lookupSymbolRecursivelyWithCodeBuilder(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    assert(argumentCount == 2);
+    beacon_MethodCompilationEnvironment_t *environment = (beacon_MethodCompilationEnvironment_t*)receiver;
+    beacon_Symbol_t *symbolToSearch = (beacon_Symbol_t *)arguments[0];
+    beacon_BytecodeCodeBuilder_t *bytecodeBuilder = (beacon_BytecodeCodeBuilder_t*)arguments[1];
+
+    if(environment->dictionary)
+    {
+        beacon_oop_t oop = beacon_MethodDictionary_atOrNil(context, environment->dictionary, symbolToSearch);
+        if(oop || beacon_MethodDictionary_includesKey(context, environment->dictionary, symbolToSearch))
+            return oop;
+    }
+
+    assert(environment->parent);
+    return beacon_performWithWith(context, (beacon_oop_t)environment->parent, context->roots.lookupSymbolRecursivelyWithBytecodeBuilderSelector, (beacon_oop_t)symbolToSearch, (beacon_oop_t)bytecodeBuilder);
+}
+
+static beacon_oop_t beacon_EmptyCompilationEnvironment_lookupSymbolRecursively(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)receiver;
+    (void)argumentCount;
+    (void)arguments;
+    return 0;
+}
+
+static beacon_oop_t beacon_SystemCompilationEnvironment_lookupSymbolRecursively(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    assert(argumentCount == 1);
+    beacon_SystemCompilationEnvironment_t *environment = (beacon_SystemCompilationEnvironment_t*)receiver;
+    beacon_Symbol_t *symbolToSearch = (beacon_Symbol_t *)arguments[0];
+
+    if(environment->systemDictionary)
+    {
+        beacon_oop_t oop = beacon_MethodDictionary_atOrNil(context, environment->systemDictionary, symbolToSearch);
+        if(oop || beacon_MethodDictionary_includesKey(context, environment->systemDictionary, symbolToSearch))
+            return oop;
+    }
+
+    assert(environment->parent);
+    return beacon_performWith(context, (beacon_oop_t)environment->parent, context->roots.lookupSymbolRecursivelySelector, (beacon_oop_t)symbolToSearch);
+}
+
+static beacon_oop_t beacon_LexicalCompilationEnvironment_lookupSymbolRecursively(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    assert(argumentCount == 1);
+    beacon_LexicalCompilationEnvironment_t *environment = (beacon_LexicalCompilationEnvironment_t*)receiver;
+    beacon_Symbol_t *symbolToSearch = (beacon_Symbol_t *)arguments[0];
+
+    if(environment->dictionary)
+    {
+        beacon_oop_t oop = beacon_MethodDictionary_atOrNil(context, environment->dictionary, symbolToSearch);
+        if(oop || beacon_MethodDictionary_includesKey(context, environment->dictionary, symbolToSearch))
+            return oop;
+    }
+
+    assert(environment->parent);
+    return beacon_performWith(context, (beacon_oop_t)environment->parent, context->roots.lookupSymbolRecursivelySelector, (beacon_oop_t)symbolToSearch);
+}
+
+static beacon_oop_t beacon_MethodCompilationEnvironment_lookupSymbolRecursively(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    assert(argumentCount == 1);
+    beacon_MethodCompilationEnvironment_t *environment = (beacon_MethodCompilationEnvironment_t*)receiver;
+    beacon_Symbol_t *symbolToSearch = (beacon_Symbol_t *)arguments[0];
+
+    if(environment->dictionary)
+    {
+        beacon_oop_t oop = beacon_MethodDictionary_atOrNil(context, environment->dictionary, symbolToSearch);
+        if(oop || beacon_MethodDictionary_includesKey(context, environment->dictionary, symbolToSearch))
+            return oop;
+    }
+
+    assert(environment->parent);
+    return beacon_performWith(context, (beacon_oop_t)environment->parent, context->roots.lookupSymbolRecursivelySelector, (beacon_oop_t)symbolToSearch);
+}
+
 void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *context)
 {   
-    beacon_addPrimitiveToClass(context, context->classes.emptyCompilationEnvironmentClass, "lookupSymbolRecursively:withBytecodeBuilder:", 2, beacon_EmptyCompilationEnvironment_lookupSymbolRecursively);
-    beacon_addPrimitiveToClass(context, context->classes.systemCompilationEnvironmentClass, "lookupSymbolRecursively:withBytecodeBuilder:", 2, beacon_SystemCompilationEnvironment_lookupSymbolRecursively);
-    beacon_addPrimitiveToClass(context, context->classes.lexicalCompilationEnvironmentClass, "lookupSymbolRecursively:withBytecodeBuilder:", 2, beacon_LexicalCompilationEnvironment_lookupSymbolRecursively);
+    beacon_addPrimitiveToClass(context, context->classes.emptyCompilationEnvironmentClass, "lookupSymbolRecursively:withBytecodeBuilder:", 2, beacon_EmptyCompilationEnvironment_lookupSymbolRecursivelyWithCodeBuilder);
+    beacon_addPrimitiveToClass(context, context->classes.systemCompilationEnvironmentClass, "lookupSymbolRecursively:withBytecodeBuilder:", 2, beacon_SystemCompilationEnvironment_lookupSymbolRecursivelyWithCodeBuilder);
+    beacon_addPrimitiveToClass(context, context->classes.lexicalCompilationEnvironmentClass, "lookupSymbolRecursively:withBytecodeBuilder:", 2, beacon_LexicalCompilationEnvironment_lookupSymbolRecursivelyWithCodeBuilder);
+    beacon_addPrimitiveToClass(context, context->classes.methodCompilationEnvironmentClass, "lookupSymbolRecursively:withBytecodeBuilder:", 2, beacon_MethodCompilationEnvironment_lookupSymbolRecursivelyWithCodeBuilder);
+
+    beacon_addPrimitiveToClass(context, context->classes.emptyCompilationEnvironmentClass, "lookupSymbolRecursively:", 1, beacon_EmptyCompilationEnvironment_lookupSymbolRecursively);
+    beacon_addPrimitiveToClass(context, context->classes.systemCompilationEnvironmentClass, "lookupSymbolRecursively:", 1, beacon_SystemCompilationEnvironment_lookupSymbolRecursively);
+    beacon_addPrimitiveToClass(context, context->classes.lexicalCompilationEnvironmentClass, "lookupSymbolRecursively:", 1, beacon_LexicalCompilationEnvironment_lookupSymbolRecursively);
+    beacon_addPrimitiveToClass(context, context->classes.methodCompilationEnvironmentClass, "lookupSymbolRecursively:", 1, beacon_MethodCompilationEnvironment_lookupSymbolRecursively);
 
     beacon_addPrimitiveToClass(context, context->classes.parseTreeNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_node);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeErrorNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_error);
@@ -275,9 +474,15 @@ void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *con
     beacon_addPrimitiveToClass(context, context->classes.parseTreeAssignmentNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_temporaryAssignment);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeReturnNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_returnNode);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeSequenceNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_sequenceNode);
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeMethodNode, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_methodNode);
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeAddMethodNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_addMethodNode);
+
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateNode);
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeLiteralNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateLiteralNode);
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeIdentifierReferenceNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateIdentifierReference);
+
         /*
-        beacon_Behavior_t *parseTreeErrorNodeClass;
-        
+
         beacon_Behavior_t *parseTreeArrayNodeClass;
         beacon_Behavior_t *parseTreeLiteralArrayNodeClass;
         beacon_Behavior_t *parseTreeArgumentDefinitionNodeClass;

@@ -134,6 +134,7 @@ typedef struct beacon_CompiledCode_s
 typedef struct beacon_CompiledMethod_s
 {
     beacon_CompiledCode_t super;
+    beacon_Symbol_t *name;
 } beacon_CompiledMethod_t;
 
 typedef struct beacon_CompiledBlock_s
@@ -468,5 +469,19 @@ typedef struct beacon_LexicalCompilationEnvironment_s
     beacon_AbstractCompilationEnvironment_t *parent;
     beacon_MethodDictionary_t *dictionary;
 } beacon_LexicalCompilationEnvironment_t;
+
+typedef struct beacon_MethodCompilationEnvironment_s
+{
+    beacon_AbstractCompilationEnvironment_t super;
+    beacon_AbstractCompilationEnvironment_t *parent;
+    beacon_MethodDictionary_t *dictionary;
+} beacon_MethodCompilationEnvironment_t;
+
+typedef struct beacon_BehaviorCompilationEnvironment_s
+{
+    beacon_AbstractCompilationEnvironment_t super;
+    beacon_AbstractCompilationEnvironment_t *parent;
+    beacon_Behavior_t *behavior;
+} beacon_BehaviorCompilationEnvironment_t;
 
 #endif // BEACON_OBJECT_MODEL_H
