@@ -85,7 +85,7 @@ int scannerState_peek(beacon_scannerState_t *state, int peekOffset)
 
 void scannerState_advanceSinglePosition(beacon_scannerState_t *state)
 {
-    assert(!scannerState_atEnd(state));
+    BeaconAssert(state->context, !scannerState_atEnd(state));
     char c = state->sourceCode->text->data[state->position];
     ++state->position;
     switch(c)

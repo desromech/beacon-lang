@@ -62,7 +62,7 @@ void beacon_MethodDictionary_incrementCapacity(beacon_context_t *context, beacon
 void beacon_MethodDictionary_atPut(beacon_context_t *context, beacon_MethodDictionary_t *dictionary, beacon_Symbol_t *symbol, beacon_oop_t element)
 {
     int slotIndex = beacon_MethodDictionary_scanFor(dictionary, (beacon_oop_t)symbol);
-    assert(slotIndex >= 0);
+    BeaconAssert(context, slotIndex >= 0);
 
     beacon_Array_t *storage = dictionary->super.super.array;
     if(!storage->elements[slotIndex*2])

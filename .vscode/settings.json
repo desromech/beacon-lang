@@ -12,6 +12,7 @@
         "type_traits": "c",
         "syntaxcompiler.h": "c",
         "ratio": "c",
-        "functional": "c"
+        "functional": "c",
+        "exceptions.h": "c"
     }
 }

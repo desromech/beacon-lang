@@ -20,6 +20,13 @@ void beacon_exception_error(beacon_context_t *context, const char *errorMessage)
     beacon_exception_signal(context, &error->super);
 }
 
+void beacon_exception_assertionFailure(beacon_context_t *context, const char *errorMessage)
+{
+    beacon_AssertionFailure_t *error = beacon_allocateObjectWithBehavior(context->heap, context->classes.assertionFailureClass, sizeof(beacon_AssertionFailure_t), BeaconObjectKindPointers);
+    error->super.super.messageText = beacon_importCString(context, errorMessage);
+    beacon_exception_signal(context, &error->super.super);
+}
+
 void beacon_exception_scannerError(beacon_context_t *context, beacon_ScannerToken_t *token)
 {
     (void)token;

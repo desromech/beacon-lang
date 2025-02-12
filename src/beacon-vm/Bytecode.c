@@ -113,7 +113,7 @@ void beacon_BytecodeCodeBuilder_jumpIfFalse(beacon_context_t *context, beacon_By
 
 uint8_t beacon_BytecodeCodeBuilder_extendArgumentsIfNeeded(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, size_t argumentCount)
 {
-    assert(argumentCount <= 0xFF);
+    BeaconAssert(context, argumentCount <= 0xFF);
     if(argumentCount <= 0xF)
         return (argumentCount << 4);
 
@@ -185,9 +185,9 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
 {
     (void)selector;
     beacon_BytecodeCode_t *code = method->bytecodeImplementation;
-    assert(beacon_decodeSmallInteger(code->argumentCount) == (intptr_t)argumentCount);
+    BeaconAssert(context, beacon_decodeSmallInteger(code->argumentCount) == (intptr_t)argumentCount);
     intptr_t temporaryCount = beacon_decodeSmallInteger(code->temporaryCount);
-    assert(temporaryCount >= 0);
+    BeaconAssert(context, temporaryCount >= 0);
 
     uint32_t pc = 0;
     uint8_t *bytecodes = code->bytecodes->elements;
@@ -228,7 +228,7 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
         uint8_t instruction = bytecodes[pc++];
 
         uint8_t instructionArgumentCount = (extendedArgumentCount << 4) | beacon_getBytecodeArgumentCount(instruction);
-        assert(instructionArgumentCount <= BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS);
+        BeaconAssert(context, instructionArgumentCount <= BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS);
         beacon_BytecodeOpcode_t opcode = beacon_getBytecodeOpcode(instruction);
 
         // Special opcode.
@@ -245,7 +245,7 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
         {
             beacon_BytecodeValue_t bytecodeResultTemporary = bytecodes[pc++];
             bytecodeResultTemporary |= (bytecodes[pc++]) << 8;
-            assert(beacon_BytecodeValue_getType(bytecodeResultTemporary) == BytecodeArgumentTypeTemporary);
+            BeaconAssert(context, beacon_BytecodeValue_getType(bytecodeResultTemporary) == BytecodeArgumentTypeTemporary);
             resultTemporaryIndex = beacon_BytecodeValue_getIndex(bytecodeResultTemporary);
         }
 
@@ -262,18 +262,18 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
             switch(beacon_BytecodeValue_getType(bytecodeArgument))
             {
             case BytecodeArgumentTypeArgument:
-                assert(bytecodeArgumentIndex <= argumentCount);
+                BeaconAssert(context, bytecodeArgumentIndex <= argumentCount);
                 if(bytecodeArgumentIndex == 0)
                     *currentDecodedArgument = receiver;
                 else
                     *currentDecodedArgument = arguments[bytecodeArgumentIndex - 1];
                 break;
             case BytecodeArgumentTypeLiteral:
-                assert(bytecodeArgumentIndex <= code->literals->super.super.super.super.super.header.slotCount);
+                BeaconAssert(context, bytecodeArgumentIndex <= code->literals->super.super.super.super.super.header.slotCount);
                 *currentDecodedArgument = bytecodeArgumentIndex == 0 ? 0 : code->literals->elements[bytecodeArgumentIndex - 1];
                 break;
             case BytecodeArgumentTypeTemporary:
-                assert(bytecodeArgumentIndex <= temporaryCount);
+                BeaconAssert(context, bytecodeArgumentIndex <= temporaryCount);
                 *currentDecodedArgument = bytecodeArgumentIndex == 0 ? 0 : temporaryStorage[bytecodeArgumentIndex - 1];
                 break;
             case BytecodeArgumentTypeJumpDelta:
@@ -294,15 +294,15 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
             // Nothing is required here.
             break;
         case BeaconBytecodeSendMessage:
-            assert(writesToTemporary);
+            BeaconAssert(context, writesToTemporary);
             instructionExecutionResult = beacon_performWithArguments(context, bytecodeDecodedArguments[0], bytecodeDecodedArguments[1], instructionArgumentCount - 2, bytecodeDecodedArguments + 2);
             break;
         case BeaconBytecodeStoreValue:
-            assert(writesToTemporary);
+            BeaconAssert(context, writesToTemporary);
             instructionExecutionResult = bytecodeDecodedArguments[0];
             break;
         case BeaconBytecodeLocalReturn:
-            assert(instructionArgumentCount == 1);
+            BeaconAssert(context, instructionArgumentCount == 1);
             stackFrameRecord.bytecodeMethodStackRecord.returnResultValue = bytecodeDecodedArguments[0];
             beacon_popStackFrameRecord(&stackFrameRecord);
             return stackFrameRecord.bytecodeMethodStackRecord.returnResultValue;

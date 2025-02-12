@@ -50,13 +50,13 @@ beacon_ScannerToken_t *parserState_peek(beacon_parserState_t *state, int offset)
 
 void parserState_advance(beacon_parserState_t *state)
 {
-    assert(state->position < state->tokenCount);
+    BeaconAssert(state->context, state->position < state->tokenCount);
     ++state->position;
 }
 
 beacon_ScannerToken_t *parserState_next(beacon_parserState_t *state)
 {
-    assert(state->position < state->tokenCount);
+    BeaconAssert(state->context, state->position < state->tokenCount);
     beacon_ScannerToken_t *token = (beacon_ScannerToken_t*)beacon_ArrayList_at(state->context, state->tokens, state->position);
     ++state->position;
     return token;
@@ -98,7 +98,7 @@ void parserState_restore(beacon_parserState_t *state, size_t memento)
 
 beacon_SourcePosition_t *parserState_previousSourcePosition(beacon_parserState_t *state)
 {
-    assert(state->position > 1);
+    BeaconAssert(state->context, state->position > 1);
     beacon_ScannerToken_t *token = (beacon_ScannerToken_t *)beacon_ArrayList_at(state->context, state->tokens, state->position - 1);
     return token->sourcePosition;
 }
@@ -111,14 +111,14 @@ beacon_SourcePosition_t *parserState_currentSourcePosition(beacon_parserState_t 
         return token->sourcePosition;
     }
 
-    assert(state->tokenCount > 0);
+    BeaconAssert(state->context, state->tokenCount > 0);
     beacon_ScannerToken_t *token = (beacon_ScannerToken_t *)beacon_ArrayList_at(state->context, state->tokens, state->tokenCount);
     return token->sourcePosition;
 }
 
 beacon_SourcePosition_t *parserState_sourcePositionFrom(beacon_parserState_t *state, size_t startingPosition)
 {
-    assert(startingPosition <= state->tokenCount);
+    BeaconAssert(state->context, startingPosition <= state->tokenCount);
     beacon_ScannerToken_t *startingToken = (beacon_ScannerToken_t *)beacon_ArrayList_at(state->context, state->tokens, startingPosition);
     beacon_SourcePosition_t *startSourcePosition = startingToken->sourcePosition;
     if (state->position > 0)
@@ -189,7 +189,7 @@ intptr_t parser_parseIntegerConstant(beacon_ScannerToken_t *token)
 beacon_ParseTreeNode_t *parser_parseLiteralInteger(beacon_parserState_t *state)
 {
     beacon_ScannerToken_t *token = parserState_next(state);
-    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenInteger);
+    BeaconAssert(state->context,beacon_decodeSmallInteger(token->kind) == BeaconTokenInteger);
 
     intptr_t parsedConstant = parser_parseIntegerConstant(token);
     beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
@@ -201,7 +201,7 @@ beacon_ParseTreeNode_t *parser_parseLiteralInteger(beacon_parserState_t *state)
 beacon_ParseTreeNode_t *parser_parseLiteralFloat(beacon_parserState_t *state)
 {
     beacon_ScannerToken_t *token = parserState_next(state);
-    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenInteger);
+    BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenInteger);
 
     char *literalBuffer = calloc(1, beacon_decodeSmallInteger(token->textSize) + 1);
     memcpy(literalBuffer, token->sourcePosition->sourceCode->text->data, token->textSize);
@@ -216,7 +216,7 @@ beacon_ParseTreeNode_t *parser_parseLiteralFloat(beacon_parserState_t *state)
 beacon_ParseTreeNode_t *parser_parseLiteralCharacter(beacon_parserState_t *state)
 {
     beacon_ScannerToken_t *token = parserState_next(state);
-    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenCharacter);
+    BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenCharacter);
 
     char parsedConstant = token->sourcePosition->sourceCode->text->data[beacon_decodeSmallInteger(token->textPosition) + 1];
     beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
@@ -228,7 +228,7 @@ beacon_ParseTreeNode_t *parser_parseLiteralCharacter(beacon_parserState_t *state
 beacon_ParseTreeNode_t *parser_parseLiteralString(beacon_parserState_t *state)
 {
     beacon_ScannerToken_t *token = parserState_next(state);
-    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenString);
+    BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenString);
 
     const char *textData = (const char*)token->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(token->textPosition);
     size_t textDataSize = beacon_decodeSmallInteger(token->textSize);
@@ -325,7 +325,7 @@ beacon_ParseTreeNode_t *parser_parseLiteralStringSymbol(beacon_ScannerToken_t *t
 beacon_ParseTreeNode_t *parser_parseLiteralSymbol(beacon_parserState_t *state)
 {
     beacon_ScannerToken_t *token = parserState_next(state);
-    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenSymbol);
+    BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenSymbol);
 
     const char *textData = (const char*)token->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(token->textPosition);
     intptr_t textDataSize = beacon_decodeSmallInteger(token->textSize);
@@ -366,7 +366,7 @@ beacon_ParseTreeNode_t *parser_parseLiteral(beacon_parserState_t *state)
 beacon_ParseTreeNode_t *parser_parseIdentifier(beacon_parserState_t *state)
 {
     beacon_ScannerToken_t *token = parserState_next(state);
-    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenIdentifier);
+    BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenIdentifier);
 
     const char *textData = (const char*)token->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(token->textPosition);
     intptr_t textDataSize = beacon_decodeSmallInteger(token->textSize);
@@ -385,7 +385,7 @@ beacon_ParseTreeNode_t *parser_parseIdentifier(beacon_parserState_t *state)
 beacon_ParseTreeNode_t *parser_parseParenthesis(beacon_parserState_t *state)
 {
     beacon_ScannerToken_t *token = parserState_next(state);
-    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenLeftParent);
+    BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenLeftParent);
     
     beacon_ParseTreeNode_t *expression = parser_parseSequenceUntilEndOrDelimiter(state, BeaconTokenRightParent);
     expression = parserState_expectAddingErrorToNode(state, BeaconTokenRightParent, expression);
@@ -432,7 +432,7 @@ beacon_ParseTreeNode_t *parser_parseBlockClosure(beacon_parserState_t *state)
 {
     size_t startingPosition = state->position;
     beacon_ScannerToken_t *token = parserState_next(state);
-    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenLeftBracket);
+    BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenLeftBracket);
 
     beacon_ArrayList_t *arguments = beacon_ArrayList_new(state->context);
     bool hasArguments = false;
@@ -441,7 +441,7 @@ beacon_ParseTreeNode_t *parser_parseBlockClosure(beacon_parserState_t *state)
         hasArguments = true;
         parserState_advance(state);
         beacon_ScannerToken_t *argumentNameToken = parserState_next(state);
-        assert(beacon_decodeSmallInteger(argumentNameToken->kind) == BeaconTokenIdentifier);
+        BeaconAssert(state->context, beacon_decodeSmallInteger(argumentNameToken->kind) == BeaconTokenIdentifier);
         
         const char *textData = (const char*)argumentNameToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(argumentNameToken->textPosition);
         intptr_t textDataSize = beacon_decodeSmallInteger(argumentNameToken->textSize);
@@ -484,7 +484,7 @@ beacon_ParseTreeNode_t *parser_parseMethodBlock(beacon_parserState_t *state)
 {
     size_t startingPosition = state->position;
     beacon_ScannerToken_t *token = parserState_next(state);
-    assert(beacon_decodeSmallInteger(token->kind) == BeaconTokenBangLeftBracket);
+    BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenBangLeftBracket);
 
 
     beacon_ParseTreeNode_t *methodNode = parser_parseMethodSyntaxWithDelimiter(state, BeaconTokenRightBracket);
@@ -840,7 +840,7 @@ beacon_ParseTreeMethodNode_t *parser_parseMethodHeader(beacon_parserState_t *sta
         beacon_Symbol_t *selector = beacon_internStringWithSize(state->context, (size_t)beacon_decodeSmallInteger(operatorToken->textSize), (char*)operatorToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(operatorToken->textPosition));
 
         beacon_ScannerToken_t *argumentNameToken = parserState_next(state);
-        assert(beacon_decodeSmallInteger(argumentNameToken->kind) == BeaconTokenIdentifier);
+        BeaconAssert(state->context, beacon_decodeSmallInteger(argumentNameToken->kind) == BeaconTokenIdentifier);
         
         const char *textData = (const char*)argumentNameToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(argumentNameToken->textPosition);
         intptr_t textDataSize = beacon_decodeSmallInteger(argumentNameToken->textSize);
@@ -873,7 +873,7 @@ beacon_ParseTreeMethodNode_t *parser_parseMethodHeader(beacon_parserState_t *sta
         beacon_ArrayList_add(state->context, keywords, (beacon_oop_t)keywordToken);
 
         beacon_ScannerToken_t *argumentNameToken = parserState_next(state);
-        assert(beacon_decodeSmallInteger(argumentNameToken->kind) == BeaconTokenIdentifier);
+        BeaconAssert(state->context, beacon_decodeSmallInteger(argumentNameToken->kind) == BeaconTokenIdentifier);
         
         const char *textData = (const char*)argumentNameToken->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(argumentNameToken->textPosition);
         intptr_t textDataSize = beacon_decodeSmallInteger(argumentNameToken->textSize);
