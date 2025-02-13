@@ -770,6 +770,18 @@ beacon_ParseTreeNode_t *parser_assignmentExpression(beacon_parserState_t *state)
 
 beacon_ParseTreeNode_t *parser_parseExpression(beacon_parserState_t *state)
 {
+    if (parserState_peekKind(state, 0) == BeaconTokenCaret)
+    {
+        size_t startingPosition = state->position;
+        parserState_advance(state);
+        beacon_ParseTreeNode_t *resultValue = parser_assignmentExpression(state);
+
+        beacon_ParseTreeReturnNode_t *returnNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeReturnNodeClass, sizeof(beacon_ParseTreeReturnNode_t), BeaconObjectKindPointers);
+        returnNode->super.sourcePosition = parserState_sourcePositionFrom(state, startingPosition);
+        returnNode->expression = resultValue;
+        return &returnNode->super;
+
+    }
     return parser_assignmentExpression(state);
 }
 

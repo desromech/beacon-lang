@@ -466,6 +466,10 @@ beacon_ScannerToken_t *beacon_scanSingleToken(beacon_scannerState_t *state)
     case '.':
         scannerState_advance(state, 1);
         return scannerState_makeTokenStartingFrom(state, BeaconTokenDot, &initialState);
+    case '^':
+        scannerState_advance(state, 1);
+        return scannerState_makeTokenStartingFrom(state, BeaconTokenCaret, &initialState);
+
     case '|':
         scannerState_advance(state, 1);
         if (scanner_isOperatorCharacter(scannerState_peek(state, 0)))
