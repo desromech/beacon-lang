@@ -13,7 +13,8 @@ void beacon_exception_scannerError(beacon_context_t *context, beacon_ScannerToke
 void beacon_exception_subclassResponsibility(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector);
 void beacon_exception_subclassResponsibility(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector);
 
-#define BeaconAssertStringify(s) #s
+#define BeaconAssertStringify_(s) #s
+#define BeaconAssertStringify(s) BeaconAssertStringify_(s)
 #define BeaconAssert(context, x) \
     if(!(x)) \
         beacon_exception_assertionFailure(context, "Assertion Failure " #x" in " __FILE__ ":" BeaconAssertStringify(__LINE__))

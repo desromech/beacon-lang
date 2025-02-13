@@ -437,6 +437,79 @@ static beacon_oop_t beacon_ObjectPrimitive_yourself(beacon_context_t *context, b
     return receiver;
 }
 
+static beacon_oop_t beacon_ObjectPrimitive_basicSize(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    if(beacon_isImmediate(receiver))
+        return beacon_encodeSmallInteger(0);
+
+    beacon_Behavior_t *class = beacon_getClass(context, receiver);
+    intptr_t fixedFieldCount = beacon_decodeSmallInteger(class->instSize);
+    beacon_ObjectHeader_t *header = (beacon_ObjectHeader_t*)receiver;
+    intptr_t variableFieldCount = header->slotCount - fixedFieldCount;
+    return beacon_encodeSmallInteger(variableFieldCount);
+}
+
+static beacon_oop_t beacon_ObjectPrimitive_basicAt(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, !beacon_isImmediate(receiver));
+    BeaconAssert(context, beacon_isImmediate(arguments[0]));
+    intptr_t index = beacon_decodeSmallInteger(arguments[0]);
+
+    beacon_Behavior_t *class = beacon_getClass(context, receiver);
+    intptr_t fixedFieldCount = beacon_decodeSmallInteger(class->instSize);
+
+    beacon_ObjectHeader_t *header = (beacon_ObjectHeader_t*)receiver;
+    intptr_t variableFieldCount = header->slotCount - fixedFieldCount;
+
+    // TODO: Use correct kind of exception here.
+    BeaconAssert(context, 1 <= index && index <= variableFieldCount);
+    if(header->objectKind == BeaconObjectKindBytes)
+    {
+        uint8_t *data = (uint8_t *)(header + 1);
+        uint8_t value = data[index - 1];
+        return beacon_encodeSmallInteger(value);
+    }
+    else
+    {
+        beacon_oop_t *data = (beacon_oop_t *)(header + 1);
+        beacon_oop_t value = data[index - 1];
+        return value;
+    }
+}
+
+static beacon_oop_t beacon_ObjectPrimitive_basicAtPut(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 2);
+    BeaconAssert(context, !beacon_isImmediate(receiver));
+    BeaconAssert(context, beacon_isImmediate(arguments[0]));
+    intptr_t index = beacon_decodeSmallInteger(arguments[0]);
+    beacon_oop_t value = arguments[1];
+
+    beacon_Behavior_t *class = beacon_getClass(context, receiver);
+    intptr_t fixedFieldCount = beacon_decodeSmallInteger(class->instSize);
+
+    beacon_ObjectHeader_t *header = (beacon_ObjectHeader_t*)receiver;
+    intptr_t variableFieldCount = header->slotCount - fixedFieldCount;
+
+    // TODO: Use correct kind of exception here.
+    BeaconAssert(context, 1 <= index && index <= variableFieldCount);
+    if(header->objectKind == BeaconObjectKindBytes)
+    {
+        BeaconAssert(context, beacon_isImmediate(value));
+        uint8_t *data = (uint8_t *)(header + 1);
+        data[index - 1] = beacon_decodeSmallInteger(value);
+        return value;
+    }
+    else
+    {
+        beacon_oop_t *data = (beacon_oop_t *)(header + 1);
+        data[index - 1] = value;
+        return value;
+    }
+}
 static beacon_oop_t beacon_ObjectPrimitive_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)receiver;
@@ -570,6 +643,9 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.protoObjectClass, "~~", 1, beacon_ProtoObjectPrimitive_identityNotEquals);
 
     beacon_addPrimitiveToClass(context, context->classes.objectClass, "yourself", 0, beacon_ObjectPrimitive_yourself);
+    beacon_addPrimitiveToClass(context, context->classes.objectClass, "basicSize", 0, beacon_ObjectPrimitive_basicSize);
+    beacon_addPrimitiveToClass(context, context->classes.objectClass, "basicAt:", 0, beacon_ObjectPrimitive_basicAt);
+    beacon_addPrimitiveToClass(context, context->classes.objectClass, "basicAt:put:", 0, beacon_ObjectPrimitive_basicAtPut);
 
     beacon_addPrimitiveToClass(context, context->classes.objectClass, "printString", 0, beacon_ObjectPrimitive_printString);
     beacon_addPrimitiveToClass(context, context->classes.trueClass, "printString", 0, beacon_True_printString);

@@ -126,7 +126,7 @@ void beacon_garbageCollect_markPhase(beacon_context_t *context)
     while(context->heap->markingStackSize > 0)
     {
         beacon_oop_t oopToExpand = context->heap->markingStack[--context->heap->markingStackSize];
-        beacon_oop_t class = beacon_getClass(context, oopToExpand);
+        beacon_oop_t class = (beacon_oop_t)beacon_getClass(context, oopToExpand);
         beacon_heap_pushReachableObject(heap, class);
 
         if(beacon_isImmediate(oopToExpand))
