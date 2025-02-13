@@ -531,6 +531,36 @@ static beacon_oop_t beacon_SmallInteger_integerModulo(beacon_context_t *context,
     return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) % beacon_decodeSmallInteger(arguments[0]));
 }
 
+static beacon_oop_t beacon_Behavior_basicNew(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    beacon_Behavior_t *behavior = (beacon_Behavior_t *)receiver;
+    size_t instanceSize = sizeof(beacon_ObjectHeader_t) + beacon_decodeSmallInteger(behavior->instSize);
+    beacon_ObjectKind_t objectKind = beacon_decodeSmallInteger(behavior->objectKind);
+
+    beacon_oop_t instance = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, behavior, instanceSize, objectKind);
+    return instance;
+}
+
+static beacon_oop_t beacon_Behavior_basicNewWithSize(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    BeaconAssert(context, argumentCount == 1);
+    intptr_t extraSlotCount = beacon_decodeSmallInteger(arguments[0]);
+
+    beacon_Behavior_t *behavior = (beacon_Behavior_t *)receiver;
+    size_t instanceSize = sizeof(beacon_ObjectHeader_t) + beacon_decodeSmallInteger(behavior->instSize);
+    beacon_ObjectKind_t objectKind = beacon_decodeSmallInteger(behavior->objectKind);
+
+    intptr_t extraSlotsSize = extraSlotCount;
+    if(objectKind != BeaconObjectKindBytes)
+        extraSlotsSize *= sizeof(beacon_oop_t);
+
+    beacon_oop_t instance = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, behavior, instanceSize + extraSlotsSize, objectKind);
+    return instance;
+}
 
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
 {
@@ -554,4 +584,7 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "*", 1, beacon_SmallInteger_times);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "//", 1, beacon_SmallInteger_integerDivision);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "\\", 1, beacon_SmallInteger_integerModulo);
+
+    beacon_addPrimitiveToClass(context, context->classes.behaviorClass, "basicNew", 0, beacon_Behavior_basicNew);
+    beacon_addPrimitiveToClass(context, context->classes.behaviorClass, "basicNew:", 1, beacon_Behavior_basicNewWithSize);
 }

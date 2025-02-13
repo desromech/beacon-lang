@@ -682,9 +682,10 @@ beacon_ParseTreeNode_t *parser_parseCascadedMessage(beacon_parserState_t *state)
     {
         beacon_ScannerToken_t *keywordToken = (beacon_ScannerToken_t*)beacon_ArrayList_at(state->context, keywords, i);
         intptr_t keywordSize = beacon_decodeSmallInteger(keywordToken->textSize);
+        intptr_t keywordPosition = beacon_decodeSmallInteger(keywordToken->textPosition);
         for(intptr_t j = 0; j < keywordSize; ++j)
         {
-            char c = keywordToken->sourcePosition->sourceCode->text->data[j];
+            char c = keywordToken->sourcePosition->sourceCode->text->data[keywordPosition + j];
             selectorString->data[destIndex++] = c;
         }
     }
@@ -894,9 +895,10 @@ beacon_ParseTreeMethodNode_t *parser_parseMethodHeader(beacon_parserState_t *sta
     {
         beacon_ScannerToken_t *keywordToken = (beacon_ScannerToken_t*)beacon_ArrayList_at(state->context, keywords, i);
         intptr_t keywordSize = beacon_decodeSmallInteger(keywordToken->textSize);
+        intptr_t keywordPosition = beacon_decodeSmallInteger(keywordToken->textPosition);
         for(intptr_t j = 0; j < keywordSize; ++j)
         {
-            char c = keywordToken->sourcePosition->sourceCode->text->data[j];
+            char c = keywordToken->sourcePosition->sourceCode->text->data[keywordPosition + j];
             selectorString->data[destIndex++] = c;
         }
     }

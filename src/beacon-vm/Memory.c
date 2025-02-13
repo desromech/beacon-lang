@@ -246,8 +246,8 @@ void beacon_memoryHeapSafepoint(beacon_context_t *context)
         return;
 
     // Check the GC activation policy.
-    size_t beforeGC = heap->allocatedByteCount;
-    size_t oldTrigger = heap->gcTriggerLimit;
+    //size_t beforeGC = heap->allocatedByteCount;
+    //size_t oldTrigger = heap->gcTriggerLimit;
     if(heap->allocatedByteCount <= heap->gcTriggerLimit)
         return;
 
@@ -261,7 +261,7 @@ void beacon_memoryHeapSafepoint(beacon_context_t *context)
         heap->gcTriggerLimit = afterGC*2;
 
     //printf("Garbage Collection before %zu - %zu after. Old trigger %zu NewTrigger %zu.\n", beforeGC, afterGC, oldTrigger, heap->gcTriggerLimit);
-}
+}  
 
 void *beacon_allocateObject(beacon_MemoryHeap_t *heap, size_t size, beacon_ObjectKind_t kind)
 {
