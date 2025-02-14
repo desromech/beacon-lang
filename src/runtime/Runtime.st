@@ -1,0 +1,5 @@
+| filesToLoad |
+
+"filesToLoad := #(
+    'Object.st'
+)."

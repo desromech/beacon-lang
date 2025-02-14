@@ -9,17 +9,17 @@ initialize
 ].
 
 Object ![
-    size
+size
     ^ self basicSize
 ].
 
 Object ![
-    at: index
+at: index
     ^ self basicAt: index
 ].
 
 Object ![
-    at: index put: value
+at: index put: value
     ^ self basicAt: index put: value
 ].
 
