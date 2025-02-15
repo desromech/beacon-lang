@@ -128,7 +128,8 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "arguments", "temporaries", "literals", "bytecodes", NULL);
     context->classes.compiledCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "CompiledCode", sizeof(beacon_CompiledCode_t), BeaconObjectKindPointers,
         "argumentCount",  "nativeImplementation", "bytecodeImplementation", NULL);
-    context->classes.compiledBlockClass = beacon_context_createClassAndMetaclass(context, context->classes.compiledCodeClass, "CompiledBlock", sizeof(beacon_CompiledBlock_t), BeaconObjectKindPointers, NULL);
+    context->classes.compiledBlockClass = beacon_context_createClassAndMetaclass(context, context->classes.compiledCodeClass, "CompiledBlock", sizeof(beacon_CompiledBlock_t), BeaconObjectKindPointers,
+        "captureCount", NULL);
     context->classes.compiledMethodClass = beacon_context_createClassAndMetaclass(context, context->classes.compiledCodeClass, "CompiledMethod", sizeof(beacon_CompiledMethod_t), BeaconObjectKindPointers,
         "name", NULL);
     context->classes.messageClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Message", sizeof(beacon_Message_t), BeaconObjectKindPointers,
@@ -188,6 +189,9 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "parent", "dictionary", NULL);
     context->classes.lexicalCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "LexicalCompilationEnvironment", sizeof(beacon_LexicalCompilationEnvironment_t), BeaconObjectKindPointers,
         "parent", "dictionary", NULL);
+    context->classes.blockClosureCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "BlockClosureCompilationEnvironment", sizeof(beacon_BlockClosureCompilationEnvironment_t), BeaconObjectKindPointers,
+        "parent", "captureList", "dictionary", NULL);
+
     context->classes.methodCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "MethodCompilationEnvironment", sizeof(beacon_MethodCompilationEnvironment_t), BeaconObjectKindPointers,
         "parent", "dictionary", NULL);
     context->classes.behaviorCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "BehaviorCompilationEnvironment", sizeof(beacon_BehaviorCompilationEnvironment_t), BeaconObjectKindPointers,

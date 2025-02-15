@@ -140,6 +140,7 @@ typedef struct beacon_CompiledMethod_s
 typedef struct beacon_CompiledBlock_s
 {
     beacon_CompiledCode_t super;
+    beacon_oop_t captureCount;
 } beacon_CompiledBlock_t;
 
 typedef struct beacon_Message_s
@@ -495,6 +496,14 @@ typedef struct beacon_LexicalCompilationEnvironment_s
     beacon_AbstractCompilationEnvironment_t *parent;
     beacon_MethodDictionary_t *dictionary;
 } beacon_LexicalCompilationEnvironment_t;
+
+typedef struct beacon_BlockClosureCompilationEnvironment_s
+{
+    beacon_AbstractCompilationEnvironment_t super;
+    beacon_AbstractCompilationEnvironment_t *parent;
+    beacon_ArrayList_t *captureList;
+    beacon_MethodDictionary_t *dictionary;
+} beacon_BlockClosureCompilationEnvironment_t;
 
 typedef struct beacon_MethodCompilationEnvironment_s
 {
