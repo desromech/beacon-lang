@@ -77,6 +77,7 @@ struct beacon_context_s
         beacon_Behavior_t *abstractCompilationEnvironmentClass;
         beacon_Behavior_t *emptyCompilationEnvironmentClass;
         beacon_Behavior_t *systemCompilationEnvironmentClass;
+        beacon_Behavior_t *fileCompilationEnvironmentClass;
         beacon_Behavior_t *lexicalCompilationEnvironmentClass;
         beacon_Behavior_t *methodCompilationEnvironmentClass;
         beacon_Behavior_t *behaviorCompilationEnvironmentClass;

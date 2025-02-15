@@ -115,6 +115,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.abstractCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AbstractCompilationEnvironment", sizeof(beacon_AbstractCompilationEnvironment_t), BeaconObjectKindPointers);
     context->classes.emptyCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "EmptyCompilationEnvironment", sizeof(beacon_EmptyCompilationEnvironment_t), BeaconObjectKindPointers);
     context->classes.systemCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "SystemCompilationEnvironment", sizeof(beacon_SystemCompilationEnvironment_t), BeaconObjectKindPointers);
+    context->classes.fileCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "FileCompilationEnvironment", sizeof(beacon_FileCompilationEnvironment_t), BeaconObjectKindPointers);
     context->classes.lexicalCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "LexicalCompilationEnvironment", sizeof(beacon_LexicalCompilationEnvironment_t), BeaconObjectKindPointers);
     context->classes.methodCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "MethodCompilationEnvironment", sizeof(beacon_MethodCompilationEnvironment_t), BeaconObjectKindPointers);
     context->classes.behaviorCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "BehaviorCompilationEnvironment", sizeof(beacon_BehaviorCompilationEnvironment_t), BeaconObjectKindPointers);
@@ -552,6 +553,13 @@ static beacon_oop_t beacon_Class_printString(beacon_context_t *context, beacon_o
     return (beacon_oop_t)beacon_importCString(context, "A Class");
 }
 
+static beacon_oop_t beacon_String_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 0);
+    return receiver;
+}
+
+
 static beacon_oop_t beacon_SmallInteger_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)arguments;
@@ -652,6 +660,7 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.falseClass, "printString", 0, beacon_False_printString);
     beacon_addPrimitiveToClass(context, context->classes.undefinedObjectClass, "printString", 0, beacon_UndefinedObject_printString);
     beacon_addPrimitiveToClass(context, context->classes.classClass, "printString", 0, beacon_Class_printString);
+    beacon_addPrimitiveToClass(context, context->classes.stringClass, "printString", 0, beacon_String_printString);
 
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "printString", 0, beacon_SmallInteger_printString);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "negated", 0, beacon_SmallInteger_negated);

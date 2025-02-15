@@ -463,6 +463,13 @@ typedef struct beacon_SystemCompilationEnvironment_s
     beacon_MethodDictionary_t *systemDictionary;
 } beacon_SystemCompilationEnvironment_t;
 
+typedef struct beacon_FileCompilationEnvironment_s
+{
+    beacon_AbstractCompilationEnvironment_t super;
+    beacon_AbstractCompilationEnvironment_t *parent;
+    beacon_MethodDictionary_t *dictionary;
+} beacon_FileCompilationEnvironment_t;
+
 typedef struct beacon_LexicalCompilationEnvironment_s
 {
     beacon_AbstractCompilationEnvironment_t super;
