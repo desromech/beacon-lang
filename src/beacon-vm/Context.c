@@ -162,6 +162,8 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "storage", "valueToStore", NULL);
     context->classes.parseTreeArrayNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeArrayNode", sizeof(beacon_ParseTreeArrayNode_t), BeaconObjectKindPointers,
         "elements", NULL);
+    context->classes.parseTreeByteArrayNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeByteArrayNode", sizeof(beacon_ParseTreeByteArrayNode_t), BeaconObjectKindPointers,
+        "elements", NULL);
     context->classes.parseTreeLiteralArrayNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeLiteralArrayNode", sizeof(beacon_ParseTreeLiteralArrayNode_t), BeaconObjectKindPointers,
         "elements", NULL);
     context->classes.parseTreeArgumentDefinitionNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeArgumentDefinitionNode", sizeof(beacon_ParseTreeArgumentDefinitionNode_t), BeaconObjectKindPointers,

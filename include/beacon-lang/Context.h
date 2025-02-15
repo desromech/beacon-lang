@@ -68,6 +68,7 @@ struct beacon_context_s
         beacon_Behavior_t *parseTreeReturnNodeClass;
         beacon_Behavior_t *parseTreeAssignmentNodeClass;
         beacon_Behavior_t *parseTreeArrayNodeClass;
+        beacon_Behavior_t *parseTreeByteArrayNodeClass;
         beacon_Behavior_t *parseTreeLiteralArrayNodeClass;
         beacon_Behavior_t *parseTreeArgumentDefinitionNodeClass;
         beacon_Behavior_t *parseTreeLocalVariableDefinitionNodeClass;

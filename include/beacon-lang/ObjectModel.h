@@ -444,6 +444,12 @@ typedef struct beacon_ParseTreeArrayNode_s
     beacon_Array_t *elements;
 } beacon_ParseTreeArrayNode_t;
 
+typedef struct beacon_ParseTreeByteArrayNode_s
+{
+    beacon_ParseTreeNode_t super;
+    beacon_Array_t *elements;
+} beacon_ParseTreeByteArrayNode_t;
+
 typedef struct beacon_ParseTreeLiteralArrayNode_s
 {
     beacon_ParseTreeNode_t super;
