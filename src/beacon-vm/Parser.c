@@ -18,6 +18,8 @@ typedef struct beacon_parserState_s
 beacon_ParseTreeNode_t *parser_parseExpression(beacon_parserState_t *state);
 beacon_ParseTreeNode_t *parser_parseSequenceUntilEndOrDelimiter(beacon_parserState_t *state, beacon_TokenKind_t delimiter);
 beacon_ParseTreeNode_t *parser_parseMethodSyntaxWithDelimiter(beacon_parserState_t *state, beacon_TokenKind_t delimiter);
+beacon_ParseTreeNode_t *parser_parseLiteralArrayElement(beacon_parserState_t *state);
+bool parser_isBinaryExpressionOperator(beacon_TokenKind_t kind);
 
 bool parserState_atEnd(beacon_parserState_t *state)
 {
@@ -343,6 +345,24 @@ beacon_ParseTreeNode_t *parser_parseLiteralSymbol(beacon_parserState_t *state)
     return &literal->super;
 }
 
+beacon_ParseTreeNode_t *parser_parseLiteralKeyword(beacon_parserState_t *state)
+{
+    beacon_ScannerToken_t *token = parserState_next(state);
+    BeaconAssert(state->context,
+        beacon_decodeSmallInteger(token->kind) == BeaconTokenKeyword ||
+        beacon_decodeSmallInteger(token->kind) == BeaconTokenMultiKeyword ||
+        parser_isBinaryExpressionOperator(beacon_decodeSmallInteger(token->kind)));
+
+    const char *textData = (const char*)token->sourcePosition->sourceCode->text->data + beacon_decodeSmallInteger(token->textPosition);
+    intptr_t textDataSize = beacon_decodeSmallInteger(token->textSize);
+
+    beacon_Symbol_t *symbolLiteral = beacon_internStringWithSize(state->context, textDataSize, textData);
+
+    beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
+    literal->super.sourcePosition = token->sourcePosition;
+    literal->value = (beacon_oop_t)symbolLiteral;
+    return &literal->super;
+}
 
 beacon_ParseTreeNode_t *parser_parseLiteral(beacon_parserState_t *state)
 {
@@ -522,6 +542,47 @@ beacon_ParseTreeNode_t *parser_parseByteArray(beacon_parserState_t *state)
     return expression;
 }
 
+beacon_ParseTreeNode_t *parser_parseLiteralArray(beacon_parserState_t *state)
+{
+    size_t startingPosition = state->position;
+    beacon_ScannerToken_t *token = parserState_next(state);
+    BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenLiteralArrayStart ||
+                                beacon_decodeSmallInteger(token->kind) == BeaconTokenLeftParent);
+
+    beacon_ArrayList_t *literalArrayElements = beacon_ArrayList_new(state->context);
+    while(!parserState_atEnd(state) && parserState_peekKind(state, 0) != BeaconTokenRightParent)
+    {   
+        beacon_ParseTreeNode_t *element = parser_parseLiteralArrayElement(state);
+        beacon_ArrayList_add(state->context, literalArrayElements, (beacon_oop_t)element);
+    }
+
+    beacon_ParseTreeLiteralArrayNode_t *literalArrayNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralArrayNodeClass, sizeof(beacon_ParseTreeLiteralArrayNode_t), BeaconObjectKindPointers);
+    literalArrayNode->super.sourcePosition = parserState_sourcePositionFrom(state, startingPosition);
+    literalArrayNode->elements = beacon_ArrayList_asArray(state->context, literalArrayElements);
+
+    beacon_ParseTreeNode_t *expression = parserState_expectAddingErrorToNode(state, BeaconTokenRightParent, &literalArrayNode->super);
+    return expression;
+}
+
+beacon_ParseTreeNode_t *parser_parseLiteralArrayElement(beacon_parserState_t *state)
+{
+    switch (parserState_peekKind(state, 0))
+    {
+    case BeaconTokenIdentifier:
+        return parser_parseIdentifier(state);
+    case BeaconTokenByteArrayStart:
+        return parser_parseByteArray(state);
+    case BeaconTokenKeyword:
+    case BeaconTokenMultiKeyword:
+        return parser_parseLiteralKeyword(state);
+    case BeaconTokenLeftParent:
+    case BeaconTokenLiteralArrayStart:
+        return parser_parseLiteralArray(state);
+    default:
+        return parser_parseLiteral(state);
+    }
+}
+
 beacon_ParseTreeNode_t *parser_parseTerm(beacon_parserState_t *state)
 {
     switch (parserState_peekKind(state, 0))
@@ -538,6 +599,8 @@ beacon_ParseTreeNode_t *parser_parseTerm(beacon_parserState_t *state)
         return parser_parseArray(state);*/
     case BeaconTokenByteArrayStart:
         return parser_parseByteArray(state);
+    case BeaconTokenLiteralArrayStart:
+        return parser_parseLiteralArray(state);
     default:
         return parser_parseLiteral(state);
     }
