@@ -39,6 +39,8 @@ struct beacon_context_s
 
         beacon_Behavior_t *magnitudeClass;
         beacon_Behavior_t *numberClass;
+        beacon_Behavior_t *integerClass;
+        beacon_Behavior_t *floatClass;
         beacon_Behavior_t *smallIntegerClass;
         beacon_Behavior_t *characterClass;
         beacon_Behavior_t *smallFloatClass;

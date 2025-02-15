@@ -253,6 +253,11 @@ typedef struct beacon_Number_s
     beacon_Magnitude_t super;
 } beacon_Number_t;
 
+typedef struct beacon_Integer_s
+{
+    beacon_Magnitude_t super;
+} beacon_Integer_t;
+
 typedef struct beacon_Boolean_s
 {
     beacon_Object_t super;
@@ -275,7 +280,7 @@ typedef struct beacon_UndefinedObject_s
 
 typedef struct beacon_SmallInteger_s
 {
-    beacon_Number_t super;
+    beacon_Integer_t super;
 } beacon_SmallInteger_t;
 
 typedef struct beacon_Character_s
@@ -283,9 +288,14 @@ typedef struct beacon_Character_s
     beacon_Magnitude_t super;
 } beacon_Character_t;
 
-typedef struct beacon_SmallFloat_s
+typedef struct beacon_Float_s
 {
     beacon_Number_t super;
+} beacon_Float_t;
+
+typedef struct beacon_SmallFloat_s
+{
+    beacon_Float_t super;
 } beacon_SmallFloat_t;
 
 typedef struct beacon_SourceCode_s
@@ -311,6 +321,7 @@ typedef struct beacon_SourcePosition_s
 
 typedef struct beacon_ScannerToken_s
 {
+    beacon_Object_t super;
     beacon_oop_t kind;
     beacon_SourcePosition_t *sourcePosition;
     beacon_String_t *errorMessage;

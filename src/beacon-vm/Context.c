@@ -91,12 +91,15 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
 
     // Normal class orders
     context->classes.collectionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Collection", sizeof(beacon_Collection_t), BeaconObjectKindPointers, NULL);
-    context->classes.hashedCollectionClass = beacon_context_createClassAndMetaclass(context, context->classes.collectionClass, "HashedCollection", sizeof(beacon_HashedCollection_t), BeaconObjectKindPointers, NULL);
+    context->classes.hashedCollectionClass = beacon_context_createClassAndMetaclass(context, context->classes.collectionClass, "HashedCollection", sizeof(beacon_HashedCollection_t), BeaconObjectKindPointers,
+        "tally", "array", NULL);
     context->classes.dictionaryClass = beacon_context_createClassAndMetaclass(context, context->classes.hashedCollectionClass, "Dictionary", sizeof(beacon_Dictionary_t), BeaconObjectKindPointers, NULL);
     context->classes.methodDictionaryClass = beacon_context_createClassAndMetaclass(context, context->classes.methodDictionaryClass, "MethodDictionary", sizeof(beacon_MethodDictionary_t), BeaconObjectKindPointers, NULL);
     context->classes.sequenceableCollectionClass = beacon_context_createClassAndMetaclass(context, context->classes.collectionClass, "SequenceableCollection", sizeof(beacon_SequenceableCollection_t), BeaconObjectKindPointers, NULL);
-    context->classes.arrayListClass = beacon_context_createClassAndMetaclass(context, context->classes.sequenceableCollectionClass, "ArrayList", sizeof(beacon_ArrayList_t), BeaconObjectKindPointers, NULL);
-    context->classes.byteArrayListClass = beacon_context_createClassAndMetaclass(context, context->classes.sequenceableCollectionClass, "ByteArrayList", sizeof(beacon_ByteArrayList_t), BeaconObjectKindPointers, NULL);
+    context->classes.arrayListClass = beacon_context_createClassAndMetaclass(context, context->classes.sequenceableCollectionClass, "ArrayList", sizeof(beacon_ArrayList_t), BeaconObjectKindPointers,
+        "array", "size", "capacity", NULL);
+    context->classes.byteArrayListClass = beacon_context_createClassAndMetaclass(context, context->classes.sequenceableCollectionClass, "ByteArrayList", sizeof(beacon_ByteArrayList_t), BeaconObjectKindPointers,
+        "array", "size", "capacity", NULL);
     context->classes.arrayedCollectionClass = beacon_context_createClassAndMetaclass(context, context->classes.sequenceableCollectionClass, "ArrayedCollection", sizeof(beacon_ArrayedCollection_t), BeaconObjectKindPointers, NULL);
     context->classes.arrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "Array", sizeof(beacon_Array_t), BeaconObjectKindPointers, NULL);
     context->classes.byteArrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "ByteArray", sizeof(beacon_ByteArray_t), BeaconObjectKindBytes, NULL);
@@ -110,53 +113,89 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
 
     context->classes.magnitudeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Magnitude", sizeof(beacon_Magnitude_t), BeaconObjectKindPointers, NULL);
     context->classes.numberClass = beacon_context_createClassAndMetaclass(context, context->classes.magnitudeClass, "Number", sizeof(beacon_Number_t), BeaconObjectKindPointers, NULL);
-    context->classes.smallIntegerClass = beacon_context_createClassAndMetaclass(context, context->classes.numberClass, "SmallInteger", sizeof(beacon_SmallInteger_t), BeaconObjectKindImmediate, NULL);
+    context->classes.integerClass = beacon_context_createClassAndMetaclass(context, context->classes.numberClass, "Integer", sizeof(beacon_Integer_t), BeaconObjectKindPointers, NULL);
+    context->classes.smallIntegerClass = beacon_context_createClassAndMetaclass(context, context->classes.integerClass, "SmallInteger", sizeof(beacon_SmallInteger_t), BeaconObjectKindImmediate, NULL);
+    context->classes.floatClass = beacon_context_createClassAndMetaclass(context, context->classes.numberClass, "Float", sizeof(beacon_Float_t), BeaconObjectKindImmediate, NULL);
+    context->classes.smallFloatClass = beacon_context_createClassAndMetaclass(context, context->classes.floatClass, "SmallFloat", sizeof(beacon_SmallFloat_t), BeaconObjectKindImmediate, NULL);
+
     context->classes.characterClass = beacon_context_createClassAndMetaclass(context, context->classes.magnitudeClass, "Character", sizeof(beacon_Character_t), BeaconObjectKindImmediate, NULL);
-    context->classes.smallFloatClass = beacon_context_createClassAndMetaclass(context, context->classes.numberClass, "SmallFloat", sizeof(beacon_SmallFloat_t), BeaconObjectKindImmediate, NULL);
 
     context->classes.nativeCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "NativeCode", sizeof(beacon_NativeCode_t), BeaconObjectKindBytes, NULL);
-    context->classes.bytecodeCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "BytecodeCode", sizeof(beacon_BytecodeCode_t), BeaconObjectKindPointers, NULL);
-    context->classes.bytecodeCodeBuilderClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "BytecodeCodeBuilder", sizeof(beacon_BytecodeCodeBuilder_t), BeaconObjectKindPointers, NULL);
-    context->classes.compiledCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "CompiledCode", sizeof(beacon_CompiledCode_t), BeaconObjectKindPointers, NULL);
+    context->classes.bytecodeCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "BytecodeCode", sizeof(beacon_BytecodeCode_t), BeaconObjectKindPointers,
+        "argumentCount", "temporaryCount", "literals", "bytecodes", NULL);
+    context->classes.bytecodeCodeBuilderClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "BytecodeCodeBuilder", sizeof(beacon_BytecodeCodeBuilder_t), BeaconObjectKindPointers,
+        "arguments", "temporaries", "literals", "bytecodes", NULL);
+    context->classes.compiledCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "CompiledCode", sizeof(beacon_CompiledCode_t), BeaconObjectKindPointers,
+        "argumentCount",  "nativeImplementation", "bytecodeImplementation", NULL);
     context->classes.compiledBlockClass = beacon_context_createClassAndMetaclass(context, context->classes.compiledCodeClass, "CompiledBlock", sizeof(beacon_CompiledBlock_t), BeaconObjectKindPointers, NULL);
-    context->classes.compiledMethodClass = beacon_context_createClassAndMetaclass(context, context->classes.compiledCodeClass, "CompiledMethod", sizeof(beacon_CompiledMethod_t), BeaconObjectKindPointers, NULL);
-    context->classes.messageClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Message", sizeof(beacon_Message_t), BeaconObjectKindPointers, NULL);
+    context->classes.compiledMethodClass = beacon_context_createClassAndMetaclass(context, context->classes.compiledCodeClass, "CompiledMethod", sizeof(beacon_CompiledMethod_t), BeaconObjectKindPointers,
+        "name", NULL);
+    context->classes.messageClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Message", sizeof(beacon_Message_t), BeaconObjectKindPointers,
+        "selector", "arguments", NULL);
 
-    context->classes.sourceCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "SourceCode", sizeof(beacon_SourceCode_t), BeaconObjectKindPointers, NULL);
-    context->classes.sourcePositionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "SourcePosition", sizeof(beacon_SourcePosition_t), BeaconObjectKindPointers, NULL);
-    context->classes.scannerTokenClass = beacon_context_createClassAndMetaclass(context, context->classes.scannerTokenClass, "ScannerToken", sizeof(beacon_ScannerToken_t), BeaconObjectKindPointers, NULL);
+    context->classes.sourceCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "SourceCode", sizeof(beacon_SourceCode_t), BeaconObjectKindPointers,
+        "directory", "name", "text", "textSize", NULL);
+    context->classes.sourcePositionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "SourcePosition", sizeof(beacon_SourcePosition_t), BeaconObjectKindPointers,
+        "sourceCode", "startIndex", "endIndex", "startLine", "endLine", "startColumn", "endColumn", NULL);
+    context->classes.scannerTokenClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "ScannerToken", sizeof(beacon_ScannerToken_t), BeaconObjectKindPointers,
+        "kind", "sourcePosition", "errorMessage", "textPosition", "textSize", NULL);
 
-    context->classes.parseTreeNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "ParseTreeNode", sizeof(beacon_ParseTreeNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeErrorNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeErrorNode", sizeof(beacon_ParseTreeErrorNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeLiteralNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeLiteralNode", sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeIdentifierReferenceNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeIdentifierReferenceNode", sizeof(beacon_ParseTreeIdentifierReferenceNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeMessageSendNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeMessageSendNode", sizeof(beacon_ParseTreeMessageSendNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeMessageCascadeNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeMessageCascadeNode", sizeof(beacon_ParseTreeMessageCascadeNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeCascadedMessageNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeCascadedMessageNpde", sizeof(beacon_ParseTreeCascadedMessageNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeSequenceNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeSequenceNode", sizeof(beacon_ParseTreeSequenceNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeReturnNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeReturnNode", sizeof(beacon_ParseTreeReturnNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeAssignmentNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeAssignmentNode", sizeof(beacon_ParseTreeAssignment_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeArrayNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeArrayNode", sizeof(beacon_ParseTreeArrayNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeLiteralArrayNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeLiteralArrayNode", sizeof(beacon_ParseTreeLiteralArrayNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeArgumentDefinitionNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeArgumentDefinitionNode", sizeof(beacon_ParseTreeArgumentDefinitionNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeLocalVariableDefinitionNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeLocalVariableDefinitionNode", sizeof(beacon_ParseTreeLocalVariableDefinitionNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeBlockClosureNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeBlockClosureNode", sizeof(beacon_ParseTreeBlockClosureNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeAddMethodNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeAddMethod", sizeof(beacon_ParseTreeAddMethod_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeMethodNode = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeMethodNode", sizeof(beacon_ParseTreeMethodNode_t), BeaconObjectKindPointers, NULL);
-    context->classes.parseTreeWorkspaceScriptNode = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeWorkspaceScriptNode", sizeof(beacon_ParseTreeWorkspaceScriptNode_t), BeaconObjectKindPointers, NULL);
+    context->classes.parseTreeNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "ParseTreeNode", sizeof(beacon_ParseTreeNode_t), BeaconObjectKindPointers,
+        "sourcePosition", NULL);
+    context->classes.parseTreeErrorNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeErrorNode", sizeof(beacon_ParseTreeErrorNode_t), BeaconObjectKindPointers,
+        "errorMessage", "innerNode", NULL);
+    context->classes.parseTreeLiteralNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeLiteralNode", sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers,
+        "value", NULL);
+    context->classes.parseTreeIdentifierReferenceNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeIdentifierReferenceNode", sizeof(beacon_ParseTreeIdentifierReferenceNode_t), BeaconObjectKindPointers,
+        "identifier", NULL);
+    context->classes.parseTreeMessageSendNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeMessageSendNode", sizeof(beacon_ParseTreeMessageSendNode_t), BeaconObjectKindPointers,
+        "receiver", "selector", "arguments", NULL);
+    context->classes.parseTreeMessageCascadeNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeMessageCascadeNode", sizeof(beacon_ParseTreeMessageCascadeNode_t), BeaconObjectKindPointers,
+        "receiver", "cascadedMessages", NULL);
+    context->classes.parseTreeCascadedMessageNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeCascadedMessageNpde", sizeof(beacon_ParseTreeCascadedMessageNode_t), BeaconObjectKindPointers,
+        "selector", "arguments", NULL);
+    context->classes.parseTreeSequenceNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeSequenceNode", sizeof(beacon_ParseTreeSequenceNode_t), BeaconObjectKindPointers,
+        "elements", NULL);
+    context->classes.parseTreeReturnNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeReturnNode", sizeof(beacon_ParseTreeReturnNode_t), BeaconObjectKindPointers,
+        "expression", NULL);
+    context->classes.parseTreeAssignmentNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeAssignmentNode", sizeof(beacon_ParseTreeAssignment_t), BeaconObjectKindPointers,
+        "storage", "valueToStore", NULL);
+    context->classes.parseTreeArrayNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeArrayNode", sizeof(beacon_ParseTreeArrayNode_t), BeaconObjectKindPointers,
+        "elements", NULL);
+    context->classes.parseTreeLiteralArrayNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeLiteralArrayNode", sizeof(beacon_ParseTreeLiteralArrayNode_t), BeaconObjectKindPointers,
+        "elements", NULL);
+    context->classes.parseTreeArgumentDefinitionNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeArgumentDefinitionNode", sizeof(beacon_ParseTreeArgumentDefinitionNode_t), BeaconObjectKindPointers,
+        "name", NULL);
+    context->classes.parseTreeLocalVariableDefinitionNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeLocalVariableDefinitionNode", sizeof(beacon_ParseTreeLocalVariableDefinitionNode_t), BeaconObjectKindPointers,
+        "name", NULL);
+    context->classes.parseTreeBlockClosureNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeBlockClosureNode", sizeof(beacon_ParseTreeBlockClosureNode_t), BeaconObjectKindPointers,
+        "arguments", "localVariables", "expression", NULL);
+    context->classes.parseTreeAddMethodNodeClass = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeAddMethod", sizeof(beacon_ParseTreeAddMethod_t), BeaconObjectKindPointers,
+        "behavior", "method", NULL);
+    context->classes.parseTreeMethodNode = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeMethodNode", sizeof(beacon_ParseTreeMethodNode_t), BeaconObjectKindPointers,
+        "selector", "arguments", "localVariables", "expression",NULL);
+    context->classes.parseTreeWorkspaceScriptNode = beacon_context_createClassAndMetaclass(context, context->classes.parseTreeNodeClass, "ParseTreeWorkspaceScriptNode", sizeof(beacon_ParseTreeWorkspaceScriptNode_t), BeaconObjectKindPointers,
+        "localVariables", "expression", NULL);
 
     context->classes.abstractCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AbstractCompilationEnvironment", sizeof(beacon_AbstractCompilationEnvironment_t), BeaconObjectKindPointers, NULL);
     context->classes.emptyCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "EmptyCompilationEnvironment", sizeof(beacon_EmptyCompilationEnvironment_t), BeaconObjectKindPointers, NULL);
-    context->classes.systemCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "SystemCompilationEnvironment", sizeof(beacon_SystemCompilationEnvironment_t), BeaconObjectKindPointers, NULL);
-    context->classes.fileCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "FileCompilationEnvironment", sizeof(beacon_FileCompilationEnvironment_t), BeaconObjectKindPointers, NULL);
-    context->classes.lexicalCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "LexicalCompilationEnvironment", sizeof(beacon_LexicalCompilationEnvironment_t), BeaconObjectKindPointers, NULL);
-    context->classes.methodCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "MethodCompilationEnvironment", sizeof(beacon_MethodCompilationEnvironment_t), BeaconObjectKindPointers, NULL);
-    context->classes.behaviorCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "BehaviorCompilationEnvironment", sizeof(beacon_BehaviorCompilationEnvironment_t), BeaconObjectKindPointers, NULL);
+    context->classes.systemCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "SystemCompilationEnvironment", sizeof(beacon_SystemCompilationEnvironment_t), BeaconObjectKindPointers,
+        "parent", "systemDictionary", NULL);
+    context->classes.fileCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "FileCompilationEnvironment", sizeof(beacon_FileCompilationEnvironment_t), BeaconObjectKindPointers,
+        "parent", "dictionary", NULL);
+    context->classes.lexicalCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "LexicalCompilationEnvironment", sizeof(beacon_LexicalCompilationEnvironment_t), BeaconObjectKindPointers,
+        "parent", "dictionary", NULL);
+    context->classes.methodCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "MethodCompilationEnvironment", sizeof(beacon_MethodCompilationEnvironment_t), BeaconObjectKindPointers,
+        "parent", "dictionary", NULL);
+    context->classes.behaviorCompilationEnvironmentClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractCompilationEnvironmentClass, "BehaviorCompilationEnvironment", sizeof(beacon_BehaviorCompilationEnvironment_t), BeaconObjectKindPointers,
+        "parent", "behavior", NULL);
 
-    context->classes.exceptionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Exception", sizeof(beacon_Exception_t), BeaconObjectKindPointers, NULL);
+    context->classes.exceptionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Exception", sizeof(beacon_Exception_t), BeaconObjectKindPointers,
+        "messageText", NULL);
     context->classes.errorClass = beacon_context_createClassAndMetaclass(context, context->classes.exceptionClass, "Error", sizeof(beacon_Error_t), BeaconObjectKindPointers, NULL);
     context->classes.assertionFailureClass = beacon_context_createClassAndMetaclass(context, context->classes.errorClass, "AssertionFailure", sizeof(beacon_AssertionFailure_t), BeaconObjectKindPointers, NULL);
-    context->classes.messageNotUnderstoodClass = beacon_context_createClassAndMetaclass(context, context->classes.errorClass, "MessageNotUnderstood", sizeof(beacon_MessageNotUnderstood_t), BeaconObjectKindPointers, NULL);
+    context->classes.messageNotUnderstoodClass = beacon_context_createClassAndMetaclass(context, context->classes.errorClass, "MessageNotUnderstood", sizeof(beacon_MessageNotUnderstood_t), BeaconObjectKindPointers,
+        "message", "receiver", "reachedDefaultHandler", NULL);
     context->classes.nonBooleanReceiverClass = beacon_context_createClassAndMetaclass(context, context->classes.errorClass, "NonBooleanReceiver", sizeof(beacon_NonBooleanReceiver_t), BeaconObjectKindPointers, NULL);
     context->classes.unhandledExceptionClass = beacon_context_createClassAndMetaclass(context, context->classes.exceptionClass, "UnhandledException", sizeof(beacon_UnhandledException_t), BeaconObjectKindPointers, NULL);
     context->classes.unhandledErrorClass = beacon_context_createClassAndMetaclass(context, context->classes.unhandledExceptionClass, "UnhandledError", sizeof(beacon_UnhandledError_t), BeaconObjectKindPointers, NULL);
