@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <unistd.h>
 
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context);
 void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *context);
@@ -202,7 +203,12 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.unhandledExceptionClass = beacon_context_createClassAndMetaclass(context, context->classes.exceptionClass, "UnhandledException", sizeof(beacon_UnhandledException_t), BeaconObjectKindPointers, NULL);
     context->classes.unhandledErrorClass = beacon_context_createClassAndMetaclass(context, context->classes.unhandledExceptionClass, "UnhandledError", sizeof(beacon_UnhandledError_t), BeaconObjectKindPointers, NULL);
 
-    context->classes.weakTombstoneClass = beacon_context_createClassAndMetaclass(context, context->classes.unhandledExceptionClass, "WeakTombstone", sizeof(beacon_WeakTombstone_t), BeaconObjectKindPointers, NULL);
+    context->classes.weakTombstoneClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "WeakTombstone", sizeof(beacon_WeakTombstone_t), BeaconObjectKindPointers, NULL);
+
+    context->classes.abstractBinaryFileStream = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AbstractBinaryFileStream", sizeof(beacon_Stdio_t), BeaconObjectKindPointers,
+        "handle", NULL);
+    context->classes.stdioClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Stdio", sizeof(beacon_Stdio_t), BeaconObjectKindPointers, NULL);
+    context->classes.stdioStreamClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractBinaryFileStream, "StdioStream", sizeof(beacon_Stdio_t), BeaconObjectKindPointers, NULL);
 }
 
 void beacon_context_createImportantRoots(beacon_context_t *context)
@@ -218,6 +224,24 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
 
     context->roots.emptyArray = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t), BeaconObjectKindPointers);
     context->roots.weakTombstone = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.weakTombstoneClass, sizeof(beacon_WeakTombstone_t), BeaconObjectKindPointers);
+
+    {
+        beacon_StdioStream_t *stdioStdin = beacon_allocateObjectWithBehavior(context->heap, context->classes.stdioStreamClass, sizeof(beacon_StdioStream_t), BeaconObjectKindPointers);
+        stdioStdin->super.handle = beacon_encodeSmallInteger(STDIN_FILENO);
+        context->roots.stdinStream = (beacon_oop_t)stdioStdin;
+    }
+
+    {
+        beacon_StdioStream_t *stdioStdout = beacon_allocateObjectWithBehavior(context->heap, context->classes.stdioStreamClass, sizeof(beacon_StdioStream_t), BeaconObjectKindPointers);
+        stdioStdout->super.handle = beacon_encodeSmallInteger(STDOUT_FILENO);
+        context->roots.stdoutStream = (beacon_oop_t)stdioStdout;
+    }
+
+    {
+        beacon_StdioStream_t *stderrStdout = beacon_allocateObjectWithBehavior(context->heap, context->classes.stdioStreamClass, sizeof(beacon_StdioStream_t), BeaconObjectKindPointers);
+        stderrStdout->super.handle = beacon_encodeSmallInteger(STDERR_FILENO);
+        context->roots.stdoutStream = (beacon_oop_t)stderrStdout;
+    }
 }
 
 void beacon_context_createSystemDictionary(beacon_context_t *context)
@@ -523,6 +547,8 @@ static beacon_oop_t beacon_ObjectPrimitive_basicSize(beacon_context_t *context, 
     intptr_t fixedFieldCount = beacon_decodeSmallInteger(class->instSize);
     beacon_ObjectHeader_t *header = (beacon_ObjectHeader_t*)receiver;
     intptr_t variableFieldCount = header->slotCount - fixedFieldCount;
+    if(header->slotCount != BeaconObjectKindBytes)
+        variableFieldCount /= sizeof(beacon_oop_t);
     return beacon_encodeSmallInteger(variableFieldCount);
 }
 
@@ -718,6 +744,69 @@ static beacon_oop_t beacon_Behavior_basicNewWithSize(beacon_context_t *context, 
     return instance;
 }
 
+static beacon_oop_t beacon_Stdio_stdin(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)receiver;
+    (void)context;
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    return context->roots.stdinStream;
+}
+
+static beacon_oop_t beacon_Stdio_stdout(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)receiver;
+    (void)context;
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    return context->roots.stdoutStream;
+}
+
+static beacon_oop_t beacon_Stdio_stderr(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)receiver;
+    (void)context;
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    return context->roots.stderrStream;
+}
+
+static beacon_oop_t beacon_AbstractBinaryFileStream_nextPut(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)receiver;
+    (void)context;
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_isImmediate(arguments[0]));
+    beacon_AbstractBinaryFileStream_t *stream = (beacon_AbstractBinaryFileStream_t *)receiver;
+    int fd = beacon_decodeSmallInteger(stream->handle);
+    uint8_t value = beacon_decodeSmallInteger(arguments[0]);
+    
+    ssize_t writtenCount = write(fd, &value, 1);
+    BeaconAssert(context, writtenCount == 1);
+    return receiver;
+}
+
+static beacon_oop_t beacon_AbstractBinaryFileStream_nextPutAll(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)receiver;
+    (void)context;
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 1);
+    
+    beacon_ObjectHeader_t *header = (beacon_ObjectHeader_t *)arguments[0];
+    ssize_t objectSize = header->slotCount;
+    BeaconAssert(context, header->objectKind = BeaconObjectKindBytes);
+    uint8_t *objectData = (uint8_t *)(header + 1);
+
+    beacon_AbstractBinaryFileStream_t *stream = (beacon_AbstractBinaryFileStream_t *)receiver;
+    int fd = beacon_decodeSmallInteger(stream->handle);
+    
+    ssize_t writtenCount = write(fd, objectData, objectSize);
+    BeaconAssert(context, writtenCount == objectSize);
+    return receiver;
+}
+
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
 {
     beacon_addPrimitiveToClass(context, context->classes.protoObjectClass, "class", 0, beacon_ProtoObjectPrimitive_getClass);
@@ -747,4 +836,11 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
 
     beacon_addPrimitiveToClass(context, context->classes.behaviorClass, "basicNew", 0, beacon_Behavior_basicNew);
     beacon_addPrimitiveToClass(context, context->classes.behaviorClass, "basicNew:", 1, beacon_Behavior_basicNewWithSize);
+
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.stdioClass), "stdin", 0, beacon_Stdio_stdin);
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.stdioClass), "stdout", 0, beacon_Stdio_stdout);
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.stdioClass), "stderr", 0, beacon_Stdio_stderr);
+
+    beacon_addPrimitiveToClass(context, context->classes.abstractBinaryFileStream, "nextPut:", 1, beacon_AbstractBinaryFileStream_nextPut);
+    beacon_addPrimitiveToClass(context, context->classes.abstractBinaryFileStream, "nextPutAll:", 1, beacon_AbstractBinaryFileStream_nextPutAll);
 }

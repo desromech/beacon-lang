@@ -559,4 +559,20 @@ typedef struct beacon_WeakTombstone_s
     beacon_Object_t super;
 } beacon_WeakTombstone_t;
 
+typedef struct beacon_Stdio_s
+{
+    beacon_Object_t super;
+} beacon_Stdio_t;
+
+typedef struct beacon_AbstractBinaryFileStream_s
+{
+    beacon_Object_t super;
+    beacon_oop_t handle;
+} beacon_AbstractBinaryFileStream_t;
+
+typedef struct beacon_StdioStream_s
+{
+    beacon_AbstractBinaryFileStream_t super;
+} beacon_StdioStream_t;
+
 #endif // BEACON_OBJECT_MODEL_H

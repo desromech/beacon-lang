@@ -94,6 +94,10 @@ struct beacon_context_s
         beacon_Behavior_t *unhandledErrorClass;
         
         beacon_Behavior_t *weakTombstoneClass;
+
+        beacon_Behavior_t *abstractBinaryFileStream;
+        beacon_Behavior_t *stdioClass;
+        beacon_Behavior_t *stdioStreamClass;
     } classes;
 
     struct ContextGCRoots
@@ -111,6 +115,10 @@ struct beacon_context_s
         beacon_oop_t addCompiledMethodSelector;
         beacon_oop_t emptyArray;
         beacon_oop_t weakTombstone;
+
+        beacon_oop_t stderrStream;
+        beacon_oop_t stdoutStream;
+        beacon_oop_t stdinStream;
     } roots;
 
     beacon_MemoryHeap_t *heap;
