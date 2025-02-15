@@ -307,6 +307,15 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
             stackFrameRecord.bytecodeMethodStackRecord.returnResultValue = bytecodeDecodedArguments[0];
             beacon_popStackFrameRecord(&stackFrameRecord);
             return stackFrameRecord.bytecodeMethodStackRecord.returnResultValue;
+        case BeaconBytecodeMakeArray:
+            {
+                BeaconAssert(context, writesToTemporary);
+                beacon_Array_t *resultArray = beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t) + instructionArgumentCount*sizeof(beacon_oop_t), BeaconObjectKindPointers);
+                for(size_t i = 0; i < instructionArgumentCount; ++i)
+                    resultArray->elements[i] = bytecodeDecodedArguments[i];
+                instructionExecutionResult = (beacon_oop_t)resultArray;
+            }
+            break;
         default:
             {
                 char buffer[64];

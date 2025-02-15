@@ -2,6 +2,7 @@
 #include "beacon-lang/Context.h"
 #include "beacon-lang/Dictionary.h"
 #include "beacon-lang/Exceptions.h"
+#include <stdlib.h>
 #include <stdio.h>
 
 static beacon_BytecodeValue_t beacon_compileNodeWithEnvironmentAndBytecodeBuilder(beacon_context_t *context, beacon_ParseTreeNode_t *node, beacon_AbstractCompilationEnvironment_t *environment, beacon_BytecodeCodeBuilder_t *builder)
@@ -366,6 +367,31 @@ static beacon_oop_t beacon_SyntaxCompiler_addMethodNode(beacon_context_t *contex
     return beacon_encodeSmallInteger(beacon_BytecodeCodeBuilder_addLiteral(context, builder, behavior));
 }
 
+static beacon_oop_t beacon_SyntaxCompiler_arrayNode(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 2);
+    beacon_ParseTreeArrayNode_t *arrayNode = (beacon_ParseTreeArrayNode_t *)receiver;
+
+    beacon_AbstractCompilationEnvironment_t *environment = (beacon_AbstractCompilationEnvironment_t*)arguments[0];
+    beacon_BytecodeCodeBuilder_t *builder = (beacon_BytecodeCodeBuilder_t *)arguments[1];
+
+    // Get the element count, and make space for them.
+    size_t elementCount = arrayNode->elements->super.super.super.super.super.header.slotCount;
+    beacon_BytecodeValue_t *elementValues = calloc(elementCount, sizeof(beacon_BytecodeValue_t *));
+    for(size_t i = 0; i < elementCount; ++i)
+    {
+        beacon_BytecodeValue_t elementValue = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, (beacon_ParseTreeNode_t*)arrayNode->elements->elements[i], environment, builder);
+        elementValues[i] = elementValue;
+    }
+
+    beacon_BytecodeValue_t resultValue = beacon_BytecodeCodeBuilder_newTemporary(context, builder, 0);
+
+    beacon_BytecodeCodeBuilder_makeArray(context, builder, resultValue, elementCount, elementValues);
+    free(elementValues);
+
+    return beacon_encodeSmallInteger(resultValue);
+}
+
 static beacon_oop_t beacon_SyntaxCompiler_byteArrayNode(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 2);
@@ -575,6 +601,7 @@ void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *con
     beacon_addPrimitiveToClass(context, context->classes.parseTreeSequenceNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_sequenceNode);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeMethodNode, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_methodNode);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeAddMethodNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_addMethodNode);
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeArrayNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_arrayNode);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeByteArrayNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_byteArrayNode);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeLiteralArrayNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_literalArrayNode);
 

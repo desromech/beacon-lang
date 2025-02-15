@@ -17,9 +17,11 @@ typedef struct beacon_parserState_s
 
 beacon_ParseTreeNode_t *parser_parseExpression(beacon_parserState_t *state);
 beacon_ParseTreeNode_t *parser_parseSequenceUntilEndOrDelimiter(beacon_parserState_t *state, beacon_TokenKind_t delimiter);
+beacon_ArrayList_t *parser_parseExpressionListUntilEndOrDelimiter(beacon_parserState_t *state, beacon_TokenKind_t delimiter);
 beacon_ParseTreeNode_t *parser_parseMethodSyntaxWithDelimiter(beacon_parserState_t *state, beacon_TokenKind_t delimiter);
 beacon_ParseTreeNode_t *parser_parseLiteralArrayElement(beacon_parserState_t *state);
 bool parser_isBinaryExpressionOperator(beacon_TokenKind_t kind);
+
 
 bool parserState_atEnd(beacon_parserState_t *state)
 {
@@ -542,6 +544,23 @@ beacon_ParseTreeNode_t *parser_parseByteArray(beacon_parserState_t *state)
     return expression;
 }
 
+beacon_ParseTreeNode_t *parser_parseArray(beacon_parserState_t *state)
+{
+    size_t startingPosition = state->position;
+    beacon_ScannerToken_t *token = parserState_next(state);
+    BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenLeftCurlyBracket);
+
+    beacon_ArrayList_t *arrayList = parser_parseExpressionListUntilEndOrDelimiter(state, BeaconTokenRightCurlyBracket);
+
+    beacon_ParseTreeArrayNode_t *arrayNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeArrayNodeClass, sizeof(beacon_ParseTreeArrayNode_t), BeaconObjectKindPointers);
+    
+    arrayNode->super.sourcePosition = parserState_sourcePositionFrom(state, startingPosition);
+    arrayNode->elements = beacon_ArrayList_asArray(state->context, arrayList);
+
+    beacon_ParseTreeNode_t *expression = parserState_expectAddingErrorToNode(state, BeaconTokenRightCurlyBracket, &arrayNode->super);
+    return expression;
+}
+
 beacon_ParseTreeNode_t *parser_parseLiteralArray(beacon_parserState_t *state)
 {
     size_t startingPosition = state->position;
@@ -595,8 +614,8 @@ beacon_ParseTreeNode_t *parser_parseTerm(beacon_parserState_t *state)
         return parser_parseBlockClosure(state);
     case BeaconTokenBangLeftBracket:
         return parser_parseMethodBlock(state);
-    /*case BeaconTokenLeftCurlyBracket:
-        return parser_parseArray(state);*/
+    case BeaconTokenLeftCurlyBracket:
+        return parser_parseArray(state);
     case BeaconTokenByteArrayStart:
         return parser_parseByteArray(state);
     case BeaconTokenLiteralArrayStart:

@@ -547,8 +547,6 @@ static beacon_oop_t beacon_ObjectPrimitive_basicSize(beacon_context_t *context, 
     intptr_t fixedFieldCount = beacon_decodeSmallInteger(class->instSize);
     beacon_ObjectHeader_t *header = (beacon_ObjectHeader_t*)receiver;
     intptr_t variableFieldCount = header->slotCount - fixedFieldCount;
-    if(header->slotCount != BeaconObjectKindBytes)
-        variableFieldCount /= sizeof(beacon_oop_t);
     return beacon_encodeSmallInteger(variableFieldCount);
 }
 
