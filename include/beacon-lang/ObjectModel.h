@@ -161,6 +161,7 @@ typedef struct beacon_Behavior_s
     beacon_MethodDictionary_t *methodDict;
     beacon_oop_t instSize;
     beacon_oop_t objectKind;
+    beacon_oop_t instanceVariableNames;
 } beacon_Behavior_t;
 
 typedef struct beacon_ClassDescription_s
@@ -172,6 +173,7 @@ typedef struct beacon_ClassDescription_s
 typedef struct beacon_Class_s
 {
     beacon_ClassDescription_t super;
+    beacon_Symbol_t *subclasses;
     beacon_Symbol_t *name;
 
 } beacon_Class_t;
