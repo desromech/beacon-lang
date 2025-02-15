@@ -501,7 +501,7 @@ beacon_ParseTreeNode_t *parser_parseByteArray(beacon_parserState_t *state)
     BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenByteArrayStart);
 
     beacon_ArrayList_t *byteArrayElements = beacon_ArrayList_new(state->context);
-    while(!parserState_atEnd(state) && parserState_peekKind(state, 0) == BeaconTokenRightBracket)
+    while(!parserState_atEnd(state) && parserState_peekKind(state, 0) != BeaconTokenRightBracket)
     {   
         if(parserState_peekKind(state, 0) == BeaconTokenInteger)
         {

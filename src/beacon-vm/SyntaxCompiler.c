@@ -74,6 +74,25 @@ static beacon_oop_t beacon_SyntaxCompiler_evaluateIdentifierReference(beacon_con
     return result;
 }
 
+static beacon_oop_t beacon_SyntaxCompiler_evaluateByteArray(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 1);
+    beacon_AbstractCompilationEnvironment_t *environment = (beacon_AbstractCompilationEnvironment_t*)arguments[0];
+
+    beacon_ParseTreeByteArrayNode_t *byteArrayNode = (beacon_ParseTreeByteArrayNode_t*)receiver;
+    size_t byteArraySize = byteArrayNode->elements->super.super.super.super.super.header.slotCount;
+    beacon_ByteArray_t *byteArray = beacon_allocateObjectWithBehavior(context->heap, context->classes.byteArrayClass, sizeof(beacon_ByteArray_t) + byteArraySize, BeaconObjectKindBytes);
+    for(size_t i = 0; i < byteArraySize; ++i)
+    {
+        beacon_oop_t integerNode = byteArrayNode->elements->elements[i];
+        beacon_oop_t integerValue = beacon_performWith(context, integerNode, context->roots.evaluateWithEnvironmentSelector, (beacon_oop_t)environment);
+        byteArray->elements[i] = beacon_decodeSmallInteger(integerValue);
+    }
+
+    return (beacon_oop_t)byteArray;
+}
 static beacon_oop_t beacon_SyntaxCompiler_node(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)context;
@@ -322,9 +341,20 @@ static beacon_oop_t beacon_SyntaxCompiler_addMethodNode(beacon_context_t *contex
         targetBehavior->methodDict = beacon_MethodDictionary_new(context);
     beacon_MethodDictionary_atPut(context, targetBehavior->methodDict, compiledMethod->name, (beacon_oop_t)compiledMethod);
 
-    return beacon_BytecodeCodeBuilder_addLiteral(context, builder, behavior);
+    return beacon_encodeSmallInteger(beacon_BytecodeCodeBuilder_addLiteral(context, builder, behavior));
 }
 
+static beacon_oop_t beacon_SyntaxCompiler_byteArrayNode(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 2);
+    beacon_ParseTreeByteArrayNode_t *byteArrayNode = (beacon_ParseTreeByteArrayNode_t *)receiver;
+
+    beacon_AbstractCompilationEnvironment_t *environment = (beacon_AbstractCompilationEnvironment_t*)arguments[0];
+    beacon_BytecodeCodeBuilder_t *builder = (beacon_BytecodeCodeBuilder_t *)arguments[1];
+
+    beacon_oop_t value = beacon_performWith(context, (beacon_oop_t)byteArrayNode, context->roots.evaluateWithEnvironmentSelector, (beacon_oop_t)environment);
+    return beacon_encodeSmallInteger(beacon_BytecodeCodeBuilder_addLiteral(context, builder, value));
+}
 
 static beacon_oop_t beacon_EmptyCompilationEnvironment_lookupSymbolRecursivelyWithCodeBuilder(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
@@ -511,10 +541,12 @@ void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *con
     beacon_addPrimitiveToClass(context, context->classes.parseTreeSequenceNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_sequenceNode);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeMethodNode, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_methodNode);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeAddMethodNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_addMethodNode);
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeByteArrayNodeClass, "compileWithEnvironment:andBytecodeBuilder:", 2, beacon_SyntaxCompiler_byteArrayNode);
 
     beacon_addPrimitiveToClass(context, context->classes.parseTreeNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateNode);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeLiteralNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateLiteralNode);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeIdentifierReferenceNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateIdentifierReference);
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeByteArrayNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateByteArray);
 
         /*
 
