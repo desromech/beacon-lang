@@ -253,6 +253,20 @@ static beacon_oop_t beacon_SyntaxCompiler_ifFalseIfTrue(beacon_context_t *contex
     return beacon_encodeSmallInteger(result);
 }
 
+static beacon_oop_t beacon_SyntaxCompiler_toDo(beacon_context_t *context, beacon_AbstractCompilationEnvironment_t *environment, beacon_BytecodeCodeBuilder_t *builder, beacon_BytecodeValue_t receiver, beacon_ParseTreeNode_t *endIndex, beacon_ParseTreeNode_t *secondInlineableArgument)
+{
+    beacon_BytecodeValue_t index =  beacon_BytecodeCodeBuilder_newTemporary(context, builder, 0);
+    beacon_BytecodeValue_t canContinue =  beacon_BytecodeCodeBuilder_newTemporary(context, builder, 0);
+    beacon_BytecodeValue_t startingIndex = receiver;
+    beacon_BytecodeValue_t endingIndexValue = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, endIndex, environment, builder);
+
+    beacon_BytecodeCodeBuilder_storeValue(context, builder, index, startingIndex);
+    uint16_t loopIterationStart = beacon_BytecodeCodeBuilder_label(builder);
+    //beacon_BytecodeCodeBuilder_sendMessage(context, builder, canContinue, index, )
+    abort();
+    return 0;
+}
+
 static beacon_oop_t beacon_SyntaxCompiler_messageSend(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 2);
@@ -285,6 +299,12 @@ static beacon_oop_t beacon_SyntaxCompiler_messageSend(beacon_context_t *context,
         BeaconAssert(context, argumentValueCount == 2);
         return beacon_SyntaxCompiler_ifFalseIfTrue(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0], (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[1]);
     }
+    else if(selectorEvaluatedValue == context->roots.toDoSelector)
+    {
+        BeaconAssert(context, argumentValueCount == 2);
+        return beacon_SyntaxCompiler_toDo(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0], (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[1]);
+    }
+    
 
     beacon_BytecodeValue_t selectorValue = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, messageSendNode->selector, environment, builder);
     beacon_BytecodeValue_t resultValue = beacon_BytecodeCodeBuilder_newTemporary(context, builder, 0);

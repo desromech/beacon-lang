@@ -131,6 +131,9 @@ struct beacon_context_s
         beacon_oop_t whileFalseSelector;
         beacon_oop_t doWhileTrueSelector;
         beacon_oop_t doWhileFalseSelector;
+        beacon_oop_t toDoSelector;
+
+        beacon_oop_t lessOrEqualsSelector;
     } roots;
 
     beacon_MemoryHeap_t *heap;

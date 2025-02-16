@@ -260,6 +260,11 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
         context->roots.whileFalseSelector = (beacon_oop_t)beacon_internCString(context, "whileFalse:");
         context->roots.doWhileTrueSelector = (beacon_oop_t)beacon_internCString(context, "do:whileTrue:");
         context->roots.doWhileFalseSelector = (beacon_oop_t)beacon_internCString(context, "do:whileFalse:");
+        context->roots.toDoSelector = (beacon_oop_t)beacon_internCString(context, "to:do:");
+    }
+
+    {
+        context->roots.lessOrEqualsSelector = (beacon_oop_t)beacon_internCString(context, "<=");
     }
 }
 
@@ -730,6 +735,48 @@ static beacon_oop_t beacon_SmallInteger_integerModulo(beacon_context_t *context,
     return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) % beacon_decodeSmallInteger(arguments[0]));
 }
 
+static beacon_oop_t beacon_SmallInteger_equals(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    return (beacon_decodeSmallInteger(receiver) == beacon_decodeSmallInteger(arguments[0])) ?
+        context->roots.trueValue : context->roots.falseValue;
+}
+
+static beacon_oop_t beacon_SmallInteger_notEquals(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    return (beacon_decodeSmallInteger(receiver) != beacon_decodeSmallInteger(arguments[0])) ?
+        context->roots.trueValue : context->roots.falseValue;
+}
+
+static beacon_oop_t beacon_SmallInteger_lessThan(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    return (beacon_decodeSmallInteger(receiver) < beacon_decodeSmallInteger(arguments[0])) ?
+        context->roots.trueValue : context->roots.falseValue;
+}
+
+static beacon_oop_t beacon_SmallInteger_lessOrEquals(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    return (beacon_decodeSmallInteger(receiver) <= beacon_decodeSmallInteger(arguments[0])) ?
+        context->roots.trueValue : context->roots.falseValue;
+}
+
+static beacon_oop_t beacon_SmallInteger_greaterThan(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    return (beacon_decodeSmallInteger(receiver) > beacon_decodeSmallInteger(arguments[0])) ?
+        context->roots.trueValue : context->roots.falseValue;
+}
+
+static beacon_oop_t beacon_SmallInteger_greaterOrEquals(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    return (beacon_decodeSmallInteger(receiver) >= beacon_decodeSmallInteger(arguments[0])) ?
+        context->roots.trueValue : context->roots.falseValue;
+}
+
 static beacon_oop_t beacon_Behavior_basicNew(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)context;
@@ -850,6 +897,13 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "*", 1, beacon_SmallInteger_times);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "//", 1, beacon_SmallInteger_integerDivision);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "\\", 1, beacon_SmallInteger_integerModulo);
+
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "=", 1, beacon_SmallInteger_equals);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "~=", 1, beacon_SmallInteger_notEquals);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "<", 1, beacon_SmallInteger_lessThan);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "<=", 1, beacon_SmallInteger_lessOrEquals);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, ">", 1, beacon_SmallInteger_greaterThan);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, ">=", 1, beacon_SmallInteger_greaterOrEquals);
 
     beacon_addPrimitiveToClass(context, context->classes.behaviorClass, "basicNew", 0, beacon_Behavior_basicNew);
     beacon_addPrimitiveToClass(context, context->classes.behaviorClass, "basicNew:", 1, beacon_Behavior_basicNewWithSize);
