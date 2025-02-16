@@ -223,6 +223,8 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
     context->roots.falseValue = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.falseClass, sizeof(beacon_False_t), BeaconObjectKindPointers);
     context->roots.doesNotUnderstandSelector = (beacon_oop_t)beacon_internCString(context, "doesNotUnderstand:");
     context->roots.compileWithEnvironmentAndBytecodeBuilderSelector = (beacon_oop_t)beacon_internCString(context, "compileWithEnvironment:andBytecodeBuilder:");
+    context->roots.compileInlineBlockWithArgumentsWithEnvironmentAndBytecodeBuilderSelector = (beacon_oop_t)beacon_internCString(context, "compileInlineBlockWithArguments:environment:andBytecodeBuilder:");
+    
     context->roots.lookupSymbolRecursivelyWithBytecodeBuilderSelector = (beacon_oop_t)beacon_internCString(context, "lookupSymbolRecursively:withBytecodeBuilder:");
     context->roots.lookupSymbolRecursivelySelector = (beacon_oop_t)beacon_internCString(context, "lookupSymbolRecursively:");
     context->roots.evaluateWithEnvironmentSelector = (beacon_oop_t)beacon_internCString(context, "evaluateWithEnvironment:");
@@ -247,6 +249,17 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
         beacon_StdioStream_t *stderrStdout = beacon_allocateObjectWithBehavior(context->heap, context->classes.stdioStreamClass, sizeof(beacon_StdioStream_t), BeaconObjectKindPointers);
         stderrStdout->super.handle = beacon_encodeSmallInteger(STDERR_FILENO);
         context->roots.stdoutStream = (beacon_oop_t)stderrStdout;
+    }
+
+    {
+        context->roots.ifTrueSelector = (beacon_oop_t)beacon_internCString(context, "ifTrue:");
+        context->roots.ifFalseSelector = (beacon_oop_t)beacon_internCString(context, "ifFalse:");
+        context->roots.ifTrueIfFalseSelector = (beacon_oop_t)beacon_internCString(context, "ifTrue:ifFalse:");
+        context->roots.ifFalseIfTrueSelector = (beacon_oop_t)beacon_internCString(context, "ifFalse:ifTrue");
+        context->roots.whileTrueSelector = (beacon_oop_t)beacon_internCString(context, "whileTrue:");
+        context->roots.whileFalseSelector = (beacon_oop_t)beacon_internCString(context, "whileFalse:");
+        context->roots.doWhileTrueSelector = (beacon_oop_t)beacon_internCString(context, "do:whileTrue:");
+        context->roots.doWhileFalseSelector = (beacon_oop_t)beacon_internCString(context, "do:whileFalse:");
     }
 }
 

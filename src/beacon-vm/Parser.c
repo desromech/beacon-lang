@@ -102,8 +102,11 @@ void parserState_restore(beacon_parserState_t *state, size_t memento)
 
 beacon_SourcePosition_t *parserState_previousSourcePosition(beacon_parserState_t *state)
 {
-    BeaconAssert(state->context, state->position > 1);
-    beacon_ScannerToken_t *token = (beacon_ScannerToken_t *)beacon_ArrayList_at(state->context, state->tokens, state->position - 1);
+    beacon_ScannerToken_t *token;
+    if(state->position == 1)
+        token = (beacon_ScannerToken_t *)beacon_ArrayList_at(state->context, state->tokens, 1);
+    else
+        token = (beacon_ScannerToken_t *)beacon_ArrayList_at(state->context, state->tokens, state->position - 1);
     return token->sourcePosition;
 }
 

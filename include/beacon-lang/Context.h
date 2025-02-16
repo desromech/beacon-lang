@@ -111,6 +111,7 @@ struct beacon_context_s
         beacon_oop_t falseValue;
         beacon_oop_t doesNotUnderstandSelector;
         beacon_oop_t compileWithEnvironmentAndBytecodeBuilderSelector;
+        beacon_oop_t compileInlineBlockWithArgumentsWithEnvironmentAndBytecodeBuilderSelector;
         beacon_oop_t lookupSymbolRecursivelySelector;
         beacon_oop_t lookupSymbolRecursivelyWithBytecodeBuilderSelector;
         beacon_oop_t evaluateWithEnvironmentSelector;
@@ -121,6 +122,15 @@ struct beacon_context_s
         beacon_oop_t stderrStream;
         beacon_oop_t stdoutStream;
         beacon_oop_t stdinStream;
+
+        beacon_oop_t ifTrueSelector;
+        beacon_oop_t ifFalseSelector;
+        beacon_oop_t ifTrueIfFalseSelector;
+        beacon_oop_t ifFalseIfTrueSelector;
+        beacon_oop_t whileTrueSelector;
+        beacon_oop_t whileFalseSelector;
+        beacon_oop_t doWhileTrueSelector;
+        beacon_oop_t doWhileFalseSelector;
     } roots;
 
     beacon_MemoryHeap_t *heap;

@@ -85,30 +85,53 @@ void beacon_BytecodeCodeBuilder_nop(beacon_context_t *context, beacon_BytecodeCo
     beacon_ByteArrayList_add(context, methodBuilder->bytecodes, BeaconBytecodeNop);
 }
 
-void beacon_BytecodeCodeBuilder_jump(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, uint16_t targetLabel)
+uint16_t beacon_BytecodeCodeBuilder_jump(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, uint16_t targetLabel)
 {
     uint16_t currentPosition = beacon_ByteArrayList_size(methodBuilder->bytecodes);
     int16_t delta = targetLabel - currentPosition;
     beacon_ByteArrayList_add(context, methodBuilder->bytecodes, 0x10 | BeaconBytecodeJump);
     beacon_ByteArrayList_addInt16(context, methodBuilder->bytecodes, beacon_BytecodeValue_encode(delta, BytecodeArgumentTypeJumpDelta));
+    return currentPosition;
 }
 
-void beacon_BytecodeCodeBuilder_jumpIfTrue(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t condition, uint16_t targetLabel)
+void beacon_BytecodeCodeBuilder_fixup_jump(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, uint16_t branchLabel, uint16_t newTarget)
+{
+    int16_t delta = beacon_BytecodeValue_encode(newTarget - branchLabel, BytecodeArgumentTypeJumpDelta);
+    uint8_t deltaLow = delta & 0xFF;
+    uint8_t deltaHigh = (delta >> 8) & 0xFF;
+
+    beacon_ByteArrayList_atPut(context, methodBuilder->bytecodes, branchLabel + 2, deltaLow);
+    beacon_ByteArrayList_atPut(context, methodBuilder->bytecodes, branchLabel + 3, deltaHigh);
+}
+
+uint16_t beacon_BytecodeCodeBuilder_jumpIfTrue(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t condition, uint16_t targetLabel)
 {
     uint16_t currentPosition = beacon_ByteArrayList_size(methodBuilder->bytecodes);
     int16_t delta = targetLabel - currentPosition;
     beacon_ByteArrayList_add(context, methodBuilder->bytecodes, 0x20 | BeaconBytecodeJumpIfTrue);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, condition);
     beacon_ByteArrayList_addInt16(context, methodBuilder->bytecodes, beacon_BytecodeValue_encode(delta, BytecodeArgumentTypeJumpDelta));
+    return currentPosition;
 }
 
-void beacon_BytecodeCodeBuilder_jumpIfFalse(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t condition, uint16_t targetLabel)
+uint16_t beacon_BytecodeCodeBuilder_jumpIfFalse(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t condition, uint16_t targetLabel)
 {
     uint16_t currentPosition = beacon_ByteArrayList_size(methodBuilder->bytecodes);
     int16_t delta = targetLabel - currentPosition;
-    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, 0x20 | BeaconBytecodeJumpIfTrue);
+    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, 0x20 | BeaconBytecodeJumpIfFalse);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, condition);
     beacon_ByteArrayList_addInt16(context, methodBuilder->bytecodes, beacon_BytecodeValue_encode(delta, BytecodeArgumentTypeJumpDelta));
+    return currentPosition;
+}
+
+void beacon_BytecodeCodeBuilder_fixup_jumpIf(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, uint16_t branchLabel, uint16_t newTarget)
+{
+    int16_t delta = beacon_BytecodeValue_encode(newTarget - branchLabel, BytecodeArgumentTypeJumpDelta);
+    uint8_t deltaLow = delta & 0xFF;
+    uint8_t deltaHigh = (delta >> 8) & 0xFF;
+
+    beacon_ByteArrayList_atPut(context, methodBuilder->bytecodes, branchLabel + 4, deltaLow);
+    beacon_ByteArrayList_atPut(context, methodBuilder->bytecodes, branchLabel + 5, deltaHigh);
 }
 
 uint8_t beacon_BytecodeCodeBuilder_extendArgumentsIfNeeded(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, size_t argumentCount)
@@ -293,6 +316,17 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
         {
         case BeaconBytecodeNop:
             // Nothing is required here.
+            break;
+        case BeaconBytecodeJump:
+            pc = branchDestinationPC;
+            break;
+        case BeaconBytecodeJumpIfTrue:
+            if(bytecodeDecodedArguments[0] == context->roots.trueValue)
+                pc = branchDestinationPC;
+            break;
+        case BeaconBytecodeJumpIfFalse:
+            if(bytecodeDecodedArguments[0] == context->roots.falseValue)
+                pc = branchDestinationPC;
             break;
         case BeaconBytecodeSendMessage:
             BeaconAssert(context, writesToTemporary);

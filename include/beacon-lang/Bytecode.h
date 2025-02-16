@@ -21,8 +21,8 @@ typedef enum beacon_BytecodeOpcode_e
 
 typedef enum beacon_BytecodeArgumentType_e
 {
-    BytecodeArgumentTypeArgument = 0,
-    BytecodeArgumentTypeLiteral,
+    BytecodeArgumentTypeLiteral = 0,
+    BytecodeArgumentTypeArgument,
     BytecodeArgumentTypeTemporary,
     BytecodeArgumentTypeJumpDelta,
     BytecodeArgumentTypeCapture
@@ -93,17 +93,28 @@ void beacon_BytecodeCodeBuilder_nop(beacon_context_t *context, beacon_BytecodeCo
 /**
  * Unconditional branch.
  */
-void beacon_BytecodeCodeBuilder_jump(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, uint16_t targetLabel);
+uint16_t beacon_BytecodeCodeBuilder_jump(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, uint16_t targetLabel);
+
+/**
+ * Fixup branch.
+ */
+void beacon_BytecodeCodeBuilder_fixup_jump(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, uint16_t branchLabel, uint16_t newTarget);
+
 
 /**
  * Jump ifTrue
  */
-void beacon_BytecodeCodeBuilder_jumpIfTrue(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t condition, uint16_t targetLabel);
+uint16_t beacon_BytecodeCodeBuilder_jumpIfTrue(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t condition, uint16_t targetLabel);
 
 /**
  * Jump ifFalse
  */
-void beacon_BytecodeCodeBuilder_jumpIfFalse(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t condition, uint16_t targetLabel);
+uint16_t beacon_BytecodeCodeBuilder_jumpIfFalse(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t condition, uint16_t targetLabel);
+
+/**
+ * Fixup branch if.
+ */
+void beacon_BytecodeCodeBuilder_fixup_jumpIf(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, uint16_t branchLabel, uint16_t newTarget);
 
 /**
  * Send a message.
