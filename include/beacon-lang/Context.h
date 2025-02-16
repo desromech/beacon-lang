@@ -133,6 +133,7 @@ struct beacon_context_s
         beacon_oop_t doWhileFalseSelector;
         beacon_oop_t toDoSelector;
 
+        beacon_oop_t plusSelector;
         beacon_oop_t lessOrEqualsSelector;
     } roots;
 

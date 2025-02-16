@@ -18,26 +18,6 @@ void printVersion(void)
     printf("beacon-vm version 0.1\n");
 }
 
-beacon_oop_t evaluateSourceCode(beacon_SourceCode_t *sourceCode)
-{
-    beacon_ArrayList_t *scannedSource = beacon_scanSourceCode(context, sourceCode);
-    intptr_t tokenCount = beacon_ArrayList_size(scannedSource);
-    for(intptr_t i = 1; i <= tokenCount; ++i)
-    {
-        beacon_ScannerToken_t *token = (beacon_ScannerToken_t *)beacon_ArrayList_at(context, scannedSource, i);
-        beacon_TokenKind_t kind = beacon_decodeSmallInteger(token->kind);
-        if(kind == BeaconTokenError)
-            beacon_exception_scannerError(context, token);
-           
-        //printf("Token %d: %s\n", (int)i, beacon_TokenKind_toString());
-    }
-
-    beacon_ParseTreeNode_t *parseTree = beacon_parseWorkspaceTokenList(context, sourceCode, scannedSource);
-    beacon_CompiledMethod_t *compiledMethod = beacon_compileFileSyntax(context, parseTree, sourceCode);
-    return beacon_runMethodWithArguments(context, &compiledMethod->super, 0, (beacon_oop_t)beacon_internCString(context, "DoIt"), 0, NULL);
-}
-
-
 void printObject(beacon_oop_t object)
 {
     beacon_String_t *printedObject = (beacon_String_t *)beacon_perform(context, object, (beacon_oop_t)beacon_internCString(context, "printString"));
@@ -49,14 +29,14 @@ void printObject(beacon_oop_t object)
 void evaluateStringAndPrint(const char *string)
 {
     beacon_SourceCode_t *sourceCode = beacon_makeSourceCodeFromString(context, "CLI", string);
-    beacon_oop_t result = evaluateSourceCode(sourceCode);
+    beacon_oop_t result = beacon_evaluateSourceCode(context, sourceCode);
     printObject(result);
 }
 
 void evaluateFileNamed(const char *fileName)
 {
     beacon_SourceCode_t *sourceCode = beacon_makeSourceCodeFromFileNamed(context, fileName);
-    evaluateSourceCode(sourceCode);
+    beacon_evaluateSourceCode(context, sourceCode);
 }
 
 int main(int argc, const char **argv)

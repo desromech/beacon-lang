@@ -4,6 +4,7 @@
 #include "beacon-lang/Exceptions.h"
 #include "beacon-lang/Bytecode.h"
 #include "beacon-lang/ArrayList.h"
+#include "beacon-lang/SourceCode.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -264,6 +265,7 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
     }
 
     {
+        context->roots.plusSelector = (beacon_oop_t)beacon_internCString(context, "+");
         context->roots.lessOrEqualsSelector = (beacon_oop_t)beacon_internCString(context, "<=");
     }
 }
@@ -860,7 +862,7 @@ static beacon_oop_t beacon_AbstractBinaryFileStream_nextPutAll(beacon_context_t 
     
     beacon_ObjectHeader_t *header = (beacon_ObjectHeader_t *)arguments[0];
     ssize_t objectSize = header->slotCount;
-    BeaconAssert(context, header->objectKind = BeaconObjectKindBytes);
+    BeaconAssert(context, header->objectKind == BeaconObjectKindBytes);
     uint8_t *objectData = (uint8_t *)(header + 1);
 
     beacon_AbstractBinaryFileStream_t *stream = (beacon_AbstractBinaryFileStream_t *)receiver;
@@ -869,6 +871,46 @@ static beacon_oop_t beacon_AbstractBinaryFileStream_nextPutAll(beacon_context_t 
     ssize_t writtenCount = write(fd, objectData, objectSize);
     BeaconAssert(context, writtenCount == objectSize);
     return receiver;
+}
+
+static beacon_oop_t beacon_String_concatenate(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)receiver;
+    (void)context;
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 1);
+
+    beacon_ObjectHeader_t *receiverHeader = (beacon_ObjectHeader_t *)receiver;
+    ssize_t receiverSize = receiverHeader->slotCount;
+
+    beacon_ObjectHeader_t *header = (beacon_ObjectHeader_t *)arguments[0];
+    ssize_t objectSize = header->slotCount;
+
+    BeaconAssert(context, header->objectKind == BeaconObjectKindBytes);
+    uint8_t *receiverData = (uint8_t *)(receiverHeader + 1);
+    uint8_t *objectData = (uint8_t *)(header + 1);
+
+    beacon_String_t *concatResult = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_String_t) + receiverSize + objectSize, BeaconObjectKindBytes);
+    memcpy(concatResult->data, receiverData, receiverSize);
+    memcpy(concatResult->data + receiverSize - 1, objectData, objectSize);
+
+    return (beacon_oop_t)concatResult;
+}
+
+static beacon_oop_t beacon_String_fileIn(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    beacon_String_t *receiverString = (beacon_String_t *)receiver;
+    size_t stringSize = receiverString->super.super.super.super.super.header.slotCount;
+
+    char *stringBuffer = calloc(1, stringSize + 1);
+    memcpy(stringBuffer, receiverString->data, stringSize);
+
+    beacon_SourceCode_t *sourceCode = beacon_makeSourceCodeFromFileNamed(context, stringBuffer);
+    free(stringBuffer);
+
+    return beacon_evaluateSourceCode(context, sourceCode);
 }
 
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
@@ -914,4 +956,7 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
 
     beacon_addPrimitiveToClass(context, context->classes.abstractBinaryFileStream, "nextPut:", 1, beacon_AbstractBinaryFileStream_nextPut);
     beacon_addPrimitiveToClass(context, context->classes.abstractBinaryFileStream, "nextPutAll:", 1, beacon_AbstractBinaryFileStream_nextPutAll);
+
+    beacon_addPrimitiveToClass(context, context->classes.stringClass, ",", 1, beacon_String_concatenate);
+    beacon_addPrimitiveToClass(context, context->classes.stringClass, "fileIn", 1, beacon_String_fileIn);
 }

@@ -253,7 +253,7 @@ static beacon_oop_t beacon_SyntaxCompiler_ifFalseIfTrue(beacon_context_t *contex
     return beacon_encodeSmallInteger(result);
 }
 
-static beacon_oop_t beacon_SyntaxCompiler_toDo(beacon_context_t *context, beacon_AbstractCompilationEnvironment_t *environment, beacon_BytecodeCodeBuilder_t *builder, beacon_BytecodeValue_t receiver, beacon_ParseTreeNode_t *endIndex, beacon_ParseTreeNode_t *secondInlineableArgument)
+static beacon_oop_t beacon_SyntaxCompiler_toDo(beacon_context_t *context, beacon_AbstractCompilationEnvironment_t *environment, beacon_BytecodeCodeBuilder_t *builder, beacon_BytecodeValue_t receiver, beacon_ParseTreeNode_t *endIndex, beacon_ParseTreeNode_t *inlineableArgument)
 {
     beacon_BytecodeValue_t index =  beacon_BytecodeCodeBuilder_newTemporary(context, builder, 0);
     beacon_BytecodeValue_t canContinue =  beacon_BytecodeCodeBuilder_newTemporary(context, builder, 0);
@@ -262,8 +262,25 @@ static beacon_oop_t beacon_SyntaxCompiler_toDo(beacon_context_t *context, beacon
 
     beacon_BytecodeCodeBuilder_storeValue(context, builder, index, startingIndex);
     uint16_t loopIterationStart = beacon_BytecodeCodeBuilder_label(builder);
-    //beacon_BytecodeCodeBuilder_sendMessage(context, builder, canContinue, index, )
-    abort();
+
+    beacon_BytecodeValue_t lessOrEqualsSelector = beacon_BytecodeCodeBuilder_addLiteral(context, builder, context->roots.lessOrEqualsSelector);
+    beacon_BytecodeCodeBuilder_sendMessage(context, builder, canContinue, index, lessOrEqualsSelector, 1, &endingIndexValue);
+    uint16_t loopEndJump = beacon_BytecodeCodeBuilder_jumpIfFalse(context, builder, canContinue, 0);
+
+    // Inline the block
+    beacon_Array_t *blockArgument = beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t), BeaconObjectKindPointers);
+    blockArgument->elements[0] = beacon_encodeSmallInteger(index);
+    beacon_compileInlineNodeWithEnvironmentAndBytecodeBuilder(context, inlineableArgument, blockArgument, environment, builder);
+
+    // Increment the index
+    beacon_BytecodeValue_t increment = beacon_BytecodeCodeBuilder_addLiteral(context, builder, beacon_encodeSmallInteger(1));
+    beacon_BytecodeValue_t plusSelector = beacon_BytecodeCodeBuilder_addLiteral(context, builder, context->roots.plusSelector);
+    beacon_BytecodeCodeBuilder_sendMessage(context, builder, index, index, plusSelector, 1, &increment);
+    beacon_BytecodeCodeBuilder_jump(context, builder, loopIterationStart);
+
+    // Merge section.
+    uint16_t loopMerge = beacon_BytecodeCodeBuilder_label(builder);
+    beacon_BytecodeCodeBuilder_fixup_jumpIf(context, builder, loopEndJump, loopMerge);
     return 0;
 }
 

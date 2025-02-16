@@ -1,6 +1,9 @@
 #include "beacon-lang/SourceCode.h"
 #include "beacon-lang/Context.h"
 #include "beacon-lang/Memory.h"
+#include "beacon-lang/Scanner.h"
+#include "beacon-lang/SyntaxCompiler.h"
+#include "beacon-lang/Parser.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -96,4 +99,23 @@ beacon_SourcePosition_t *beacon_sourcePosition_until(beacon_context_t *context, 
     merged->endLine     = end->startLine;
     merged->endColumn   = end->startColumn;
     return merged;
+}
+
+beacon_oop_t beacon_evaluateSourceCode(beacon_context_t *context, beacon_SourceCode_t *sourceCode)
+{
+    beacon_ArrayList_t *scannedSource = beacon_scanSourceCode(context, sourceCode);
+    intptr_t tokenCount = beacon_ArrayList_size(scannedSource);
+    for(intptr_t i = 1; i <= tokenCount; ++i)
+    {
+        beacon_ScannerToken_t *token = (beacon_ScannerToken_t *)beacon_ArrayList_at(context, scannedSource, i);
+        beacon_TokenKind_t kind = beacon_decodeSmallInteger(token->kind);
+        if(kind == BeaconTokenError)
+            beacon_exception_scannerError(context, token);
+           
+        //printf("Token %d: %s\n", (int)i, beacon_TokenKind_toString());
+    }
+
+    beacon_ParseTreeNode_t *parseTree = beacon_parseWorkspaceTokenList(context, sourceCode, scannedSource);
+    beacon_CompiledMethod_t *compiledMethod = beacon_compileFileSyntax(context, parseTree, sourceCode);
+    return beacon_runMethodWithArguments(context, &compiledMethod->super, 0, (beacon_oop_t)beacon_internCString(context, "DoIt"), 0, NULL);
 }
