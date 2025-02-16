@@ -248,6 +248,7 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
     while(pc < bytecodesSize)
     {
         uint32_t instructionPC = pc;
+        int16_t branchDestinationDelta = 0;
         uint32_t branchDestinationPC = instructionPC;
         uint8_t instruction = bytecodes[pc++];
 
@@ -301,7 +302,8 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
                 *currentDecodedArgument = bytecodeArgumentIndex == 0 ? 0 : temporaryStorage[bytecodeArgumentIndex - 1];
                 break;
             case BytecodeArgumentTypeJumpDelta:
-                branchDestinationPC += bytecodeArgumentSignedIndex;
+                branchDestinationDelta = bytecodeArgumentSignedIndex;
+                branchDestinationPC += branchDestinationDelta;
                 break;
             case BytecodeArgumentTypeCapture:
             default:
@@ -319,14 +321,24 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
             break;
         case BeaconBytecodeJump:
             pc = branchDestinationPC;
+            if(branchDestinationDelta < 0)
+                beacon_memoryHeapSafepoint(context);
             break;
         case BeaconBytecodeJumpIfTrue:
             if(bytecodeDecodedArguments[0] == context->roots.trueValue)
+            {
                 pc = branchDestinationPC;
+                if(branchDestinationDelta < 0)
+                    beacon_memoryHeapSafepoint(context);
+            }
             break;
         case BeaconBytecodeJumpIfFalse:
             if(bytecodeDecodedArguments[0] == context->roots.falseValue)
+            {
                 pc = branchDestinationPC;
+                if(branchDestinationDelta < 0)
+                    beacon_memoryHeapSafepoint(context);
+            }
             break;
         case BeaconBytecodeSendMessage:
             BeaconAssert(context, writesToTemporary);
