@@ -51,6 +51,7 @@ struct beacon_context_s
         beacon_Behavior_t *compiledCodeClass;
         beacon_Behavior_t *compiledBlockClass;
         beacon_Behavior_t *compiledMethodClass;
+        beacon_Behavior_t *blockClosureClass;
         beacon_Behavior_t *messageClass;
 
         beacon_Behavior_t *sourceCodeClass;

@@ -132,6 +132,8 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "captureCount", NULL);
     context->classes.compiledMethodClass = beacon_context_createClassAndMetaclass(context, context->classes.compiledCodeClass, "CompiledMethod", sizeof(beacon_CompiledMethod_t), BeaconObjectKindPointers,
         "name", NULL);
+    context->classes.blockClosureClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "BlockClosure", sizeof(beacon_BlockClosure_t), BeaconObjectKindPointers,
+        "code", "captures", NULL);
     context->classes.messageClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Message", sizeof(beacon_Message_t), BeaconObjectKindPointers,
         "selector", "arguments", NULL);
 

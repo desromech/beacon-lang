@@ -333,9 +333,25 @@ static beacon_oop_t beacon_SyntaxCompiler_blockClosure(beacon_context_t *context
     beacon_BytecodeCodeBuilder_t *parentBuilder = (beacon_BytecodeCodeBuilder_t *)arguments[1];
 
     beacon_CompiledBlock_t *compiledBlock = beacon_SyntaxCompiler_compileBlockClosureNode(context, (beacon_ParseTreeBlockClosureNode_t*)receiver, environment);
-    beacon_BytecodeValue_t compiledBlockCodeLiteral = beacon_BytecodeCodeBuilder_addLiteral(context, parentBuilder, (beacon_oop_t)compiledBlock);
 
-    return beacon_encodeSmallInteger(compiledBlockCodeLiteral);
+    // If capture list 
+    size_t captureListSize = 0;
+    if(captureListSize == 0)
+    {
+        beacon_BlockClosure_t *blockClosure = beacon_allocateObjectWithBehavior(context->heap, context->classes.blockClosureClass, sizeof(beacon_BlockClosure_t), BeaconObjectKindPointers);
+        blockClosure->captures = context->roots.emptyArray;
+        blockClosure->code = compiledBlock;
+
+        beacon_BytecodeValue_t blockClosureLiteral = beacon_BytecodeCodeBuilder_addLiteral(context, parentBuilder, (beacon_oop_t)blockClosure);
+        return beacon_encodeSmallInteger(blockClosureLiteral);
+    }
+
+    // TODO: Support the captures in the closures
+    abort();
+    beacon_BytecodeValue_t compiledBlockCodeLiteral = beacon_BytecodeCodeBuilder_addLiteral(context, parentBuilder, (beacon_oop_t)compiledBlock);
+    beacon_BytecodeValue_t closureTemporary = beacon_BytecodeCodeBuilder_newTemporary(context, parentBuilder, 0);
+    beacon_BytecodeCodeBuilder_makeClosureInstance(context, parentBuilder, closureTemporary, compiledBlockCodeLiteral, 0, 0);
+    return beacon_encodeSmallInteger(closureTemporary);
 }
 
 static beacon_CompiledMethod_t *beacon_SyntaxCompiler_compileMethodNode(beacon_context_t *context, beacon_ParseTreeMethodNode_t *methodNode, beacon_AbstractCompilationEnvironment_t *environment)
@@ -699,12 +715,4 @@ void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *con
     beacon_addPrimitiveToClass(context, context->classes.parseTreeIdentifierReferenceNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateIdentifierReference);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeByteArrayNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateByteArray);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeLiteralArrayNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateLiteralArray);
-
-        /*
-
-        beacon_Behavior_t *parseTreeArrayNodeClass;
-        beacon_Behavior_t *parseTreeLiteralArrayNodeClass;
-        beacon_Behavior_t *parseTreeBlockClosureNodeClass;
-        */
-
 }

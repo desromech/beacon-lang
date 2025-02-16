@@ -143,6 +143,13 @@ typedef struct beacon_CompiledBlock_s
     beacon_oop_t captureCount;
 } beacon_CompiledBlock_t;
 
+typedef struct beacon_BlockClosure_s
+{
+    beacon_Object_t super;
+    beacon_CompiledBlock_t *code;
+    beacon_oop_t captures;
+} beacon_BlockClosure_t;
+
 typedef struct beacon_Message_s
 {
     beacon_Dictionary_t super;
