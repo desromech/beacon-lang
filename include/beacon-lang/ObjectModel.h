@@ -74,7 +74,7 @@ static inline beacon_oop_t beacon_encodeSmallDoubleValue(double value)
 }
 
 typedef struct beacon_context_s beacon_context_t;
-typedef beacon_oop_t (*beacon_NativeCodeFunction_t)(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments);
+typedef beacon_oop_t (*beacon_NativeCodeFunction_t)(beacon_context_t *context, beacon_oop_t receiverOrCaptures, size_t argumentCount, beacon_oop_t *arguments);
 
 struct beacon_ObjectHeader_s
 {

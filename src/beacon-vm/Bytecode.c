@@ -204,9 +204,10 @@ void beacon_BytecodeCodeBuilder_makeClosureInstance(beacon_context_t *context, b
         beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, captures[i]);
 }
 
-beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_CompiledCode_t *method, beacon_oop_t receiver, beacon_oop_t selector, size_t argumentCount, beacon_oop_t *arguments)
+beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_CompiledCode_t *method, beacon_oop_t receiver, beacon_oop_t selector, beacon_oop_t captures, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)selector;
+    (void)captures;
     beacon_BytecodeCode_t *code = method->bytecodeImplementation;
     BeaconAssert(context, beacon_decodeSmallInteger(code->argumentCount) == (intptr_t)argumentCount);
     intptr_t temporaryCount = beacon_decodeSmallInteger(code->temporaryCount);

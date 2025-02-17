@@ -436,9 +436,20 @@ beacon_oop_t beacon_runMethodWithArguments(beacon_context_t *context, beacon_Com
     if(method->nativeImplementation)
         return method->nativeImplementation->nativeFunction(context, receiver, argumentCount, arguments);
     else if(method->bytecodeImplementation)
-        return beacon_interpretBytecodeMethod(context, method, receiver, selector, argumentCount, arguments);
+        return beacon_interpretBytecodeMethod(context, method, receiver, selector, 0, argumentCount, arguments);
 
     beacon_exception_error(context, "Cannot evaluate a method without any kind of implementation.");
+    return 0;
+}
+
+beacon_oop_t beacon_runBlockClosureWithArguments(beacon_context_t *context, beacon_CompiledCode_t *blockClosureCode, beacon_oop_t captures, size_t argumentCount, beacon_oop_t *arguments)
+{
+    if(blockClosureCode->nativeImplementation)
+        return blockClosureCode->nativeImplementation->nativeFunction(context, captures, argumentCount, arguments);
+    else if(blockClosureCode->bytecodeImplementation)
+        return beacon_interpretBytecodeMethod(context, blockClosureCode, 0, 0, captures, argumentCount, arguments);
+
+    beacon_exception_error(context, "Cannot evaluate a block closure without code.");
     return 0;
 }
 
@@ -913,6 +924,23 @@ static beacon_oop_t beacon_String_fileIn(beacon_context_t *context, beacon_oop_t
     return beacon_evaluateSourceCode(context, sourceCode);
 }
 
+static beacon_oop_t beacon_Object_value(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)argumentCount;
+    (void)arguments;
+    return receiver;
+}
+
+static beacon_oop_t beacon_BlockClosure_value(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_BlockClosure_t* blockClosure = (beacon_BlockClosure_t*)receiver;
+    intptr_t expectedArgumentCount = beacon_decodeSmallInteger(blockClosure->code->super.argumentCount);
+    BeaconAssert(context, (intptr_t)argumentCount == expectedArgumentCount);
+
+    return beacon_runBlockClosureWithArguments(context, &blockClosure->code->super, blockClosure->captures, argumentCount, arguments);
+}
+
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
 {
     beacon_addPrimitiveToClass(context, context->classes.protoObjectClass, "class", 0, beacon_ProtoObjectPrimitive_getClass);
@@ -959,4 +987,13 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
 
     beacon_addPrimitiveToClass(context, context->classes.stringClass, ",", 1, beacon_String_concatenate);
     beacon_addPrimitiveToClass(context, context->classes.stringClass, "fileIn", 1, beacon_String_fileIn);
+
+    beacon_addPrimitiveToClass(context, context->classes.objectClass, "value", 0, beacon_Object_value);
+
+    beacon_addPrimitiveToClass(context, context->classes.blockClosureClass, "value", 0, beacon_BlockClosure_value);
+    beacon_addPrimitiveToClass(context, context->classes.blockClosureClass, "value:", 1, beacon_BlockClosure_value);
+    beacon_addPrimitiveToClass(context, context->classes.blockClosureClass, "value:value:", 2, beacon_BlockClosure_value);
+    beacon_addPrimitiveToClass(context, context->classes.blockClosureClass, "value:value:value:", 3, beacon_BlockClosure_value);
+    beacon_addPrimitiveToClass(context, context->classes.blockClosureClass, "value:value:value:value:", 4, beacon_BlockClosure_value);
+
 }
