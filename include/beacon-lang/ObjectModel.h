@@ -471,6 +471,9 @@ typedef struct beacon_BytecodeCodeBuilder_t
     beacon_ArrayList_t *temporaries;
     beacon_ArrayList_t *literals;
     beacon_ByteArrayList_t *bytecodes;
+    beacon_oop_t isCapturing;
+    beacon_oop_t parentBuilder;
+    beacon_oop_t blockEnvironment;
 } beacon_BytecodeCodeBuilder_t;
 
 typedef struct beacon_AbstractCompilationEnvironment_s

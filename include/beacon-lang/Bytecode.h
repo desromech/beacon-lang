@@ -62,7 +62,7 @@ static inline int16_t beacon_BytecodeValue_encode(uint16_t index, beacon_Bytecod
     return (index << 3) | type;
 }
 
-beacon_BytecodeCodeBuilder_t *beacon_BytecodeCodeBuilder_new(beacon_context_t *context);
+beacon_BytecodeCodeBuilder_t *beacon_BytecodeCodeBuilder_new(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *parentBuilder);
 
 /**
  * Finishes the construction of a bytecode method.
@@ -80,6 +80,12 @@ beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_getOrCreateSelf(beacon_context
 
 // New argument
 beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_newArgument(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, beacon_oop_t optionalNameSymbol);
+
+// Begin capturing values.
+void beacon_BytecodeCodeBuilder_beginCapturing(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder);
+
+// End capturing values.
+void beacon_BytecodeCodeBuilder_endCapturing(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder);
 
 // Bytecode assembly label.
 uint16_t beacon_BytecodeCodeBuilder_label(beacon_BytecodeCodeBuilder_t *methodBuilder);

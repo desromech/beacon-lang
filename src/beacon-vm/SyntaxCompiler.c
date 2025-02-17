@@ -40,7 +40,7 @@ beacon_CompiledMethod_t *beacon_compileFileSyntax(beacon_context_t *context, bea
     beacon_MethodDictionary_atPut(context, fileEnvironment->dictionary, beacon_internCString(context, "__FileDir__"), (beacon_oop_t)sourceCode->directory);
     beacon_MethodDictionary_atPut(context, fileEnvironment->dictionary, beacon_internCString(context, "__FileName__"), (beacon_oop_t)sourceCode->name);
 
-    beacon_BytecodeCodeBuilder_t *bytecodeBuilder = beacon_BytecodeCodeBuilder_new(context);
+    beacon_BytecodeCodeBuilder_t *bytecodeBuilder = beacon_BytecodeCodeBuilder_new(context, NULL);
     
     beacon_BytecodeValue_t lastValue = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, parseTree, &fileEnvironment->super, bytecodeBuilder);
 
@@ -424,13 +424,14 @@ static beacon_oop_t beacon_SyntaxCompiler_returnNode(beacon_context_t *context, 
     return  beacon_encodeSmallInteger(0);
 }
 
-static beacon_CompiledBlock_t *beacon_SyntaxCompiler_compileBlockClosureNode(beacon_context_t *context, beacon_ParseTreeBlockClosureNode_t *blockClosureNode, beacon_AbstractCompilationEnvironment_t *environment)
+static beacon_CompiledBlock_t *beacon_SyntaxCompiler_compileBlockClosureNode(beacon_context_t *context, beacon_ParseTreeBlockClosureNode_t *blockClosureNode, beacon_AbstractCompilationEnvironment_t *environment, beacon_BytecodeCodeBuilder_t *parentBuilder)
 {
     beacon_BlockClosureCompilationEnvironment_t *blockEnvironment = beacon_allocateObjectWithBehavior(context->heap, context->classes.blockClosureCompilationEnvironmentClass, sizeof(beacon_BlockClosureCompilationEnvironment_t), BeaconObjectKindPointers);
     blockEnvironment->parent = environment;
     blockEnvironment->dictionary = beacon_MethodDictionary_new(context);
 
-    beacon_BytecodeCodeBuilder_t *blockBuilder = beacon_BytecodeCodeBuilder_new(context);
+    beacon_BytecodeCodeBuilder_t *blockBuilder = beacon_BytecodeCodeBuilder_new(context, parentBuilder);
+    blockBuilder->blockEnvironment = (beacon_oop_t)blockEnvironment;
 
     // Block arguments
     size_t blockArguments = blockClosureNode->arguments->super.super.super.super.super.header.slotCount;
@@ -469,7 +470,7 @@ static beacon_oop_t beacon_SyntaxCompiler_blockClosure(beacon_context_t *context
     beacon_AbstractCompilationEnvironment_t *environment = (beacon_AbstractCompilationEnvironment_t*)arguments[0];
     beacon_BytecodeCodeBuilder_t *parentBuilder = (beacon_BytecodeCodeBuilder_t *)arguments[1];
 
-    beacon_CompiledBlock_t *compiledBlock = beacon_SyntaxCompiler_compileBlockClosureNode(context, (beacon_ParseTreeBlockClosureNode_t*)receiver, environment);
+    beacon_CompiledBlock_t *compiledBlock = beacon_SyntaxCompiler_compileBlockClosureNode(context, (beacon_ParseTreeBlockClosureNode_t*)receiver, environment, parentBuilder);
 
     // If capture list 
     size_t captureListSize = 0;
@@ -535,7 +536,7 @@ static beacon_CompiledMethod_t *beacon_SyntaxCompiler_compileMethodNode(beacon_c
     methodEnvironment->parent = environment;
     methodEnvironment->dictionary = beacon_MethodDictionary_new(context);
 
-    beacon_BytecodeCodeBuilder_t *methodBuilder = beacon_BytecodeCodeBuilder_new(context);
+    beacon_BytecodeCodeBuilder_t *methodBuilder = beacon_BytecodeCodeBuilder_new(context, NULL);
 
     // Method receiver.
     beacon_BytecodeValue_t self = beacon_BytecodeCodeBuilder_getOrCreateSelf(context, methodBuilder);
@@ -755,7 +756,10 @@ static beacon_oop_t beacon_BlockClosureCompilationEnvironment_lookupSymbolRecurs
     }
 
     BeaconAssert(context, environment->parent);
-    return beacon_performWithWith(context, (beacon_oop_t)environment->parent, context->roots.lookupSymbolRecursivelyWithBytecodeBuilderSelector, (beacon_oop_t)symbolToSearch, (beacon_oop_t)bytecodeBuilder);
+    beacon_BytecodeCodeBuilder_beginCapturing(context, bytecodeBuilder);
+    beacon_oop_t result = beacon_performWithWith(context, (beacon_oop_t)environment->parent, context->roots.lookupSymbolRecursivelyWithBytecodeBuilderSelector, (beacon_oop_t)symbolToSearch, (beacon_oop_t)bytecodeBuilder);
+    beacon_BytecodeCodeBuilder_endCapturing(context, bytecodeBuilder);
+    return result;
 }
 
 static beacon_oop_t beacon_EmptyCompilationEnvironment_lookupSymbolRecursively(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)

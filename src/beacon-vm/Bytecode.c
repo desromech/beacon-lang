@@ -20,14 +20,27 @@ static inline bool beacon_bytecodeWritesToTemporary(beacon_BytecodeOpcode_t opco
     }
 }
 
-beacon_BytecodeCodeBuilder_t *beacon_BytecodeCodeBuilder_new(beacon_context_t *context)
+beacon_BytecodeCodeBuilder_t *beacon_BytecodeCodeBuilder_new(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *parentBuilder)
 {
     beacon_BytecodeCodeBuilder_t *builder = beacon_allocateObjectWithBehavior(context->heap, context->classes.bytecodeCodeBuilderClass, sizeof(beacon_BytecodeCodeBuilder_t), BeaconObjectKindPointers);
     builder->arguments = beacon_ArrayList_new(context);
     builder->temporaries = beacon_ArrayList_new(context);
     builder->literals = beacon_ArrayList_new(context);
     builder->bytecodes = beacon_ByteArrayList_new(context);
+    builder->parentBuilder = (beacon_oop_t)parentBuilder;
+    builder->isCapturing = context->roots.falseValue;
+    builder->blockEnvironment = 0;
     return builder;
+}
+
+void beacon_BytecodeCodeBuilder_beginCapturing(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder)
+{
+    methodBuilder->isCapturing = context->roots.trueValue;
+}
+
+void beacon_BytecodeCodeBuilder_endCapturing(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder)
+{
+    methodBuilder->isCapturing = context->roots.falseValue;
 }
 
 beacon_BytecodeCode_t *beacon_BytecodeCodeBuilder_finish(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *builder)
