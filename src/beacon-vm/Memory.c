@@ -102,8 +102,8 @@ void beacon_garbageCollect_markRootsPhase(beacon_context_t *context)
                 for(size_t i = 0; i < currentStackRecord->bytecodeMethodStackRecord.decodedArgumentsTemporaryZoneSize; ++i)
                     beacon_heap_pushReachableObject(context->heap, currentStackRecord->bytecodeMethodStackRecord.decodedArgumentsTemporaryZone[i]);
 
+                beacon_heap_pushReachableObject(context->heap, currentStackRecord->bytecodeMethodStackRecord.captures);
                 beacon_heap_pushReachableObject(context->heap, currentStackRecord->bytecodeMethodStackRecord.returnResultValue);
-
             }
                 break;
             

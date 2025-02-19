@@ -235,6 +235,7 @@ typedef struct beacon_BytecodeCode_s
     beacon_Object_t super;
     beacon_oop_t argumentCount;
     beacon_oop_t temporaryCount;
+    beacon_oop_t captureCount;
     beacon_Array_t *literals;
     beacon_ByteArray_t *bytecodes;
 } beacon_BytecodeCode_t;
@@ -470,10 +471,9 @@ typedef struct beacon_BytecodeCodeBuilder_t
     beacon_ArrayList_t *arguments;
     beacon_ArrayList_t *temporaries;
     beacon_ArrayList_t *literals;
+    beacon_ArrayList_t *captures;
     beacon_ByteArrayList_t *bytecodes;
-    beacon_oop_t isCapturing;
     beacon_oop_t parentBuilder;
-    beacon_oop_t blockEnvironment;
 } beacon_BytecodeCodeBuilder_t;
 
 typedef struct beacon_AbstractCompilationEnvironment_s

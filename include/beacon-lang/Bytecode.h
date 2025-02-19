@@ -75,21 +75,17 @@ beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_addLiteral(beacon_context_t *c
 // New temporary
 beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_newTemporary(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, beacon_oop_t optionalNameSymbol);
 
+// New capture
+beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_newCapture(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder);
+
 // The receiver value
 beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_getOrCreateSelf(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder);
 
 // New argument
 beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_newArgument(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, beacon_oop_t optionalNameSymbol);
 
-// Begin capturing values.
-void beacon_BytecodeCodeBuilder_beginCapturing(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder);
-
-// End capturing values.
-void beacon_BytecodeCodeBuilder_endCapturing(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder);
-
 // Bytecode assembly label.
 uint16_t beacon_BytecodeCodeBuilder_label(beacon_BytecodeCodeBuilder_t *methodBuilder);
-
 
 /**
  * No operation.

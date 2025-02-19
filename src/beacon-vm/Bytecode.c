@@ -26,21 +26,10 @@ beacon_BytecodeCodeBuilder_t *beacon_BytecodeCodeBuilder_new(beacon_context_t *c
     builder->arguments = beacon_ArrayList_new(context);
     builder->temporaries = beacon_ArrayList_new(context);
     builder->literals = beacon_ArrayList_new(context);
+    builder->captures = beacon_ArrayList_new(context);
     builder->bytecodes = beacon_ByteArrayList_new(context);
     builder->parentBuilder = (beacon_oop_t)parentBuilder;
-    builder->isCapturing = context->roots.falseValue;
-    builder->blockEnvironment = 0;
     return builder;
-}
-
-void beacon_BytecodeCodeBuilder_beginCapturing(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder)
-{
-    methodBuilder->isCapturing = context->roots.trueValue;
-}
-
-void beacon_BytecodeCodeBuilder_endCapturing(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder)
-{
-    methodBuilder->isCapturing = context->roots.falseValue;
 }
 
 beacon_BytecodeCode_t *beacon_BytecodeCodeBuilder_finish(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *builder)
@@ -73,6 +62,12 @@ beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_newTemporary(beacon_context_t 
 {
     beacon_ArrayList_add(context, codeBuilder->temporaries, optionalNameSymbol);
     return beacon_BytecodeValue_encode(beacon_ArrayList_size(codeBuilder->temporaries), BytecodeArgumentTypeTemporary);
+}
+
+beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_newCapture(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder)
+{
+    beacon_ArrayList_add(context, codeBuilder->captures, 0);
+    return beacon_BytecodeValue_encode(beacon_ArrayList_size(codeBuilder->captures), BytecodeArgumentTypeCapture);
 }
 
 beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_getOrCreateSelf(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder)
@@ -210,7 +205,7 @@ void beacon_BytecodeCodeBuilder_makeArray(beacon_context_t *context, beacon_Byte
 void beacon_BytecodeCodeBuilder_makeClosureInstance(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t closure, size_t captureCount, beacon_BytecodeValue_t *captures)
 {
     uint8_t argumentCountBits = beacon_BytecodeCodeBuilder_extendArgumentsIfNeeded(context, methodBuilder, 1 + captureCount);
-    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, argumentCountBits | BeaconBytecodeMakeArray);
+    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, argumentCountBits | BeaconBytecodeMakeClosureInstance);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultTemporary);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, closure);
     for(size_t i = 0; i < captureCount; ++i)
@@ -231,6 +226,9 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
     size_t bytecodesSize = code->bytecodes->super.super.super.super.super.header.slotCount;
     uint8_t extendedArgumentCount = 0;
 
+    beacon_Array_t *capturesArray = (beacon_Array_t*)captures;
+    size_t captureCount = capturesArray ? capturesArray->super.super.super.super.super.header.slotCount : 0;
+
     beacon_oop_t bytecodeDecodedArguments[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS];
     memset(bytecodeDecodedArguments, 0, sizeof(bytecodeDecodedArguments));
     beacon_oop_t temporaryStorage[temporaryCount];
@@ -248,6 +246,7 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
             .temporaries = temporaryStorage,
             .decodedArgumentsTemporaryZoneSize = BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS,
             .decodedArgumentsTemporaryZone = bytecodeDecodedArguments,
+            .captures = captures,
         }
     };
 
@@ -320,6 +319,9 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
                 branchDestinationPC += branchDestinationDelta;
                 break;
             case BytecodeArgumentTypeCapture:
+                BeaconAssert(context, 0 < bytecodeArgumentIndex && bytecodeArgumentIndex <= captureCount);
+                *currentDecodedArgument = capturesArray->elements[bytecodeArgumentIndex - 1];
+                break;
             default:
                 beacon_exception_error(context, "Invalid bytecode value type");
                 break;
@@ -374,6 +376,21 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
                 for(size_t i = 0; i < instructionArgumentCount; ++i)
                     resultArray->elements[i] = bytecodeDecodedArguments[i];
                 instructionExecutionResult = (beacon_oop_t)resultArray;
+            }
+            break;
+        case BeaconBytecodeMakeClosureInstance:
+            {
+                BeaconAssert(context, writesToTemporary);
+
+                beacon_BlockClosure_t *blockClosure = beacon_allocateObjectWithBehavior(context->heap, context->classes.blockClosureClass, sizeof(beacon_BlockClosure_t), BeaconObjectKindPointers);
+                blockClosure->code = (beacon_CompiledBlock_t*)bytecodeDecodedArguments[0];
+
+                beacon_Array_t *captures = beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t) + (instructionArgumentCount - 1)*sizeof(beacon_oop_t), BeaconObjectKindPointers);
+                blockClosure->captures = (beacon_oop_t)captures;
+                for(size_t i = 1; i < instructionArgumentCount; ++i)
+                    captures->elements[i - 1] = bytecodeDecodedArguments[i];
+
+                instructionExecutionResult = (beacon_oop_t)blockClosure;
             }
             break;
         default:

@@ -55,6 +55,7 @@ typedef struct beacon_StackFrameRecord_s
             beacon_oop_t *temporaries;
             beacon_oop_t *decodedArgumentsTemporaryZone;
 
+            beacon_oop_t captures;
             beacon_oop_t returnResultValue;
             jmp_buf nonLocalReturnJumpBuffer;
         } bytecodeMethodStackRecord;

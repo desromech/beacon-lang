@@ -2,6 +2,7 @@
 #include "beacon-lang/Context.h"
 #include "beacon-lang/Dictionary.h"
 #include "beacon-lang/Exceptions.h"
+#include "beacon-lang/ArrayList.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -424,14 +425,15 @@ static beacon_oop_t beacon_SyntaxCompiler_returnNode(beacon_context_t *context, 
     return  beacon_encodeSmallInteger(0);
 }
 
-static beacon_CompiledBlock_t *beacon_SyntaxCompiler_compileBlockClosureNode(beacon_context_t *context, beacon_ParseTreeBlockClosureNode_t *blockClosureNode, beacon_AbstractCompilationEnvironment_t *environment, beacon_BytecodeCodeBuilder_t *parentBuilder)
+static beacon_CompiledBlock_t *beacon_SyntaxCompiler_compileBlockClosureNode(beacon_context_t *context, beacon_ParseTreeBlockClosureNode_t *blockClosureNode, beacon_AbstractCompilationEnvironment_t *environment, beacon_BytecodeCodeBuilder_t *parentBuilder, beacon_ArrayList_t **outCaptureList)
 {
     beacon_BlockClosureCompilationEnvironment_t *blockEnvironment = beacon_allocateObjectWithBehavior(context->heap, context->classes.blockClosureCompilationEnvironmentClass, sizeof(beacon_BlockClosureCompilationEnvironment_t), BeaconObjectKindPointers);
     blockEnvironment->parent = environment;
     blockEnvironment->dictionary = beacon_MethodDictionary_new(context);
+    blockEnvironment->captureList = beacon_ArrayList_new(context);
+    *outCaptureList = blockEnvironment->captureList;
 
     beacon_BytecodeCodeBuilder_t *blockBuilder = beacon_BytecodeCodeBuilder_new(context, parentBuilder);
-    blockBuilder->blockEnvironment = (beacon_oop_t)blockEnvironment;
 
     // Block arguments
     size_t blockArguments = blockClosureNode->arguments->super.super.super.super.super.header.slotCount;
@@ -460,6 +462,7 @@ static beacon_CompiledBlock_t *beacon_SyntaxCompiler_compileBlockClosureNode(bea
     beacon_CompiledBlock_t *compiledBlock = beacon_allocateObjectWithBehavior(context->heap, context->classes.compiledBlockClass, sizeof(beacon_CompiledBlock_t), BeaconObjectKindPointers);
     compiledBlock->super.argumentCount = bytecode->argumentCount;
     compiledBlock->super.bytecodeImplementation = bytecode;
+    compiledBlock->captureCount = beacon_encodeSmallInteger(beacon_ArrayList_size(blockEnvironment->captureList));
 
     return compiledBlock;
 }
@@ -469,11 +472,12 @@ static beacon_oop_t beacon_SyntaxCompiler_blockClosure(beacon_context_t *context
     BeaconAssert(context, argumentCount == 2);
     beacon_AbstractCompilationEnvironment_t *environment = (beacon_AbstractCompilationEnvironment_t*)arguments[0];
     beacon_BytecodeCodeBuilder_t *parentBuilder = (beacon_BytecodeCodeBuilder_t *)arguments[1];
+    beacon_ArrayList_t *captureList = NULL;
 
-    beacon_CompiledBlock_t *compiledBlock = beacon_SyntaxCompiler_compileBlockClosureNode(context, (beacon_ParseTreeBlockClosureNode_t*)receiver, environment, parentBuilder);
+    beacon_CompiledBlock_t *compiledBlock = beacon_SyntaxCompiler_compileBlockClosureNode(context, (beacon_ParseTreeBlockClosureNode_t*)receiver, environment, parentBuilder, &captureList);
 
     // If capture list 
-    size_t captureListSize = 0;
+    size_t captureListSize = beacon_ArrayList_size(captureList);
     if(captureListSize == 0)
     {
         beacon_BlockClosure_t *blockClosure = beacon_allocateObjectWithBehavior(context->heap, context->classes.blockClosureClass, sizeof(beacon_BlockClosure_t), BeaconObjectKindPointers);
@@ -484,11 +488,16 @@ static beacon_oop_t beacon_SyntaxCompiler_blockClosure(beacon_context_t *context
         return beacon_encodeSmallInteger(blockClosureLiteral);
     }
 
-    // TODO: Support the captures in the closures
-    abort();
+    // Closure with capture values.
+    beacon_BytecodeValue_t *captures = calloc(captureListSize, sizeof(beacon_BytecodeValue_t));
+    for(size_t i = 0; i < captureListSize; ++i)
+        captures[i] = beacon_decodeSmallInteger(beacon_ArrayList_at(context, captureList, i + 1));
+
     beacon_BytecodeValue_t compiledBlockCodeLiteral = beacon_BytecodeCodeBuilder_addLiteral(context, parentBuilder, (beacon_oop_t)compiledBlock);
     beacon_BytecodeValue_t closureTemporary = beacon_BytecodeCodeBuilder_newTemporary(context, parentBuilder, 0);
-    beacon_BytecodeCodeBuilder_makeClosureInstance(context, parentBuilder, closureTemporary, compiledBlockCodeLiteral, 0, 0);
+    beacon_BytecodeCodeBuilder_makeClosureInstance(context, parentBuilder, closureTemporary, compiledBlockCodeLiteral, captureListSize, captures);
+
+    free(captures);
     return beacon_encodeSmallInteger(closureTemporary);
 }
 
@@ -756,9 +765,38 @@ static beacon_oop_t beacon_BlockClosureCompilationEnvironment_lookupSymbolRecurs
     }
 
     BeaconAssert(context, environment->parent);
-    beacon_BytecodeCodeBuilder_beginCapturing(context, bytecodeBuilder);
-    beacon_oop_t result = beacon_performWithWith(context, (beacon_oop_t)environment->parent, context->roots.lookupSymbolRecursivelyWithBytecodeBuilderSelector, (beacon_oop_t)symbolToSearch, (beacon_oop_t)bytecodeBuilder);
-    beacon_BytecodeCodeBuilder_endCapturing(context, bytecodeBuilder);
+    BeaconAssert(context, bytecodeBuilder->parentBuilder);
+    beacon_BytecodeCodeBuilder_t *parentBuilder = (beacon_BytecodeCodeBuilder_t *)bytecodeBuilder->parentBuilder;
+
+    beacon_oop_t parentResultOop = beacon_performWithWith(context, (beacon_oop_t)environment->parent, context->roots.lookupSymbolRecursivelyWithBytecodeBuilderSelector, (beacon_oop_t)symbolToSearch, (beacon_oop_t)parentBuilder);
+
+    beacon_BytecodeValue_t parentValue = beacon_decodeSmallInteger(parentResultOop);
+    beacon_BytecodeValueType_t parentValueType = beacon_BytecodeValue_getType(parentValue);
+    uint16_t parentValueIndex = beacon_BytecodeValue_getIndex(parentValue);
+
+    beacon_oop_t result = 0;
+    switch(parentValueType)
+    {
+    case BytecodeArgumentTypeLiteral:
+        {
+            beacon_oop_t parentLiteral = beacon_ArrayList_at(context, parentBuilder->literals, parentValueIndex);
+            return beacon_BytecodeCodeBuilder_addLiteral(context, bytecodeBuilder, parentLiteral);
+        }
+    case BytecodeArgumentTypeArgument:
+    case BytecodeArgumentTypeTemporary:
+    case BytecodeArgumentTypeCapture:
+        {
+            beacon_ArrayList_add(context, environment->captureList, parentResultOop);
+            beacon_BytecodeValue_t captureValue = beacon_BytecodeCodeBuilder_newCapture(context, bytecodeBuilder);
+            result = beacon_encodeSmallInteger(captureValue);
+            beacon_MethodDictionary_atPut(context, environment->dictionary, symbolToSearch, result);
+        }
+        break;
+
+    default:
+        BeaconAssert(context, false && "Unexpected bytecode value");
+
+    }
     return result;
 }
 
