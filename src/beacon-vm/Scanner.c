@@ -2,6 +2,7 @@
 #include "beacon-lang/Memory.h"
 #include "beacon-lang/Context.h"
 #include "beacon-lang/ArrayList.h"
+#include "beacon-lang/Exceptions.h"
 #include <stdbool.h>
 #include <stddef.h>
 

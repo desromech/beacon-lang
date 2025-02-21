@@ -5,11 +5,14 @@
 #include <string.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct beacon_ObjectHeader_s beacon_ObjectHeader_t;
 typedef struct beacon_Behavior_s beacon_Behavior_t;
 typedef struct beacon_String_s beacon_String_t;
 typedef struct beacon_Symbol_s beacon_Symbol_t;
-
 
 typedef enum beacon_ObjectKind_e {
     BeaconObjectKindPointers = 0,
@@ -593,5 +596,9 @@ typedef struct beacon_StdioStream_s
 {
     beacon_AbstractBinaryFileStream_t super;
 } beacon_StdioStream_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // BEACON_OBJECT_MODEL_H

@@ -1,6 +1,7 @@
 #include "beacon-lang/Dictionary.h"
 #include "beacon-lang/Memory.h"
 #include "beacon-lang/Context.h"
+#include "beacon-lang/Exceptions.h"
 #include <stdlib.h>
 #include <stdio.h>
 

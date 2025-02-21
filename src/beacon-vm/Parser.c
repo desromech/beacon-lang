@@ -1,6 +1,7 @@
 #include "beacon-lang/Parser.h"
 #include "beacon-lang/Context.h"
 #include "beacon-lang/ArrayList.h"
+#include "beacon-lang/Exceptions.h"
 #include "beacon-lang/SourceCode.h"
 #include <stdlib.h>
 #include <stddef.h>

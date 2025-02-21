@@ -6,6 +6,10 @@
 #include "ObjectModel.h"
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct beacon_context_s beacon_context_t;
 
 /**
@@ -78,4 +82,9 @@ uint8_t beacon_ByteArrayList_at(beacon_context_t *context, beacon_ByteArrayList_
  * Sets the element at the specified location.
  */
 void beacon_ByteArrayList_atPut(beacon_context_t *context, beacon_ByteArrayList_t *collection, intptr_t index, uint8_t element);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //BEACON_ARRAY_LIST_H

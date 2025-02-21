@@ -3,6 +3,10 @@
 
 #include "ObjectModel.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum beacon_BytecodeOpcode_e
 {
     BeaconBytecodeNop = 0,
@@ -157,5 +161,9 @@ void beacon_BytecodeCodeBuilder_makeClosureInstance(beacon_context_t *context, b
  * Bytecode interpretation.
  */
 beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_CompiledCode_t *method, beacon_oop_t receiver, beacon_oop_t selector, beacon_oop_t captures, size_t argumentCount, beacon_oop_t *arguments);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //BEACON_LANG_BYTECODE_H

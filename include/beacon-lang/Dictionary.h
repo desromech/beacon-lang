@@ -4,6 +4,10 @@
 #include "ObjectModel.h"
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct beacon_context_s beacon_context_t;
 
 
@@ -26,5 +30,9 @@ beacon_oop_t beacon_MethodDictionary_atOrNil(beacon_context_t *context, beacon_M
  * Checks for the inclusion of a key
  */
 bool beacon_MethodDictionary_includesKey(beacon_context_t *context, beacon_MethodDictionary_t *dictionary, beacon_Symbol_t *symbol);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //BEACON_LANG_DICTIONARY_H

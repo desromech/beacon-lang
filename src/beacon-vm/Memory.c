@@ -1,6 +1,6 @@
 #include "beacon-lang/Memory.h"
 #include "beacon-lang/Context.h"
-//#include <stdlib.h>
+#include <stdlib.h>
 #include <assert.h>
 
 _Thread_local beacon_StackFrameRecord_t *beaconCurrentTopStackFrameRecord = 0;

@@ -7,6 +7,10 @@
 #include <stddef.h>
 #include <setjmp.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct beacon_context_s beacon_context_t;
 
 typedef struct beacon_MemoryAllocationHeader_s beacon_MemoryAllocationHeader_t;
@@ -75,4 +79,9 @@ void beacon_memoryHeapSafepoint(beacon_context_t *context);
 
 void *beacon_allocateObject(beacon_MemoryHeap_t *heap, size_t size, beacon_ObjectKind_t kind);
 void *beacon_allocateObjectWithBehavior(beacon_MemoryHeap_t *heap, beacon_Behavior_t *behavior, size_t size, beacon_ObjectKind_t kind);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //BEACON_MEMORY_H

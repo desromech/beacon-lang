@@ -5,6 +5,10 @@
 
 #include "ObjectModel.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct beacon_context_s beacon_context_t;
 
 beacon_SourceCode_t *beacon_makeSourceCodeFromFileNamed(beacon_context_t *context, const char *fileName);
@@ -15,5 +19,8 @@ beacon_SourcePosition_t *beacon_sourcePosition_until(beacon_context_t *context, 
 
 beacon_oop_t beacon_evaluateSourceCode(beacon_context_t *context, beacon_SourceCode_t *sourceCode);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif //BEACON_LANG_SOURCE_CODE_H

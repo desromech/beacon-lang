@@ -3,6 +3,7 @@
 #include "beacon-lang/SourceCode.h"
 #include "beacon-lang/Parser.h"
 #include "beacon-lang/SyntaxCompiler.h"
+#include "beacon-lang/Exceptions.h"
 #include <stdio.h>
 #include <string.h>
 

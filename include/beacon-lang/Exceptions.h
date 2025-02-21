@@ -1,6 +1,12 @@
 #ifndef BEACON_LANG_EXCEPTIONS_H
 #define BEACON_LANG_EXCEPTIONS_H
 
+#include "ObjectModel.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct beacon_context_s beacon_context_t;
 typedef struct beacon_ScannerToken_s beacon_ScannerToken_t;
 
@@ -18,5 +24,9 @@ void beacon_exception_subclassResponsibility(beacon_context_t *context, beacon_o
 #define BeaconAssert(context, x) \
     if(!(x)) \
         beacon_exception_assertionFailure(context, "Assertion Failure " #x" in " __FILE__ ":" BeaconAssertStringify(__LINE__))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //BEACON_LANG_EXCEPTIONS_H
