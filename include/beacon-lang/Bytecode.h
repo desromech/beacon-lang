@@ -1,6 +1,8 @@
 #ifndef BEACON_LANG_BYTECODE_H
 #define BEACON_LANG_BYTECODE_H
 
+#pragma once 
+
 #include "ObjectModel.h"
 
 #ifdef __cplusplus

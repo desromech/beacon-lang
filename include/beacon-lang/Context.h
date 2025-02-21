@@ -105,6 +105,9 @@ struct beacon_context_s
         beacon_Behavior_t *abstractBinaryFileStream;
         beacon_Behavior_t *stdioClass;
         beacon_Behavior_t *stdioStreamClass;
+
+        beacon_Behavior_t *formClass;
+        beacon_Behavior_t *windowClass;
     } classes;
 
     struct ContextGCRoots

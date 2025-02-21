@@ -8,4 +8,5 @@
 #include "Parser.c"
 #include "Bytecode.c"
 #include "SyntaxCompiler.c"
+#include "NullWindow.c"
 #include "Main.c"

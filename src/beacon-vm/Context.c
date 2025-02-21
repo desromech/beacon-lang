@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context);
+void beacon_context_registerWindowSystemPrimitives(beacon_context_t *context);
 void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *context);
 
 static size_t beacon_context_computeBehaviorSlotCount(beacon_context_t *context, beacon_Behavior_t *behavior)
@@ -267,6 +268,11 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "handle", NULL);
     context->classes.stdioClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Stdio", sizeof(beacon_Stdio_t), BeaconObjectKindPointers, NULL);
     context->classes.stdioStreamClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractBinaryFileStream, "StdioStream", sizeof(beacon_Stdio_t), BeaconObjectKindPointers, NULL);
+
+    context->classes.formClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Form", sizeof(beacon_Form_t), BeaconObjectKindPointers,
+        "bits", "width", "height", "depth", NULL);
+    context->classes.windowClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Window", sizeof(beacon_Window_t), BeaconObjectKindPointers,
+        "width", "height", "handle", NULL);
 }
 
 void beacon_context_createImportantRoots(beacon_context_t *context)
@@ -343,6 +349,7 @@ void beacon_context_createSystemDictionary(beacon_context_t *context)
 void beacon_context_registerBasicPrimitives(beacon_context_t *context)
 {
     beacon_context_registerObjectBasicPrimitives(context);
+    beacon_context_registerWindowSystemPrimitives(context);
     beacon_context_registerParseTreeCompilationPrimitives(context);
 }
 

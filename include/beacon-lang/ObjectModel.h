@@ -1,6 +1,8 @@
 #ifndef BEACON_OBJECT_MODEL_H
 #define BEACON_OBJECT_MODEL_H
 
+#pragma once
+
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
@@ -603,6 +605,23 @@ typedef struct beacon_StdioStream_s
 {
     beacon_AbstractBinaryFileStream_t super;
 } beacon_StdioStream_t;
+
+typedef struct beacon_Form_s
+{
+    beacon_Object_t super;
+    beacon_ByteArray_t *bits;
+    beacon_oop_t width;
+    beacon_oop_t height;
+    beacon_oop_t depth;
+} beacon_Form_t;
+
+typedef struct beacon_Window_s
+{
+    beacon_Object_t super;
+    beacon_oop_t width;
+    beacon_oop_t height;
+    beacon_oop_t handle;
+} beacon_Window_t;
 
 #ifdef __cplusplus
 }

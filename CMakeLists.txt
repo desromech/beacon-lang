@@ -46,6 +46,7 @@ set(LIBRARY_OUTPUT_PATH "${BeaconLanguage_BINARY_DIR}/dist")
 include(CTest)
 
 # Build the program
+find_library(XCB xcb)
 
 # Add the current directory.
 include_directories(

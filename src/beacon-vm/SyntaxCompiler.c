@@ -391,8 +391,9 @@ static beacon_oop_t beacon_SyntaxCompiler_temporaryAssignment(beacon_context_t *
 
     beacon_BytecodeValue_t valueToStore = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, assignmentNode->valueToStore, environment, builder);
     beacon_BytecodeValue_t storage = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, assignmentNode->storage, environment, builder);
-    if(beacon_BytecodeValue_getType(storage) != BytecodeArgumentTypeTemporary)
-        beacon_exception_error(context, "Cannot assign to non temporary variable.");
+    if(beacon_BytecodeValue_getType(storage) != BytecodeArgumentTypeTemporary &&
+       beacon_BytecodeValue_getType(storage) != BytecodeArgumentTypeReceiverSlot)
+        beacon_exception_error(context, "Cannot assign to non temporary variable, or a receiver slot.");
 
     beacon_BytecodeCodeBuilder_storeValue(context, builder, storage, valueToStore);
     return beacon_encodeSmallInteger(valueToStore);
@@ -570,10 +571,10 @@ static beacon_CompiledMethod_t *beacon_SyntaxCompiler_compileMethodNode(beacon_c
         beacon_MethodDictionary_atPut(context, methodEnvironment->dictionary, definition->name, beacon_encodeSmallInteger(temporaryValue));        
     }
 
-    beacon_BytecodeValue_t lastValue = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, methodNode->expression, &methodEnvironment->super, methodBuilder);
+    beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, methodNode->expression, &methodEnvironment->super, methodBuilder);
 
     // Ensure that we are at least returning the receiver.
-    beacon_BytecodeCodeBuilder_localReturn(context, methodBuilder, lastValue);
+    beacon_BytecodeCodeBuilder_localReturn(context, methodBuilder, self);
 
     beacon_BytecodeCode_t *bytecode = beacon_BytecodeCodeBuilder_finish(context, methodBuilder);
 

@@ -1,6 +1,8 @@
 #ifndef BEACON_LANG_PARSER_H
 #define BEACON_LANG_PARSER_H
 
+#pragma once
+
 #include "ObjectModel.h"
 #include "Scanner.h"
 
