@@ -294,13 +294,16 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
 
         // Decode the result destination.
         bool writesToTemporary = beacon_bytecodeWritesToTemporary(opcode);
-        size_t resultTemporaryIndex = 0;
+        size_t resultTemporaryOrInstanceVarIndex = 0;
+        bool resultTemporaryIsReceiverSlot = false;
         if(writesToTemporary)
         {
             beacon_BytecodeValue_t bytecodeResultTemporary = bytecodes[pc++];
             bytecodeResultTemporary |= (bytecodes[pc++]) << 8;
-            BeaconAssert(context, beacon_BytecodeValue_getType(bytecodeResultTemporary) == BytecodeArgumentTypeTemporary);
-            resultTemporaryIndex = beacon_BytecodeValue_getIndex(bytecodeResultTemporary);
+            BeaconAssert(context, beacon_BytecodeValue_getType(bytecodeResultTemporary) == BytecodeArgumentTypeTemporary ||
+                                  beacon_BytecodeValue_getType(bytecodeResultTemporary) == BytecodeArgumentTypeReceiverSlot);
+            resultTemporaryOrInstanceVarIndex = beacon_BytecodeValue_getIndex(bytecodeResultTemporary);
+            resultTemporaryIsReceiverSlot = beacon_BytecodeValue_getType(bytecodeResultTemporary) == BytecodeArgumentTypeReceiverSlot;
         }
 
         // Fetch all of the instruction arguments.
@@ -423,8 +426,13 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
         }
 
         // Write back the result.
-        if(writesToTemporary && resultTemporaryIndex > 0)
-            temporaryStorage[resultTemporaryIndex - 1] = instructionExecutionResult;
+        if(writesToTemporary && resultTemporaryOrInstanceVarIndex > 0)
+        {
+            if(resultTemporaryIsReceiverSlot)
+                receiverSlots[resultTemporaryOrInstanceVarIndex - 1] = instructionExecutionResult;
+            else
+                temporaryStorage[resultTemporaryOrInstanceVarIndex - 1] = instructionExecutionResult;
+        }
     }
 
     return 0;
