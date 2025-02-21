@@ -52,6 +52,7 @@ typedef struct beacon_StackFrameRecord_s
         struct
         {
             beacon_CompiledCode_t *code;
+            beacon_oop_t receiver;
             size_t argumentCount;
             size_t temporaryCount;
             size_t decodedArgumentsTemporaryZoneSize;

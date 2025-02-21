@@ -29,7 +29,8 @@ typedef enum beacon_BytecodeArgumentType_e
     BytecodeArgumentTypeArgument,
     BytecodeArgumentTypeTemporary,
     BytecodeArgumentTypeJumpDelta,
-    BytecodeArgumentTypeCapture
+    BytecodeArgumentTypeCapture,
+    BytecodeArgumentTypeReceiverSlot
 } beacon_BytecodeValueType_t;
 
 #define BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS 32
@@ -87,6 +88,9 @@ beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_getOrCreateSelf(beacon_context
 
 // New argument
 beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_newArgument(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, beacon_oop_t optionalNameSymbol);
+
+// Receiver slot
+beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_getReceiverSlot(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, intptr_t index);
 
 // Bytecode assembly label.
 uint16_t beacon_BytecodeCodeBuilder_label(beacon_BytecodeCodeBuilder_t *methodBuilder);

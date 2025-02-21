@@ -9,8 +9,8 @@
             "request": "launch",
             "name": "Debug",
             "program": "${workspaceFolder}/build/dist/beacon-vm",
-            //"args": ["src/runtime/Runtime.st"],
-            "args": ["-eval", "([:x | [:y | x + y]] value: 42) value: 3"],
+            "args": ["src/runtime/Runtime.st", "-eval", "Behavior superclass"],
+            //"args": ["-eval", "([:x | [:y | x + y]] value: 42) value: 3"],
             "cwd": "${workspaceFolder}"
         }
     ]

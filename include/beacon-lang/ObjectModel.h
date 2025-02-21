@@ -165,6 +165,13 @@ typedef struct beacon_InternedSymbolSet_s
     beacon_HashedCollection_t super;
 } beacon_InternedSymbolSet_t;
 
+typedef struct beacon_Slot_s
+{
+    beacon_Object_t super;
+    beacon_oop_t name;
+    beacon_oop_t index;
+} beacon_Slot_t;
+
 typedef struct beacon_Behavior_s
 {
     beacon_Object_t super;
@@ -172,7 +179,7 @@ typedef struct beacon_Behavior_s
     beacon_MethodDictionary_t *methodDict;
     beacon_oop_t instSize;
     beacon_oop_t objectKind;
-    beacon_oop_t instanceVariableNames;
+    beacon_oop_t slots;
 } beacon_Behavior_t;
 
 typedef struct beacon_ClassDescription_s

@@ -95,6 +95,7 @@ void beacon_garbageCollect_markRootsPhase(beacon_context_t *context)
             case StackFrameBytecodeMethodRecord:
             {
                 beacon_heap_pushReachableObject(context->heap, (beacon_oop_t)currentStackRecord->bytecodeMethodStackRecord.code);
+                beacon_heap_pushReachableObject(context->heap, (beacon_oop_t)currentStackRecord->bytecodeMethodStackRecord.receiver);
                 for(size_t i = 0; i < currentStackRecord->bytecodeMethodStackRecord.argumentCount; ++i)
                     beacon_heap_pushReachableObject(context->heap, currentStackRecord->bytecodeMethodStackRecord.arguments[i]);
                 for(size_t i = 0; i < currentStackRecord->bytecodeMethodStackRecord.temporaryCount; ++i)

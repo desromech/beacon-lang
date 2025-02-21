@@ -32,3 +32,8 @@ Behavior ![
 new: anInteger
     ^ (self basicNew: anInteger) initialize
 ].
+
+Behavior ![
+superclass
+    ^ superclass
+].

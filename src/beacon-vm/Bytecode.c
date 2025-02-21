@@ -83,6 +83,13 @@ beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_newArgument(beacon_context_t *
     return beacon_BytecodeValue_encode(beacon_ArrayList_size(codeBuilder->arguments), BytecodeArgumentTypeArgument);
 }
 
+beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_getReceiverSlot(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, intptr_t index)
+{
+    (void)codeBuilder;
+    BeaconAssert(context, 1<=index);
+    return beacon_BytecodeValue_encode(index, BytecodeArgumentTypeReceiverSlot);
+}
+
 uint16_t beacon_BytecodeCodeBuilder_label(beacon_BytecodeCodeBuilder_t *methodBuilder)
 {
     return beacon_ByteArrayList_size(methodBuilder->bytecodes);
@@ -225,6 +232,14 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
     uint8_t *bytecodes = code->bytecodes->elements;
     size_t bytecodesSize = code->bytecodes->super.super.super.super.super.header.slotCount;
     uint8_t extendedArgumentCount = 0;
+    size_t receiverSlotCount = 0;
+    beacon_oop_t *receiverSlots = NULL;
+
+    if(receiver)
+    {
+        receiverSlotCount = ((beacon_ObjectHeader_t*)receiver)->slotCount;
+        receiverSlots = (beacon_oop_t*)((beacon_ObjectHeader_t*)receiver + 1);
+    }
 
     beacon_Array_t *capturesArray = (beacon_Array_t*)captures;
     size_t captureCount = capturesArray ? capturesArray->super.super.super.super.super.header.slotCount : 0;
@@ -240,6 +255,7 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
         .previousRecord = NULL,
         .bytecodeMethodStackRecord = {
             .code = method,
+            .receiver = receiver,
             .argumentCount = argumentCount,
             .arguments = arguments,
             .temporaryCount = temporaryCount,
@@ -321,6 +337,10 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
             case BytecodeArgumentTypeCapture:
                 BeaconAssert(context, 0 < bytecodeArgumentIndex && bytecodeArgumentIndex <= captureCount);
                 *currentDecodedArgument = capturesArray->elements[bytecodeArgumentIndex - 1];
+                break;
+            case BytecodeArgumentTypeReceiverSlot:
+                BeaconAssert(context, 0 < bytecodeArgumentIndex && bytecodeArgumentIndex <= receiverSlotCount);
+                *currentDecodedArgument = receiverSlots[bytecodeArgumentIndex - 1];
                 break;
             default:
                 beacon_exception_error(context, "Invalid bytecode value type");
