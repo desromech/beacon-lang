@@ -609,6 +609,7 @@ static beacon_oop_t beacon_SyntaxCompiler_addMethodNode(beacon_context_t *contex
 
     beacon_BehaviorCompilationEnvironment_t *behaviorEnvironment = beacon_allocateObjectWithBehavior(context->heap, context->classes.behaviorCompilationEnvironmentClass, sizeof(beacon_BehaviorCompilationEnvironment_t), BeaconObjectKindPointers);
     behaviorEnvironment->behavior = (beacon_Behavior_t*)behavior;
+    behaviorEnvironment->parent = environment;
 
     beacon_CompiledMethod_t *compiledMethod = beacon_SyntaxCompiler_compileMethodNode(context, (beacon_ParseTreeMethodNode_t*)addMethodNode->method, &behaviorEnvironment->super);
     beacon_Behavior_t *targetBehavior = (beacon_Behavior_t *)behavior;
