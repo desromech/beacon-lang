@@ -4,6 +4,8 @@
 #include "beacon-lang/Scanner.h"
 #include "beacon-lang/SyntaxCompiler.h"
 #include "beacon-lang/Parser.h"
+#include "beacon-lang/ArrayList.h"
+#include "beacon-lang/Exceptions.h"
 #include <string.h>
 #include <stdio.h>
 
