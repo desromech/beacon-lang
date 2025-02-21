@@ -2,6 +2,7 @@
 
 FilesToLoad := #(
     'Object.st'
+    'Behavior.st'
 ).
 
 1 to: FilesToLoad basicSize do: [:index |
