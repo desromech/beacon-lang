@@ -36,6 +36,8 @@ Class ![
     subclass name: subclassName.
     subclass setSlotsWithInstanceVariableNames: instanceVariables.
 
+    SystemDictionary at: subclassName put: subclass.
+
     ^ subclass
 ].
 

@@ -193,7 +193,7 @@ typedef struct beacon_ClassDescription_s
 typedef struct beacon_Class_s
 {
     beacon_ClassDescription_t super;
-    beacon_Symbol_t *subclasses;
+    beacon_oop_t subclasses;
     beacon_Symbol_t *name;
 
 } beacon_Class_t;

@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context);
+void beacon_context_registerDictionaryPrimitives(beacon_context_t *context);
 void beacon_context_registerWindowSystemPrimitives(beacon_context_t *context);
 void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *context);
 
@@ -355,11 +356,13 @@ void beacon_context_createSystemDictionary(beacon_context_t *context)
     beacon_MethodDictionary_atPut(context, context->roots.systemDictionary, beacon_internCString(context, "nil"), context->roots.nilValue);
     beacon_MethodDictionary_atPut(context, context->roots.systemDictionary, beacon_internCString(context, "true"), context->roots.trueValue);
     beacon_MethodDictionary_atPut(context, context->roots.systemDictionary, beacon_internCString(context, "false"), context->roots.falseValue);
+    beacon_MethodDictionary_atPut(context, context->roots.systemDictionary, beacon_internCString(context, "SystemDictionary"), (beacon_oop_t)context->roots.systemDictionary);
 }
 
 void beacon_context_registerBasicPrimitives(beacon_context_t *context)
 {
     beacon_context_registerObjectBasicPrimitives(context);
+    beacon_context_registerDictionaryPrimitives(context);
     beacon_context_registerWindowSystemPrimitives(context);
     beacon_context_registerParseTreeCompilationPrimitives(context);
 }

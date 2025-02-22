@@ -106,3 +106,27 @@ bool beacon_MethodDictionary_includesKey(beacon_context_t *context, beacon_Metho
 
     return dictionary->super.super.array->elements[slotIndex*2] != 0;
 }
+
+static beacon_oop_t beacon_MethodDictionaryPrimitive_atOrNil(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, (intptr_t)argumentCount == 1);
+    beacon_MethodDictionary_t *methodDict = (beacon_MethodDictionary_t*)receiver;
+    beacon_Symbol_t *symbol = (beacon_Symbol_t *)arguments[0];
+    return beacon_MethodDictionary_atOrNil(context, methodDict, symbol);
+}
+
+static beacon_oop_t beacon_MethodDictionaryPrimitive_atPut(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, (intptr_t)argumentCount == 2);
+    beacon_MethodDictionary_t *methodDict = (beacon_MethodDictionary_t*)receiver;
+    beacon_Symbol_t *symbol = (beacon_Symbol_t *)arguments[0];
+    beacon_oop_t value = arguments[1];
+    beacon_MethodDictionary_atPut(context, methodDict, symbol, value);
+    return value;
+}
+
+void beacon_context_registerDictionaryPrimitives(beacon_context_t *context)
+{
+    beacon_addPrimitiveToClass(context, context->classes.methodDictionaryClass, "atOrNil:", 1, beacon_MethodDictionaryPrimitive_atPut);
+    beacon_addPrimitiveToClass(context, context->classes.methodDictionaryClass, "at:put:", 2, beacon_MethodDictionaryPrimitive_atPut);
+}
