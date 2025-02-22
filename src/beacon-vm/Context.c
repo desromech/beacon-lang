@@ -130,8 +130,10 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
 
     // Normal class orders
     context->classes.collectionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Collection", sizeof(beacon_Collection_t), BeaconObjectKindPointers, NULL);
+    context->classes.hashedCollectionClass = beacon_context_createClassAndMetaclass(context, context->classes.collectionClass, "HashedCollection", sizeof(beacon_HashedCollection_t), BeaconObjectKindPointers,
+        "tally", "array", NULL);
     context->classes.dictionaryClass = beacon_context_createClassAndMetaclass(context, context->classes.hashedCollectionClass, "Dictionary", sizeof(beacon_Dictionary_t), BeaconObjectKindPointers, NULL);
-    context->classes.methodDictionaryClass = beacon_context_createClassAndMetaclass(context, context->classes.methodDictionaryClass, "MethodDictionary", sizeof(beacon_MethodDictionary_t), BeaconObjectKindPointers, NULL);
+    context->classes.methodDictionaryClass = beacon_context_createClassAndMetaclass(context, context->classes.dictionaryClass, "MethodDictionary", sizeof(beacon_MethodDictionary_t), BeaconObjectKindPointers, NULL);
     context->classes.sequenceableCollectionClass = beacon_context_createClassAndMetaclass(context, context->classes.collectionClass, "SequenceableCollection", sizeof(beacon_SequenceableCollection_t), BeaconObjectKindPointers, NULL);
     context->classes.arrayedCollectionClass = beacon_context_createClassAndMetaclass(context, context->classes.sequenceableCollectionClass, "ArrayedCollection", sizeof(beacon_ArrayedCollection_t), BeaconObjectKindPointers, NULL);
     context->classes.arrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "Array", sizeof(beacon_Array_t), BeaconObjectKindPointers, NULL);
@@ -142,6 +144,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     beacon_context_fixEarlyArray(context, context->classes.classDescriptionClass);
     beacon_context_fixEarlyArray(context, context->classes.metaclassClass);
     beacon_context_fixEarlyArray(context, context->classes.collectionClass);
+    beacon_context_fixEarlyArray(context, context->classes.hashedCollectionClass);
     beacon_context_fixEarlyArray(context, context->classes.dictionaryClass);
     beacon_context_fixEarlyArray(context, context->classes.methodDictionaryClass);
     beacon_context_fixEarlyArray(context, context->classes.sequenceableCollectionClass);
@@ -151,9 +154,6 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     
     context->classes.byteArrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "ByteArray", sizeof(beacon_ByteArray_t), BeaconObjectKindBytes, NULL);
     context->classes.stringClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "String", sizeof(beacon_String_t), BeaconObjectKindBytes, NULL);
-
-    context->classes.hashedCollectionClass = beacon_context_createClassAndMetaclass(context, context->classes.collectionClass, "HashedCollection", sizeof(beacon_HashedCollection_t), BeaconObjectKindPointers,
-    "tally", "array", NULL);
 
     context->classes.arrayListClass = beacon_context_createClassAndMetaclass(context, context->classes.sequenceableCollectionClass, "ArrayList", sizeof(beacon_ArrayList_t), BeaconObjectKindPointers,
     "array", "size", "capacity", NULL);
@@ -273,6 +273,19 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "bits", "width", "height", "depth", NULL);
     context->classes.windowClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Window", sizeof(beacon_Window_t), BeaconObjectKindPointers,
         "width", "height", "handle", NULL);
+
+    context->classes.windowEventClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "WindowEvent", sizeof(beacon_WindowEvent_t), BeaconObjectKindPointers, NULL);
+    context->classes.windowExposeEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowExposeEvent", sizeof(beacon_WindowExposeEvent_t), BeaconObjectKindPointers,
+        "x", "y", "width", "height",NULL);
+    context->classes.windowMouseButtonEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowMouseButton", sizeof(beacon_WindowMouseButtonEvent_t), BeaconObjectKindPointers,
+        "x", "y", NULL);
+
+        typedef struct beacon_WindowMouseButtonDownEvent_s
+        {
+            beacon_Object_t super;
+            beacon_oop_t x;
+            beacon_oop_t y;
+        } beacon_WindowMouseButtonDownEvent_t;
 }
 
 void beacon_context_createImportantRoots(beacon_context_t *context)
@@ -325,6 +338,8 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
         context->roots.plusSelector = (beacon_oop_t)beacon_internCString(context, "+");
         context->roots.lessOrEqualsSelector = (beacon_oop_t)beacon_internCString(context, "<=");
     }
+
+    context->roots.windowHandleMap = beacon_MethodDictionary_new(context);
 }
 
 void beacon_context_createSystemDictionary(beacon_context_t *context)

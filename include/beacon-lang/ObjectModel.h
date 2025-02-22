@@ -624,6 +624,27 @@ typedef struct beacon_Window_s
     beacon_oop_t drawingHandle;
 } beacon_Window_t;
 
+typedef struct beacon_WindowEvent_s
+{
+    beacon_Object_t super;
+} beacon_WindowEvent_t;
+
+typedef struct beacon_WindowExposeEvent_s
+{
+    beacon_Object_t super;
+    beacon_oop_t x;
+    beacon_oop_t y;
+    beacon_oop_t width;
+    beacon_oop_t height;
+} beacon_WindowExposeEvent_t;
+
+typedef struct beacon_WindowMouseButtonEvent_s
+{
+    beacon_Object_t super;
+    beacon_oop_t x;
+    beacon_oop_t y;
+} beacon_WindowMouseButtonEvent_t;
+
 #ifdef __cplusplus
 }
 #endif

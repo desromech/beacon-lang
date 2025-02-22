@@ -1,4 +1,5 @@
 #include "Context.h"
+#include "Dictionary.h"
 #include "Window.h"
 #include <xcb/xcb.h>
 #include <stdio.h>
@@ -19,6 +20,8 @@ static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t r
     // Create the window
     xcb_window_t windowHandle = xcb_generate_id(xcb_connection);
     beaconWindow->handle = beacon_encodeSmallInteger(windowHandle);
+    
+    beacon_MethodDictionary_atPut(context, context->roots.windowHandleMap, (beacon_Symbol_t*)beaconWindow->handle, (beacon_oop_t)beaconWindow);
     uint32_t mask = XCB_CW_EVENT_MASK;
     uint32_t valwin[] = {
         XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE
@@ -49,18 +52,38 @@ static beacon_oop_t beacon_WindowClass_enterMainLoop(beacon_context_t *context, 
         case XCB_EXPOSE:
             {
                 xcb_expose_event_t *expose = (xcb_expose_event_t *)event;
+                beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,
+                        (beacon_Symbol_t*)beacon_encodeSmallInteger(expose->window));
+                if(beaconWindow)
+                {
+                    beacon_WindowExposeEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowExposeEventClass, sizeof(beacon_WindowExposeEvent_t), BeaconObjectKindPointers);
+                    beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onExpose:"), (beacon_oop_t)event);
+                }
+                
             }
             break;
         case XCB_BUTTON_PRESS:
             {
-                xcb_button_press_event_t *expose = (xcb_button_press_event_t*)event;
-                printf("Mouse button press\n");
+                xcb_button_press_event_t *pressEvent = (xcb_button_press_event_t*)event;
+                beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,
+                    (beacon_Symbol_t*)beacon_encodeSmallInteger(pressEvent->event));
+                if(beaconWindow)
+                {
+                    beacon_WindowMouseButtonEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowMouseButtonEventClass, sizeof(beacon_WindowMouseButtonEvent_t), BeaconObjectKindPointers);
+                    beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onMouseButtonDown:"), (beacon_oop_t)event);
+                }
             }
             break;
         case XCB_BUTTON_RELEASE:
             {
-                xcb_button_press_event_t *expose = (xcb_button_press_event_t*)event;
-                printf("Mouse button release\n");
+                xcb_button_release_event_t *releaseEvent = (xcb_button_release_event_t*)event;
+                beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,
+                    (beacon_Symbol_t*)beacon_encodeSmallInteger(releaseEvent->event));
+                if(beaconWindow)
+                {
+                    beacon_WindowMouseButtonEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowMouseButtonEventClass, sizeof(beacon_WindowMouseButtonEvent_t), BeaconObjectKindPointers);
+                    beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onMouseButtonUp:"), (beacon_oop_t)event);
+                }
             }
             break;
         }

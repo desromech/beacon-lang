@@ -108,6 +108,9 @@ struct beacon_context_s
 
         beacon_Behavior_t *formClass;
         beacon_Behavior_t *windowClass;
+        beacon_Behavior_t *windowEventClass;
+        beacon_Behavior_t *windowExposeEventClass;
+        beacon_Behavior_t *windowMouseButtonEventClass;
     } classes;
 
     struct ContextGCRoots
@@ -143,6 +146,8 @@ struct beacon_context_s
 
         beacon_oop_t plusSelector;
         beacon_oop_t lessOrEqualsSelector;
+
+        beacon_MethodDictionary_t *windowHandleMap;
     } roots;
 
     beacon_MemoryHeap_t *heap;
