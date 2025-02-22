@@ -117,6 +117,13 @@ typedef struct beacon_Dictionary_s
     beacon_HashedCollection_t super;
 } beacon_Dictionary_t;
 
+typedef struct beacon_Association_s
+{
+    beacon_Object_t super;
+    beacon_oop_t key;
+    beacon_oop_t value;
+} beacon_Association_t;
+
 typedef struct beacon_MethodDictionary_s
 {
     beacon_Dictionary_t super;
@@ -157,7 +164,7 @@ typedef struct beacon_BlockClosure_s
 
 typedef struct beacon_Message_s
 {
-    beacon_Dictionary_t super;
+    beacon_Object_t super;
     beacon_oop_t selector;
     beacon_oop_t arguments;
 } beacon_Message_t;

@@ -38,6 +38,10 @@ void beacon_exception_subclassResponsibility(beacon_context_t *context, beacon_o
     (void)receiver;
     char buffer[256];
     beacon_Symbol_t *selectorSymbol = (beacon_Symbol_t *)selector;
-    snprintf(buffer, sizeof(buffer), "Subclass responsibility with implementing #%.*s", selectorSymbol->super.super.super.super.super.header.slotCount, selectorSymbol->data);
+    beacon_Class_t *class = (beacon_Class_t*)beacon_getClass(context, receiver);
+    snprintf(buffer, sizeof(buffer), "Subclass responsibility with implementing #%.*s in %.*s.",
+        selectorSymbol->super.super.super.super.super.header.slotCount, selectorSymbol->data,
+        class->name->super.super.super.super.super.header.slotCount, class->name->data
+    );
     beacon_exception_error(context, buffer);
 }

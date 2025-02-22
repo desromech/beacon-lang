@@ -12,6 +12,7 @@ extern "C" {
 #endif
 
 beacon_CompiledMethod_t *beacon_compileFileSyntax(beacon_context_t *context, beacon_ParseTreeNode_t *parseTree, beacon_SourceCode_t *sourceCode);
+beacon_oop_t beacon_evaluateFileSyntax(beacon_context_t *context, beacon_ParseTreeNode_t *parseTree, beacon_SourceCode_t *sourceCode);
 
 #ifdef __cplusplus
 }

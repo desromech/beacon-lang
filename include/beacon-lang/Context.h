@@ -20,6 +20,7 @@ struct beacon_context_s
         beacon_Behavior_t *objectClass;
         beacon_Behavior_t *collectionClass;
         beacon_Behavior_t *hashedCollectionClass;
+        beacon_Behavior_t *associationClass;
         beacon_Behavior_t *dictionaryClass;
         beacon_Behavior_t *methodDictionaryClass;
         beacon_Behavior_t *slotClass;

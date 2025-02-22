@@ -133,6 +133,8 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.collectionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Collection", sizeof(beacon_Collection_t), BeaconObjectKindPointers, NULL);
     context->classes.hashedCollectionClass = beacon_context_createClassAndMetaclass(context, context->classes.collectionClass, "HashedCollection", sizeof(beacon_HashedCollection_t), BeaconObjectKindPointers,
         "tally", "array", NULL);
+    context->classes.associationClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Association", sizeof(beacon_Association_t), BeaconObjectKindPointers,
+        "key", "value", NULL);
     context->classes.dictionaryClass = beacon_context_createClassAndMetaclass(context, context->classes.hashedCollectionClass, "Dictionary", sizeof(beacon_Dictionary_t), BeaconObjectKindPointers, NULL);
     context->classes.methodDictionaryClass = beacon_context_createClassAndMetaclass(context, context->classes.dictionaryClass, "MethodDictionary", sizeof(beacon_MethodDictionary_t), BeaconObjectKindPointers, NULL);
     context->classes.sequenceableCollectionClass = beacon_context_createClassAndMetaclass(context, context->classes.collectionClass, "SequenceableCollection", sizeof(beacon_SequenceableCollection_t), BeaconObjectKindPointers, NULL);
@@ -146,6 +148,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     beacon_context_fixEarlyArray(context, context->classes.metaclassClass);
     beacon_context_fixEarlyArray(context, context->classes.collectionClass);
     beacon_context_fixEarlyArray(context, context->classes.hashedCollectionClass);
+    beacon_context_fixEarlyArray(context, context->classes.associationClass);
     beacon_context_fixEarlyArray(context, context->classes.dictionaryClass);
     beacon_context_fixEarlyArray(context, context->classes.methodDictionaryClass);
     beacon_context_fixEarlyArray(context, context->classes.sequenceableCollectionClass);
