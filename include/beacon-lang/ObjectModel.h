@@ -595,6 +595,11 @@ typedef struct beacon_Stdio_s
     beacon_Object_t super;
 } beacon_Stdio_t;
 
+typedef struct beacon_Stream_s
+{
+    beacon_Object_t super;
+} beacon_Stream_t;
+
 typedef struct beacon_AbstractBinaryFileStream_s
 {
     beacon_Object_t super;
@@ -644,6 +649,13 @@ typedef struct beacon_WindowMouseButtonEvent_s
     beacon_oop_t x;
     beacon_oop_t y;
 } beacon_WindowMouseButtonEvent_t;
+
+typedef struct beacon_WindowKeyboardEvent_t
+{
+    beacon_Object_t super;
+    beacon_oop_t scancode;
+    beacon_oop_t symbol;
+} beacon_WindowKeyboardEvent_t;
 
 #ifdef __cplusplus
 }

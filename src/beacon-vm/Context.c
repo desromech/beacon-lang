@@ -264,10 +264,11 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
 
     context->classes.weakTombstoneClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "WeakTombstone", sizeof(beacon_WeakTombstone_t), BeaconObjectKindPointers, NULL);
 
-    context->classes.abstractBinaryFileStream = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AbstractBinaryFileStream", sizeof(beacon_Stdio_t), BeaconObjectKindPointers,
+    context->classes.streamClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Stream", sizeof(beacon_Stdio_t), BeaconObjectKindPointers, NULL);
+    context->classes.abstractBinaryFileStreamClass = beacon_context_createClassAndMetaclass(context, context->classes.streamClass, "AbstractBinaryFileStream", sizeof(beacon_Stdio_t), BeaconObjectKindPointers,
         "handle", NULL);
     context->classes.stdioClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Stdio", sizeof(beacon_Stdio_t), BeaconObjectKindPointers, NULL);
-    context->classes.stdioStreamClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractBinaryFileStream, "StdioStream", sizeof(beacon_Stdio_t), BeaconObjectKindPointers, NULL);
+    context->classes.stdioStreamClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractBinaryFileStreamClass, "StdioStream", sizeof(beacon_Stdio_t), BeaconObjectKindPointers, NULL);
 
     context->classes.formClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Form", sizeof(beacon_Form_t), BeaconObjectKindPointers,
         "bits", "width", "height", "depth", NULL);
@@ -279,13 +280,8 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "x", "y", "width", "height",NULL);
     context->classes.windowMouseButtonEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowMouseButton", sizeof(beacon_WindowMouseButtonEvent_t), BeaconObjectKindPointers,
         "x", "y", NULL);
-
-        typedef struct beacon_WindowMouseButtonDownEvent_s
-        {
-            beacon_Object_t super;
-            beacon_oop_t x;
-            beacon_oop_t y;
-        } beacon_WindowMouseButtonDownEvent_t;
+    context->classes.windowKeyboardEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowKeyboardEvent", sizeof(beacon_WindowMouseButtonEvent_t), BeaconObjectKindPointers,
+        "scancode", "symbol", NULL);
 }
 
 void beacon_context_createImportantRoots(beacon_context_t *context)
@@ -1055,8 +1051,8 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.stdioClass), "stdout", 0, beacon_Stdio_stdout);
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.stdioClass), "stderr", 0, beacon_Stdio_stderr);
 
-    beacon_addPrimitiveToClass(context, context->classes.abstractBinaryFileStream, "nextPut:", 1, beacon_AbstractBinaryFileStream_nextPut);
-    beacon_addPrimitiveToClass(context, context->classes.abstractBinaryFileStream, "nextPutAll:", 1, beacon_AbstractBinaryFileStream_nextPutAll);
+    beacon_addPrimitiveToClass(context, context->classes.abstractBinaryFileStreamClass, "nextPut:", 1, beacon_AbstractBinaryFileStream_nextPut);
+    beacon_addPrimitiveToClass(context, context->classes.abstractBinaryFileStreamClass, "nextPutAll:", 1, beacon_AbstractBinaryFileStream_nextPutAll);
 
     beacon_addPrimitiveToClass(context, context->classes.stringClass, ",", 1, beacon_String_concatenate);
     beacon_addPrimitiveToClass(context, context->classes.stringClass, "fileIn", 1, beacon_String_fileIn);

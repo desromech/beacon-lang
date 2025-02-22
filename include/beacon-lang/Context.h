@@ -102,7 +102,8 @@ struct beacon_context_s
         
         beacon_Behavior_t *weakTombstoneClass;
 
-        beacon_Behavior_t *abstractBinaryFileStream;
+        beacon_Behavior_t *streamClass;
+        beacon_Behavior_t *abstractBinaryFileStreamClass;
         beacon_Behavior_t *stdioClass;
         beacon_Behavior_t *stdioStreamClass;
 
@@ -111,6 +112,7 @@ struct beacon_context_s
         beacon_Behavior_t *windowEventClass;
         beacon_Behavior_t *windowExposeEventClass;
         beacon_Behavior_t *windowMouseButtonEventClass;
+        beacon_Behavior_t *windowKeyboardEventClass;
     } classes;
 
     struct ContextGCRoots
