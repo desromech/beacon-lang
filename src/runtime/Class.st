@@ -43,7 +43,7 @@ Class ![
 
 Class ![
     subclass: subclassName instanceVariables: instanceVariables
-    self subclass: subclassName instanceVariables: instanceVariables metaInstanceVariables: #()
+    ^ self subclass: subclassName instanceVariables: instanceVariables metaInstanceVariables: #()
 ].
 
 Class ![

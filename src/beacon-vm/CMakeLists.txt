@@ -11,7 +11,7 @@ set(BeaconVM_Sources
     SyntaxCompiler.c
 )
 
-if(XCB)
+if(XCB AND NOT APPLE)
     set(BeaconVM_XcbSources
         XcbWindow.c
     )
