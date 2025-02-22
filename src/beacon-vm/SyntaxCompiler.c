@@ -815,6 +815,7 @@ static beacon_oop_t beacon_BlockClosureCompilationEnvironment_lookupSymbolRecurs
     case BytecodeArgumentTypeArgument:
     case BytecodeArgumentTypeTemporary:
     case BytecodeArgumentTypeCapture:
+    case BytecodeArgumentTypeReceiverSlot:
         {
             beacon_ArrayList_add(context, environment->captureList, parentResultOop);
             beacon_BytecodeValue_t captureValue = beacon_BytecodeCodeBuilder_newCapture(context, bytecodeBuilder);

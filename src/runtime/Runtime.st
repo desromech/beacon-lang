@@ -3,6 +3,8 @@
 FilesToLoad := #(
     'Object.st'
     'Behavior.st'
+    'Slot.st'
+    'Class.st'
     'AbstractBinaryFileStream.st'
     'Window.st'
 ).
