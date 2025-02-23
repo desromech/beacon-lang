@@ -525,6 +525,36 @@ static beacon_oop_t beacon_SyntaxCompiler_messageCascade(beacon_context_t *conte
     return beacon_encodeSmallInteger(resultTemporary);
 }
 
+static beacon_oop_t beacon_SyntaxCompiler_evaluateMessageCascade(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    beacon_ParseTreeMessageCascadeNode_t *messageCascadeNode = (beacon_ParseTreeMessageCascadeNode_t *)receiver;
+    beacon_AbstractCompilationEnvironment_t *environment = (beacon_AbstractCompilationEnvironment_t*)arguments[0];
+
+    beacon_oop_t receiverValue = beacon_evaluateNodeWithEnvironment(context, messageCascadeNode->receiver, environment);
+    size_t cascadedMessageCount = messageCascadeNode->cascadedMessages->super.super.super.super.super.header.slotCount;
+    if(cascadedMessageCount == 0)
+        return receiverValue;
+
+    beacon_oop_t resultValue = receiverValue;
+    for(size_t i = 0; i < cascadedMessageCount; ++i)
+    {
+        beacon_ParseTreeCascadedMessageNode_t *cascadedMessage = (beacon_ParseTreeCascadedMessageNode_t *)messageCascadeNode->cascadedMessages->elements[i];
+        beacon_oop_t selectorValue = beacon_evaluateNodeWithEnvironment(context, cascadedMessage->selector, environment);
+
+        size_t argumentValueCount = cascadedMessage->arguments->super.super.super.super.super.header.slotCount;
+        BeaconAssert(context, argumentValueCount <= BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS);
+        beacon_oop_t argumentValues[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS] = {};
+
+        for(size_t i = 0; i < argumentValueCount; ++i)
+            argumentValues[i] = beacon_evaluateNodeWithEnvironment(context, (beacon_ParseTreeNode_t*)cascadedMessage->arguments->elements[i] , environment);
+
+        resultValue = beacon_performWithArguments(context, receiverValue, selectorValue, argumentValueCount, argumentValues);
+    }
+
+    return resultValue;
+}
+
 static beacon_oop_t beacon_SyntaxCompiler_identifierReference(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 2);
@@ -808,6 +838,28 @@ static beacon_oop_t beacon_SyntaxCompiler_addMethodNode(beacon_context_t *contex
     beacon_MethodDictionary_atPut(context, targetBehavior->methodDict, compiledMethod->name, (beacon_oop_t)compiledMethod);
 
     return beacon_encodeSmallInteger(beacon_BytecodeCodeBuilder_addLiteral(context, builder, behavior));
+}
+
+static beacon_oop_t beacon_SyntaxCompiler_evaluateAddMethodNode(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    beacon_ParseTreeAddMethod_t *addMethodNode = (beacon_ParseTreeAddMethod_t *)receiver;
+
+    beacon_AbstractCompilationEnvironment_t *environment = (beacon_AbstractCompilationEnvironment_t*)arguments[0];
+
+    beacon_oop_t behaviorValue = beacon_evaluateNodeWithEnvironment(context, (beacon_ParseTreeNode_t*)addMethodNode->behavior, environment);  
+
+    beacon_BehaviorCompilationEnvironment_t *behaviorEnvironment = beacon_allocateObjectWithBehavior(context->heap, context->classes.behaviorCompilationEnvironmentClass, sizeof(beacon_BehaviorCompilationEnvironment_t), BeaconObjectKindPointers);
+    behaviorEnvironment->behavior = (beacon_Behavior_t*)behaviorValue;
+    behaviorEnvironment->parent = environment;
+
+    beacon_CompiledMethod_t *compiledMethod = beacon_SyntaxCompiler_compileMethodNode(context, (beacon_ParseTreeMethodNode_t*)addMethodNode->method, &behaviorEnvironment->super);
+    beacon_Behavior_t *targetBehavior = (beacon_Behavior_t *)behaviorValue;
+    if(!targetBehavior->methodDict)
+        targetBehavior->methodDict = beacon_MethodDictionary_new(context);
+    beacon_MethodDictionary_atPut(context, targetBehavior->methodDict, compiledMethod->name, (beacon_oop_t)compiledMethod);
+
+    return behaviorValue;
 }
 
 static beacon_oop_t beacon_SyntaxCompiler_arrayNode(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -1150,12 +1202,15 @@ void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *con
 
     beacon_addPrimitiveToClass(context, context->classes.parseTreeNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateNode);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeWorkspaceScriptNode, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateWorkspaceScript);
-    beacon_addPrimitiveToClass(context, context->classes.parseTreeMessageSendNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateMessageSend);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeLiteralNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateLiteralNode);
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeMessageSendNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateMessageSend);
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeMessageCascadeNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateMessageCascade);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeIdentifierReferenceNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateIdentifierReference);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeAssignmentNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateAssignment);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeSequenceNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateSequenceNode);
     beacon_addPrimitiveToClass(context, context->classes.parseTreeLiteralArrayNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateLiteralArray);
+    beacon_addPrimitiveToClass(context, context->classes.parseTreeAddMethodNodeClass, "evaluateWithEnvironment:", 1, beacon_SyntaxCompiler_evaluateAddMethodNode);
 
+    
     beacon_addPrimitiveToClass(context, context->classes.parseTreeBlockClosureNodeClass, "compileInlineBlockWithArguments:environment:andBytecodeBuilder:", 3, beacon_SyntaxCompiler_compileInlineBlock);
 }
