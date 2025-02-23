@@ -283,9 +283,9 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.windowEventClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "WindowEvent", sizeof(beacon_WindowEvent_t), BeaconObjectKindPointers, NULL);
     context->classes.windowExposeEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowExposeEvent", sizeof(beacon_WindowExposeEvent_t), BeaconObjectKindPointers,
         "x", "y", "width", "height",NULL);
-    context->classes.windowMouseButtonEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowMouseButton", sizeof(beacon_WindowMouseButtonEvent_t), BeaconObjectKindPointers,
+    context->classes.windowMouseButtonEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowMouseButtonEvent", sizeof(beacon_WindowMouseButtonEvent_t), BeaconObjectKindPointers,
         "button", "x", "y", NULL);
-    context->classes.windowMouseMotionEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowMouseMotion", sizeof(beacon_WindowMouseMotionEvent_t), BeaconObjectKindPointers,
+    context->classes.windowMouseMotionEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowMouseMotionEvent", sizeof(beacon_WindowMouseMotionEvent_t), BeaconObjectKindPointers,
         "x", "y", "xrel", "yrel", NULL);
     context->classes.windowKeyboardEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowKeyboardEvent", sizeof(beacon_WindowMouseButtonEvent_t), BeaconObjectKindPointers,
         "scancode", "symbol", NULL);
