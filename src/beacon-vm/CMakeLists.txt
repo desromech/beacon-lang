@@ -11,7 +11,15 @@ set(BeaconVM_Sources
     SyntaxCompiler.c
 )
 
-if(XCB AND NOT APPLE)
+if(SDL2_LIBRARY AND SDL2_INCLUDE_DIR)
+    set(BeaconVM_SDL2Sources
+        SDL2Window.c
+    )
+
+    add_library(BeaconVMCore ${BeaconVM_Sources} ${BeaconVM_SDL2Sources})
+    target_link_libraries(BeaconVMCore ${XCB})
+
+elseif(XCB AND NOT APPLE)
     set(BeaconVM_XcbSources
         XcbWindow.c
     )

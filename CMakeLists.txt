@@ -48,6 +48,25 @@ include(CTest)
 # Build the program
 find_library(XCB xcb)
 
+# Use pkg-config.
+# For VisualStudio or mingw in Window
+find_path(SDL2_INCLUDE_DIR
+    NAMES SDL.h
+    PATH_SUFFIXES SDL2
+)
+
+find_path(SDL2_LIBRARY_PATH
+    NAMES SDL2.lib SDL2.a
+)
+
+find_library(SDL2_LIBRARY NAMES SDL2 PATHS ${SDL2_LIBRARY_PATH})
+if(WIN32)
+    find_library(SDL2_MAIN_LIBRARY NAMES SDL2main PATHS ${SDL2_LIBRARY_PATH})
+else()
+    set(SDL2_MAIN_LIBRARY "")
+endif()
+include_directories("${SDL2_INCLUDE_DIR}")
+
 # Add the current directory.
 include_directories(
 .
