@@ -107,7 +107,14 @@ void beacon_garbageCollect_markRootsPhase(beacon_context_t *context)
                 beacon_heap_pushReachableObject(context->heap, currentStackRecord->bytecodeMethodStackRecord.returnResultValue);
             }
                 break;
-            
+            case StackFrameSourceCompilationRoots:
+            {
+                beacon_heap_pushReachableObject(context->heap, currentStackRecord->sourceCompilationRoots.sourceCode);
+                beacon_heap_pushReachableObject(context->heap, currentStackRecord->sourceCompilationRoots.tokenList);
+                beacon_heap_pushReachableObject(context->heap, currentStackRecord->sourceCompilationRoots.parseTree);
+                beacon_heap_pushReachableObject(context->heap, currentStackRecord->sourceCompilationRoots.evaluation);
+            }
+                break;
             default:
                 abort();
                 break;

@@ -105,7 +105,16 @@ beacon_SourcePosition_t *beacon_sourcePosition_until(beacon_context_t *context, 
 
 beacon_oop_t beacon_evaluateSourceCode(beacon_context_t *context, beacon_SourceCode_t *sourceCode)
 {
+    beacon_StackFrameRecord_t frameRecord = {
+        .kind = StackFrameSourceCompilationRoots,
+        .context = context,
+        .sourceCompilationRoots.sourceCode = (beacon_oop_t)sourceCode
+    };
+    beacon_pushStackFrameRecord(&frameRecord);
+
     beacon_ArrayList_t *scannedSource = beacon_scanSourceCode(context, sourceCode);
+    frameRecord.sourceCompilationRoots.tokenList = (beacon_oop_t)scannedSource;
+
     intptr_t tokenCount = beacon_ArrayList_size(scannedSource);
     for(intptr_t i = 1; i <= tokenCount; ++i)
     {
@@ -118,6 +127,13 @@ beacon_oop_t beacon_evaluateSourceCode(beacon_context_t *context, beacon_SourceC
     }
 
     beacon_ParseTreeNode_t *parseTree = beacon_parseWorkspaceTokenList(context, sourceCode, scannedSource);
-    beacon_oop_t evaluationResult = beacon_evaluateFileSyntax(context, parseTree, sourceCode);
-    return evaluationResult;
+    frameRecord.sourceCompilationRoots.parseTree = (beacon_oop_t)parseTree;
+
+    // Disable GC during file evaluation.
+    beacon_memoryHeapDisableGC(context->heap);
+    frameRecord.sourceCompilationRoots.evaluation = beacon_evaluateFileSyntax(context, parseTree, sourceCode);
+    beacon_memoryHeapEnableGC(context->heap);
+
+    beacon_popStackFrameRecord(&frameRecord);
+    return frameRecord.sourceCompilationRoots.evaluation;
 }
