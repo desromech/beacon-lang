@@ -40,7 +40,8 @@ typedef struct beacon_MemoryHeap_s
 typedef enum beacon_StackFrameRecordKind_e
 {
     StackFrameBytecodeMethodRecord = 0,
-    StackFrameSourceCompilationRoots
+    StackFrameSourceCompilationRoots,
+    StackFramePrimitiveRoots
 } beacon_StackFrameRecordKind_t;
 
 typedef struct beacon_StackFrameRecord_s
@@ -73,6 +74,15 @@ typedef struct beacon_StackFrameRecord_s
             beacon_oop_t parseTree;
             beacon_oop_t evaluation;
         } sourceCompilationRoots;
+
+        struct
+        {
+            beacon_oop_t receiver;
+            size_t argumentCount;
+            beacon_oop_t *arguments;
+            beacon_oop_t allocatedObjects[4];
+            beacon_oop_t result;
+        } primitiveRoots;
     };
 } beacon_StackFrameRecord_t;
 

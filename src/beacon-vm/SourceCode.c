@@ -130,9 +130,9 @@ beacon_oop_t beacon_evaluateSourceCode(beacon_context_t *context, beacon_SourceC
     frameRecord.sourceCompilationRoots.parseTree = (beacon_oop_t)parseTree;
 
     // Disable GC during file evaluation.
-    beacon_memoryHeapDisableGC(context->heap);
+    //beacon_memoryHeapDisableGC(context->heap);
     frameRecord.sourceCompilationRoots.evaluation = beacon_evaluateFileSyntax(context, parseTree, sourceCode);
-    beacon_memoryHeapEnableGC(context->heap);
+    //beacon_memoryHeapEnableGC(context->heap);
 
     beacon_popStackFrameRecord(&frameRecord);
     return frameRecord.sourceCompilationRoots.evaluation;

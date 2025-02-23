@@ -115,6 +115,16 @@ void beacon_garbageCollect_markRootsPhase(beacon_context_t *context)
                 beacon_heap_pushReachableObject(context->heap, currentStackRecord->sourceCompilationRoots.evaluation);
             }
                 break;
+            case StackFramePrimitiveRoots:
+                {
+                    beacon_heap_pushReachableObject(context->heap, currentStackRecord->primitiveRoots.receiver);
+                    for(size_t i = 0; i < currentStackRecord->primitiveRoots.argumentCount; ++i)
+                        beacon_heap_pushReachableObject(context->heap, currentStackRecord->primitiveRoots.arguments[i]);
+                    for(size_t i = 0; i < 4; ++i)
+                        beacon_heap_pushReachableObject(context->heap, currentStackRecord->primitiveRoots.allocatedObjects[i]);
+                    beacon_heap_pushReachableObject(context->heap, currentStackRecord->primitiveRoots.result);
+                }
+                break;
             default:
                 abort();
                 break;

@@ -190,6 +190,20 @@ static beacon_oop_t beacon_SyntaxCompiler_evaluateWorkspaceScript(beacon_context
 
     beacon_LexicalCompilationEnvironment_t *lexicalEnvironment = beacon_allocateObjectWithBehavior(context->heap, context->classes.lexicalCompilationEnvironmentClass, sizeof(beacon_LexicalCompilationEnvironment_t), BeaconObjectKindPointers);
     lexicalEnvironment->parent = environment;
+    
+    beacon_StackFrameRecord_t frameRecord = {
+        .kind = StackFramePrimitiveRoots,
+        .context = context,
+        .primitiveRoots = {
+            .receiver = receiver,
+            .argumentCount = argumentCount,
+            .arguments = arguments,
+            .allocatedObjects = {
+                (beacon_oop_t)lexicalEnvironment
+            }
+        }
+    };
+    beacon_pushStackFrameRecord(&frameRecord);
 
     size_t localVariableCount = scriptNode->localVariables->super.super.super.super.super.header.slotCount;
     for(size_t i = 0; i < localVariableCount; ++i)
@@ -204,7 +218,9 @@ static beacon_oop_t beacon_SyntaxCompiler_evaluateWorkspaceScript(beacon_context
         beacon_MethodDictionary_atPut(context, lexicalEnvironment->dictionary, definition->name, (beacon_oop_t)assoc);
     }
 
-    return beacon_evaluateNodeWithEnvironment(context, scriptNode->expression, &lexicalEnvironment->super);
+    frameRecord.primitiveRoots.result = beacon_evaluateNodeWithEnvironment(context, scriptNode->expression, &lexicalEnvironment->super);
+    beacon_popStackFrameRecord(&frameRecord);
+    return frameRecord.primitiveRoots.result;
 }
 
 
