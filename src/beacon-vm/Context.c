@@ -158,6 +158,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     
     context->classes.byteArrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "ByteArray", sizeof(beacon_ByteArray_t), BeaconObjectKindBytes, NULL);
     context->classes.stringClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "String", sizeof(beacon_String_t), BeaconObjectKindBytes, NULL);
+    context->classes.externalAddressClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "ExternalAddress", sizeof(beacon_ExternalAddress_t), BeaconObjectKindBytes, NULL);
 
     context->classes.arrayListClass = beacon_context_createClassAndMetaclass(context, context->classes.sequenceableCollectionClass, "ArrayList", sizeof(beacon_ArrayList_t), BeaconObjectKindPointers,
     "array", "size", "capacity", NULL);

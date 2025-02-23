@@ -233,6 +233,12 @@ typedef struct beacon_ByteArray_s
     uint8_t elements[];
 } beacon_ByteArray_t;
 
+typedef struct beacon_ExternalAddress_s
+{
+    beacon_ArrayedCollection_t super;
+    void *address;
+} beacon_ExternalAddress_t;
+
 typedef struct beacon_ArrayList_s
 {
     beacon_SequenceableCollection_t super;

@@ -35,6 +35,7 @@ struct beacon_context_s
         beacon_Behavior_t *arrayedCollectionClass;
         beacon_Behavior_t *arrayClass;
         beacon_Behavior_t *byteArrayClass;
+        beacon_Behavior_t *externalAddressClass;
         beacon_Behavior_t *stringClass;
         beacon_Behavior_t *symbolClass;
 
