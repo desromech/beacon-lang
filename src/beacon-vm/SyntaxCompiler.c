@@ -422,7 +422,7 @@ static beacon_oop_t beacon_evaluateParseTreeBlockWithValue(beacon_context_t *con
         beacon_MethodDictionary_atPut(context, inlineEnvironment->dictionary, definition->name, (beacon_oop_t)assoc);
     }
 
-    return beacon_evaluateNodeWithEnvironment(context, blockClosureNode->expression, &inlineEnvironment->parent);
+    return beacon_evaluateNodeWithEnvironment(context, blockClosureNode->expression, &inlineEnvironment->super);
 }
 
 static beacon_oop_t beacon_SyntaxCompiler_evaluateMessageSend(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
