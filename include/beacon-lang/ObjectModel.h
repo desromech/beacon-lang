@@ -659,9 +659,19 @@ typedef struct beacon_WindowExposeEvent_s
 typedef struct beacon_WindowMouseButtonEvent_s
 {
     beacon_Object_t super;
+    beacon_oop_t button;
     beacon_oop_t x;
     beacon_oop_t y;
 } beacon_WindowMouseButtonEvent_t;
+
+typedef struct beacon_WindowMouseMotionEvent_s
+{
+    beacon_Object_t super;
+    beacon_oop_t x;
+    beacon_oop_t y;
+    beacon_oop_t xrel;
+    beacon_oop_t yrel;
+} beacon_WindowMouseMotionEvent_t;
 
 typedef struct beacon_WindowKeyboardEvent_t
 {

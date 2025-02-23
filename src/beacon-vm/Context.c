@@ -284,7 +284,9 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.windowExposeEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowExposeEvent", sizeof(beacon_WindowExposeEvent_t), BeaconObjectKindPointers,
         "x", "y", "width", "height",NULL);
     context->classes.windowMouseButtonEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowMouseButton", sizeof(beacon_WindowMouseButtonEvent_t), BeaconObjectKindPointers,
-        "x", "y", NULL);
+        "button", "x", "y", NULL);
+    context->classes.windowMouseMotionEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowMouseMotion", sizeof(beacon_WindowMouseMotionEvent_t), BeaconObjectKindPointers,
+        "x", "y", "xrel", "yrel", NULL);
     context->classes.windowKeyboardEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowKeyboardEvent", sizeof(beacon_WindowMouseButtonEvent_t), BeaconObjectKindPointers,
         "scancode", "symbol", NULL);
 }
@@ -1015,6 +1017,19 @@ static beacon_oop_t beacon_BlockClosure_value(beacon_context_t *context, beacon_
     BeaconAssert(context, (intptr_t)argumentCount == expectedArgumentCount);
 
     return beacon_runBlockClosureWithArguments(context, &blockClosure->code->super, blockClosure->captures, argumentCount, arguments);
+}
+
+beacon_oop_t beacon_boxExternalAddress(beacon_context_t *context, void *pointer)
+{
+    beacon_ExternalAddress_t *externalAddress = beacon_allocateObjectWithBehavior(context->heap, context->classes.externalAddressClass, sizeof(beacon_ExternalAddress_t), BeaconObjectKindBytes);
+    externalAddress->address = pointer;
+    return (beacon_oop_t)externalAddress;
+}
+
+void *beacon_unboxExternalAddress(beacon_context_t *context, beacon_oop_t box)
+{
+    BeaconAssert(context, beacon_getClass(context, box) == context->classes.externalAddressClass);
+    return ((beacon_ExternalAddress_t*)box)->address;
 }
 
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)

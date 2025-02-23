@@ -39,6 +39,11 @@ onMouseButtonUp: event
 ].
 
 Window ![
+onMouseMotion: event
+    Stdio stdout nextPutAll: 'Window onMouseMotion.'; lf
+].
+
+Window ![
 onKeyPressed: event
     Stdio stdout nextPutAll: 'Window onKeyPressed.'; lf
 ].

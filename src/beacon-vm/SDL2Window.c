@@ -1,22 +1,151 @@
 #include "Context.h"
+#include "Exceptions.h"
 #include "Window.h"
+#include "Dictionary.h"
+#include "SDL.h"
 
 static bool hasInitializedSDL2;
+static bool isQuitting;
+static void ensureSDL2Initialization(void)
+{
+    if(hasInitializedSDL2)
+        return;
+
+    SDL_Init(SDL_INIT_VIDEO);
+    hasInitializedSDL2 = true;
+}
 
 static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
-    (void)context;
-    (void)receiver;
     (void)argumentCount;
     (void)arguments;
+
+    beacon_Window_t *beaconWindow = (beacon_Window_t *)receiver;
+    int width = beacon_decodeSmallInteger(beaconWindow->width);
+    int height = beacon_decodeSmallInteger(beaconWindow->height);
+
+    ensureSDL2Initialization();
+
+    SDL_Window *sdlWindow = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
+    if(!sdlWindow)
+        beacon_exception_error(context, "Failed to create SDL window.");
+
+    uint32_t sdlWindowID = SDL_GetWindowID(sdlWindow);
+    beaconWindow->handle = beacon_encodeSmallInteger(sdlWindowID);
+    beacon_MethodDictionary_atPut(context, context->roots.windowHandleMap, (beacon_Symbol_t*)beaconWindow->handle, (beacon_oop_t)beaconWindow);
+
     return receiver;
 }
+
+static void beacon_sdl2_fetchAndDispatchEvents(beacon_context_t *context)
+{
+    SDL_Event sdlEvent;
+    while(SDL_PollEvent(&sdlEvent))
+    {
+        switch(sdlEvent.type)
+        {
+        case SDL_MOUSEBUTTONDOWN:
+        {
+            beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,
+                (beacon_Symbol_t*)beacon_encodeSmallInteger(sdlEvent.button.windowID));
+            if(beaconWindow)
+            {
+                beacon_WindowMouseButtonEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowMouseButtonEventClass, sizeof(beacon_WindowMouseButtonEvent_t), BeaconObjectKindPointers);
+                event->button = beacon_encodeSmallInteger(sdlEvent.button.button);
+                event->x = beacon_encodeSmallInteger(sdlEvent.button.x);
+                event->y = beacon_encodeSmallInteger(sdlEvent.button.y);
+                beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onMouseButtonDown:"), (beacon_oop_t)event);
+            }
+        }
+            break;
+        case SDL_MOUSEBUTTONUP:
+        {
+            beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,
+                (beacon_Symbol_t*)beacon_encodeSmallInteger(sdlEvent.button.windowID));
+            if(beaconWindow)
+            {
+                beacon_WindowMouseButtonEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowMouseButtonEventClass, sizeof(beacon_WindowMouseButtonEvent_t), BeaconObjectKindPointers);
+                event->button = beacon_encodeSmallInteger(sdlEvent.button.button);
+                event->x = beacon_encodeSmallInteger(sdlEvent.button.x);
+                event->y = beacon_encodeSmallInteger(sdlEvent.button.y);
+                beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onMouseButtonUp:"), (beacon_oop_t)event);
+            }
+        }
+            break;
+        case SDL_MOUSEMOTION:
+        {
+            beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,
+                (beacon_Symbol_t*)beacon_encodeSmallInteger(sdlEvent.motion.windowID));
+            if(beaconWindow)
+            {
+                beacon_WindowMouseMotionEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowKeyboardEventClass, sizeof(beacon_WindowMouseMotionEvent_t), BeaconObjectKindPointers);
+                event->x = beacon_encodeSmallInteger(sdlEvent.motion.x);
+                beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onMouseMotion:"), (beacon_oop_t)event);
+            }
+        }
+            break;
+        case SDL_KEYDOWN:
+        {
+            beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,
+                (beacon_Symbol_t*)beacon_encodeSmallInteger(sdlEvent.key.windowID));
+            if(beaconWindow)
+            {
+                beacon_WindowKeyboardEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowKeyboardEventClass, sizeof(beacon_WindowKeyboardEvent_t), BeaconObjectKindPointers);
+                event->scancode = beacon_encodeSmallInteger(sdlEvent.key.keysym.scancode);
+                event->symbol = beacon_encodeSmallInteger(sdlEvent.key.keysym.sym);
+                beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onKeyPressed:"), (beacon_oop_t)event);
+            }
+        }
+            break;
+        case SDL_KEYUP:
+        {
+            beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,
+                (beacon_Symbol_t*)beacon_encodeSmallInteger(sdlEvent.key.windowID));
+            if(beaconWindow)
+            {
+                beacon_WindowKeyboardEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowKeyboardEventClass, sizeof(beacon_WindowKeyboardEvent_t), BeaconObjectKindPointers);
+                event->scancode = beacon_encodeSmallInteger(sdlEvent.key.keysym.scancode);
+                event->symbol = beacon_encodeSmallInteger(sdlEvent.key.keysym.sym);
+                beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onKeyReleased:"), (beacon_oop_t)event);
+            }
+        }
+            break;
+        case SDL_WINDOWEVENT:
+            switch(sdlEvent.window.event)
+            {
+            case SDL_WINDOWEVENT_EXPOSED:
+            {
+                beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,
+                    (beacon_Symbol_t*)beacon_encodeSmallInteger(sdlEvent.window.windowID));
+                if(beaconWindow)
+                {
+                    beacon_WindowExposeEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowExposeEventClass, sizeof(beacon_WindowExposeEvent_t), BeaconObjectKindPointers);
+                    beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onExpose:"), (beacon_oop_t)event);
+                }
+
+            }
+                break;
+            }
+            break;
+        case SDL_QUIT:
+            isQuitting = true;
+            break;
+        }
+    }
+}
+
 static beacon_oop_t beacon_WindowClass_enterMainLoop(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)context;
     (void)receiver;
     (void)argumentCount;
     (void)arguments;
+
+    while(!isQuitting)
+    {
+        beacon_sdl2_fetchAndDispatchEvents(context);
+    }
+
     return receiver;
 }
 

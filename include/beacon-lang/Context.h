@@ -114,6 +114,7 @@ struct beacon_context_s
         beacon_Behavior_t *windowEventClass;
         beacon_Behavior_t *windowExposeEventClass;
         beacon_Behavior_t *windowMouseButtonEventClass;
+        beacon_Behavior_t *windowMouseMotionEventClass;
         beacon_Behavior_t *windowKeyboardEventClass;
     } classes;
 
@@ -179,6 +180,9 @@ beacon_oop_t beacon_performWithWith(beacon_context_t *context, beacon_oop_t rece
 beacon_oop_t beacon_runMethodWithArguments(beacon_context_t *context, beacon_CompiledCode_t *method, beacon_oop_t receiver, beacon_oop_t selector, size_t argumentCount, beacon_oop_t *arguments);
 
 void beacon_addPrimitiveToClass(beacon_context_t *context, beacon_Behavior_t *behavior, const char *selector, size_t argumentCount, beacon_NativeCodeFunction_t primitive);
+
+beacon_oop_t beacon_boxExternalAddress(beacon_context_t *context, void *pointer);
+void *beacon_unboxExternalAddress(beacon_context_t *context, beacon_oop_t box);
 
 #ifdef __cplusplus
 }

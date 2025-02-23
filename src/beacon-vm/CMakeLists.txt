@@ -17,7 +17,7 @@ if(SDL2_LIBRARY AND SDL2_INCLUDE_DIR)
     )
 
     add_library(BeaconVMCore ${BeaconVM_Sources} ${BeaconVM_SDL2Sources})
-    target_link_libraries(BeaconVMCore ${XCB})
+    target_link_libraries(BeaconVMCore ${SDL2_LIBRARY})
 
 elseif(XCB AND NOT APPLE)
     set(BeaconVM_XcbSources
