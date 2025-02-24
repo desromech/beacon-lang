@@ -16,6 +16,7 @@
         "exceptions.h": "c",
         "ranges": "c",
         "xcb.h": "c",
-        "shm.h": "c"
+        "shm.h": "c",
+        "sdl_hints.h": "c"
     }
 }

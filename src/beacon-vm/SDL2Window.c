@@ -3,6 +3,8 @@
 #include "Window.h"
 #include "Dictionary.h"
 #include "SDL.h"
+#include "SDL_hints.h"
+#include <stdlib.h>
 
 static bool hasInitializedSDL2;
 static bool isQuitting;
@@ -11,6 +13,7 @@ static void ensureSDL2Initialization(void)
     if(hasInitializedSDL2)
         return;
 
+    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");    
     SDL_Init(SDL_INIT_VIDEO);
     hasInitializedSDL2 = true;
 }
@@ -88,8 +91,41 @@ static beacon_oop_t beacon_Window_displayForm(beacon_context_t *context, beacon_
     beacon_Window_t *beaconWindow = (beacon_Window_t *)receiver;
     beacon_Form_t *form = (beacon_Form_t*)arguments[0];
 
+    SDL_Renderer *renderer = beacon_unboxExternalAddress(context, beaconWindow->rendererHandle);
     SDL_Texture *texture = beacon_unboxExternalAddress(context, beaconWindow->textureHandle);
     BeaconAssert(context, texture != NULL);
+
+    int textureWidth = beacon_decodeSmallInteger(beaconWindow->textureWidth);
+    int textureHeight = beacon_decodeSmallInteger(beaconWindow->textureHeight);
+
+    int formWidth = beacon_decodeSmallInteger(form->width);
+    int formHeight = beacon_decodeSmallInteger(form->height);
+
+    int blitWidth = formWidth < textureWidth ? formWidth : textureWidth;
+    int blitHeight = formHeight < textureHeight ? formHeight : textureHeight;
+    int sourcePitch = beacon_decodeSmallInteger(form->pitch);
+    uint8_t *sourceTexturePixels = form->bits->elements;
+
+    // Lock the texture
+    void *texturePixels = NULL;
+    int texturePitch = 0;
+    SDL_LockTexture(texture, NULL, &texturePixels, &texturePitch);
+
+    uint8_t *sourceRow = sourceTexturePixels;
+    uint8_t *destRow = texturePixels;
+    for(int y = 0; y < blitHeight; ++y)
+    {
+        memcpy(destRow, sourceRow, blitWidth*4);
+        sourceRow += sourcePitch;
+        destRow += texturePitch;
+    }
+
+    // Unlock the texture.
+    SDL_UnlockTexture(texture);
+
+    // Blit the texture to the screen.
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_RenderPresent(renderer);
     return receiver;
 }
 
