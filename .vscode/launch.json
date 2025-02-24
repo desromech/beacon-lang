@@ -10,7 +10,7 @@
             "name": "Debug",
             "program": "${workspaceFolder}/build/dist/beacon-vm",
             //"args": ["-eval", "42. 5"],
-            "args": ["src/runtime/Runtime.st", "-eval", "Object subclass: #TestClass. 42"],
+            "args": ["src/runtime/Runtime.st", "-eval", "Morph new openInWindow. Window enterMainLoop"],
             //"args": ["src/runtime/Runtime.st", "-eval", "Window new width: 256; height: 64; open"],
             //"args": ["-eval", "([:x | [:y | x + y]] value: 42) value: 3"],
             "cwd": "${workspaceFolder}"

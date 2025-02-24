@@ -32,7 +32,8 @@ typedef enum beacon_BytecodeArgumentType_e
     BytecodeArgumentTypeTemporary,
     BytecodeArgumentTypeJumpDelta,
     BytecodeArgumentTypeCapture,
-    BytecodeArgumentTypeReceiverSlot
+    BytecodeArgumentTypeReceiverSlot,
+    BytecodeArgumentTypeSuperReceiver
 } beacon_BytecodeValueType_t;
 
 #define BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS 32
@@ -78,6 +79,9 @@ beacon_BytecodeCode_t *beacon_BytecodeCodeBuilder_finish(beacon_context_t *conte
 
 // Add a literal value.
 beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_addLiteral(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, beacon_oop_t literal);
+
+// Super receiver class.
+beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_superReceiverClass(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, beacon_oop_t literalBehavior);
 
 // New temporary
 beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_newTemporary(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, beacon_oop_t optionalNameSymbol);
@@ -136,7 +140,7 @@ void beacon_BytecodeCodeBuilder_sendMessage(beacon_context_t *context, beacon_By
 /**
  * Send a message to the superclass
  */
-void beacon_BytecodeCodeBuilder_superSendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t receiver, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments);
+void beacon_BytecodeCodeBuilder_superSendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t receiverClass, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments);
 
 /**
  * Stores the given value

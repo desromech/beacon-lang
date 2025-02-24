@@ -58,6 +58,12 @@ beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_addLiteral(beacon_context_t *c
     return beacon_BytecodeValue_encode(beacon_ArrayList_size(codeBuilder->literals), BytecodeArgumentTypeLiteral);
 }
 
+beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_superReceiverClass(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, beacon_oop_t literalBehavior)
+{
+    beacon_BytecodeValue_t literalValue = beacon_BytecodeCodeBuilder_addLiteral(context, codeBuilder, literalBehavior);
+    return beacon_BytecodeValue_encode(beacon_BytecodeValue_getIndex(literalValue), BytecodeArgumentTypeSuperReceiver);
+}
+
 beacon_BytecodeValue_t beacon_BytecodeCodeBuilder_newTemporary(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *codeBuilder, beacon_oop_t optionalNameSymbol)
 {
     beacon_ArrayList_add(context, codeBuilder->temporaries, optionalNameSymbol);
@@ -170,12 +176,12 @@ void beacon_BytecodeCodeBuilder_sendMessage(beacon_context_t *context, beacon_By
         beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, arguments[i]);
 }
 
-void beacon_BytecodeCodeBuilder_superSendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t receiver, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments)
+void beacon_BytecodeCodeBuilder_superSendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t receiverClass, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments)
 {
     uint8_t argumentCountBits = beacon_BytecodeCodeBuilder_extendArgumentsIfNeeded(context, methodBuilder, 2 + argumentCount);
     beacon_ByteArrayList_add(context, methodBuilder->bytecodes, argumentCountBits | BeaconBytecodeSuperSendMessage);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultTemporary);
-    beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, receiver);
+    beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, receiverClass);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, selector);
     for(size_t i = 0; i < argumentCount; ++i)
         beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, arguments[i]);
@@ -326,6 +332,7 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
                     *currentDecodedArgument = arguments[bytecodeArgumentIndex - 1];
                 break;
             case BytecodeArgumentTypeLiteral:
+            case BytecodeArgumentTypeSuperReceiver:
                 BeaconAssert(context, bytecodeArgumentIndex <= code->literals->super.super.super.super.super.header.slotCount);
                 *currentDecodedArgument = bytecodeArgumentIndex == 0 ? 0 : code->literals->elements[bytecodeArgumentIndex - 1];
                 break;
@@ -382,6 +389,10 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
         case BeaconBytecodeSendMessage:
             BeaconAssert(context, writesToTemporary);
             instructionExecutionResult = beacon_performWithArguments(context, bytecodeDecodedArguments[0], bytecodeDecodedArguments[1], instructionArgumentCount - 2, bytecodeDecodedArguments + 2);
+            break;
+        case BeaconBytecodeSuperSendMessage:
+            BeaconAssert(context, writesToTemporary);
+            instructionExecutionResult = beacon_performWithArgumentsInSuperclass(context, receiver, bytecodeDecodedArguments[1], instructionArgumentCount - 2, bytecodeDecodedArguments + 2, bytecodeDecodedArguments[0]);
             break;
         case BeaconBytecodeStoreValue:
             BeaconAssert(context, writesToTemporary);

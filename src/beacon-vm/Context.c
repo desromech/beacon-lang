@@ -553,9 +553,9 @@ beacon_oop_t beacon_runBlockClosureWithArguments(beacon_context_t *context, beac
     return 0;
 }
 
-beacon_oop_t beacon_performWithArguments(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, size_t argumentCount, beacon_oop_t *arguments)
+beacon_oop_t beacon_performWithArgumentsInSuperclass(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, size_t argumentCount, beacon_oop_t *arguments, beacon_oop_t startingSuperclass)
 {
-    beacon_Behavior_t *behavior = beacon_getClass(context, receiver);
+    beacon_Behavior_t *behavior = (beacon_Behavior_t*)startingSuperclass;
     while(behavior)
     {
         if(behavior->methodDict)
@@ -593,6 +593,11 @@ beacon_oop_t beacon_performWithArguments(beacon_context_t *context, beacon_oop_t
     
     return beacon_performWithArguments(context, receiver, context->roots.doesNotUnderstandSelector, 1, dnuArguments);
 
+}
+
+beacon_oop_t beacon_performWithArguments(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, size_t argumentCount, beacon_oop_t *arguments)
+{
+    return beacon_performWithArgumentsInSuperclass(context, receiver, selector, argumentCount, arguments, (beacon_oop_t)beacon_getClass(context, receiver));
 }
 
 beacon_oop_t beacon_perform(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector)

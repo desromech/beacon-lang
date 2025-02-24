@@ -400,40 +400,44 @@ static beacon_oop_t beacon_SyntaxCompiler_messageSend(beacon_context_t *context,
     beacon_BytecodeValue_t receiverValue = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, messageSendNode->receiver, environment, builder);
     size_t argumentValueCount = messageSendNode->arguments->super.super.super.super.super.header.slotCount;
     BeaconAssert(context, argumentValueCount <= BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS);
-    if(selectorEvaluatedValue == context->roots.ifTrueSelector)
+    bool isSuperSend = beacon_BytecodeValue_getType(receiverValue) == BytecodeArgumentTypeSuperReceiver;
+    if(!isSuperSend)
     {
-        BeaconAssert(context, argumentValueCount == 1);
-        return beacon_SyntaxCompiler_ifTrue(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0]);
-    }
-    else if(selectorEvaluatedValue == context->roots.ifFalseSelector)
-    {
-        BeaconAssert(context, argumentValueCount == 1);
-        return beacon_SyntaxCompiler_ifFalse(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0]);
-    }
-    else if(selectorEvaluatedValue == context->roots.ifTrueIfFalseSelector)
-    {
-        BeaconAssert(context, argumentValueCount == 2);
-        return beacon_SyntaxCompiler_ifTrueIfFalse(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0], (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[1]);
-    }
-    else if(selectorEvaluatedValue == context->roots.ifFalseIfTrueSelector)
-    {
-        BeaconAssert(context, argumentValueCount == 2);
-        return beacon_SyntaxCompiler_ifFalseIfTrue(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0], (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[1]);
-    }
-    else if(selectorEvaluatedValue == context->roots.andSelector)
-    {
-        BeaconAssert(context, argumentValueCount == 1);
-        return beacon_SyntaxCompiler_and(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0]);
-    }
-    else if(selectorEvaluatedValue == context->roots.orSelector)
-    {
-        BeaconAssert(context, argumentValueCount == 1);
-        return beacon_SyntaxCompiler_or(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0]);
-    }
-    else if(selectorEvaluatedValue == context->roots.toDoSelector)
-    {
-        BeaconAssert(context, argumentValueCount == 2);
-        return beacon_SyntaxCompiler_toDo(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0], (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[1]);
+        if(selectorEvaluatedValue == context->roots.ifTrueSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 1);
+            return beacon_SyntaxCompiler_ifTrue(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0]);
+        }
+        else if(selectorEvaluatedValue == context->roots.ifFalseSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 1);
+            return beacon_SyntaxCompiler_ifFalse(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0]);
+        }
+        else if(selectorEvaluatedValue == context->roots.ifTrueIfFalseSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 2);
+            return beacon_SyntaxCompiler_ifTrueIfFalse(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0], (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[1]);
+        }
+        else if(selectorEvaluatedValue == context->roots.ifFalseIfTrueSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 2);
+            return beacon_SyntaxCompiler_ifFalseIfTrue(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0], (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[1]);
+        }
+        else if(selectorEvaluatedValue == context->roots.andSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 1);
+            return beacon_SyntaxCompiler_and(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0]);
+        }
+        else if(selectorEvaluatedValue == context->roots.orSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 1);
+            return beacon_SyntaxCompiler_or(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0]);
+        }
+        else if(selectorEvaluatedValue == context->roots.toDoSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 2);
+            return beacon_SyntaxCompiler_toDo(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0], (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[1]);
+        }
     }
     
 
@@ -445,7 +449,10 @@ static beacon_oop_t beacon_SyntaxCompiler_messageSend(beacon_context_t *context,
     for(size_t i = 0; i < argumentValueCount; ++i)
         argumentValues[i] = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[i] , environment, builder);
 
-    beacon_BytecodeCodeBuilder_sendMessage(context, builder, resultValue, receiverValue, selectorValue, argumentValueCount, argumentValues);
+    if(isSuperSend)
+        beacon_BytecodeCodeBuilder_superSendMessage(context, builder, resultValue, receiverValue, selectorValue, argumentValueCount, argumentValues);
+    else
+        beacon_BytecodeCodeBuilder_sendMessage(context, builder, resultValue, receiverValue, selectorValue, argumentValueCount, argumentValues);
     return beacon_encodeSmallInteger(resultValue);
 }
 
@@ -815,7 +822,7 @@ static beacon_oop_t beacon_SyntaxCompiler_compileInlineBlock(beacon_context_t *c
 }
 
 
-static beacon_CompiledMethod_t *beacon_SyntaxCompiler_compileMethodNode(beacon_context_t *context, beacon_ParseTreeMethodNode_t *methodNode, beacon_AbstractCompilationEnvironment_t *environment)
+static beacon_CompiledMethod_t *beacon_SyntaxCompiler_compileMethodNode(beacon_context_t *context, beacon_ParseTreeMethodNode_t *methodNode, beacon_AbstractCompilationEnvironment_t *environment, beacon_oop_t superBehavior)
 {
     beacon_MethodCompilationEnvironment_t *methodEnvironment = beacon_allocateObjectWithBehavior(context->heap, context->classes.methodCompilationEnvironmentClass, sizeof(beacon_MethodCompilationEnvironment_t), BeaconObjectKindPointers);
     methodEnvironment->parent = environment;
@@ -827,6 +834,9 @@ static beacon_CompiledMethod_t *beacon_SyntaxCompiler_compileMethodNode(beacon_c
     beacon_BytecodeValue_t self = beacon_BytecodeCodeBuilder_getOrCreateSelf(context, methodBuilder);
     beacon_MethodDictionary_atPut(context, methodEnvironment->dictionary, beacon_internCString(context, "self"), beacon_encodeSmallInteger(self));
 
+    beacon_BytecodeValue_t super = beacon_BytecodeCodeBuilder_superReceiverClass(context, methodBuilder, superBehavior);
+    beacon_MethodDictionary_atPut(context, methodEnvironment->dictionary, beacon_internCString(context, "super"), beacon_encodeSmallInteger(super));
+    
     // Method arguments
     size_t blockArguments = methodNode->arguments->super.super.super.super.super.header.slotCount;
     for(size_t i = 0; i < blockArguments; ++i)
@@ -867,7 +877,7 @@ static beacon_oop_t beacon_SyntaxCompiler_methodNode(beacon_context_t *context, 
     beacon_AbstractCompilationEnvironment_t *environment = (beacon_AbstractCompilationEnvironment_t*)arguments[0];
     beacon_BytecodeCodeBuilder_t *parentBuilder = (beacon_BytecodeCodeBuilder_t *)arguments[1];
 
-    beacon_CompiledMethod_t *compiledMethod = beacon_SyntaxCompiler_compileMethodNode(context, (beacon_ParseTreeMethodNode_t*)receiver, environment);
+    beacon_CompiledMethod_t *compiledMethod = beacon_SyntaxCompiler_compileMethodNode(context, (beacon_ParseTreeMethodNode_t*)receiver, environment, 0);
     beacon_BytecodeValue_t compiledMethodLiteralValue = beacon_BytecodeCodeBuilder_addLiteral(context, parentBuilder, (beacon_oop_t)compiledMethod);
     return beacon_encodeSmallInteger(compiledMethodLiteralValue);
 }
@@ -887,7 +897,7 @@ static beacon_oop_t beacon_SyntaxCompiler_addMethodNode(beacon_context_t *contex
     behaviorEnvironment->behavior = (beacon_Behavior_t*)behavior;
     behaviorEnvironment->parent = environment;
 
-    beacon_CompiledMethod_t *compiledMethod = beacon_SyntaxCompiler_compileMethodNode(context, (beacon_ParseTreeMethodNode_t*)addMethodNode->method, &behaviorEnvironment->super);
+    beacon_CompiledMethod_t *compiledMethod = beacon_SyntaxCompiler_compileMethodNode(context, (beacon_ParseTreeMethodNode_t*)addMethodNode->method, &behaviorEnvironment->super, (beacon_oop_t)behaviorEnvironment->behavior->superclass);
     beacon_Behavior_t *targetBehavior = (beacon_Behavior_t *)behavior;
     if(!targetBehavior->methodDict)
         targetBehavior->methodDict = beacon_MethodDictionary_new(context);
@@ -909,7 +919,7 @@ static beacon_oop_t beacon_SyntaxCompiler_evaluateAddMethodNode(beacon_context_t
     behaviorEnvironment->behavior = (beacon_Behavior_t*)behaviorValue;
     behaviorEnvironment->parent = environment;
 
-    beacon_CompiledMethod_t *compiledMethod = beacon_SyntaxCompiler_compileMethodNode(context, (beacon_ParseTreeMethodNode_t*)addMethodNode->method, &behaviorEnvironment->super);
+    beacon_CompiledMethod_t *compiledMethod = beacon_SyntaxCompiler_compileMethodNode(context, (beacon_ParseTreeMethodNode_t*)addMethodNode->method, &behaviorEnvironment->super, (beacon_oop_t)behaviorEnvironment->behavior->superclass);
     beacon_Behavior_t *targetBehavior = (beacon_Behavior_t *)behaviorValue;
     if(!targetBehavior->methodDict)
         targetBehavior->methodDict = beacon_MethodDictionary_new(context);

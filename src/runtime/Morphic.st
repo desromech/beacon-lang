@@ -2,7 +2,7 @@ Object subclass: #Morph instanceVariables: #(bounds owner submorphs color).
 
 Morph ![
 initialize
-    "super initialize."
+    super initialize.
     submorphs := #().
     bounds := 0@0 corner: 50@40.
     color := Color blue.
@@ -27,9 +27,7 @@ Morph subclass: #BorderedMorph instanceVariables: #(borderColor borderWidth).
 
 BorderedMorph ![
 initialize
-    submorphs := #().
-    bounds := 0@0 corner: 50@40.
-    color := Color blue.
+    super initialize.
     borderColor := Color black.
     borderWidth := 1.
 ]

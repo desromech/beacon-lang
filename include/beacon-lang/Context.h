@@ -183,6 +183,7 @@ beacon_Symbol_t *beacon_internString(beacon_context_t *context, beacon_String_t 
 
 beacon_Behavior_t *beacon_getClass(beacon_context_t *context, beacon_oop_t receiver);
 
+beacon_oop_t beacon_performWithArgumentsInSuperclass(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, size_t argumentCount, beacon_oop_t *arguments, beacon_oop_t superclass);
 beacon_oop_t beacon_performWithArguments(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, size_t argumentCount, beacon_oop_t *arguments);
 beacon_oop_t beacon_perform(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector);
 beacon_oop_t beacon_performWith(beacon_context_t *context, beacon_oop_t receiver, beacon_oop_t selector, beacon_oop_t firstArgument);
