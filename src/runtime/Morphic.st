@@ -22,3 +22,14 @@ Morph ![
 renderWithBuilder: renderingBuilder
     renderingBuilder solidRectangle: bounds color: color
 ].
+
+Morph subclass: #BorderedMorph instanceVariables: #(borderColor borderWidth).
+
+BorderedMorph ![
+initialize
+    submorphs := #().
+    bounds := 0@0 corner: 50@40.
+    color := Color blue.
+    borderColor := Color black.
+    borderWidth := 1.
+]

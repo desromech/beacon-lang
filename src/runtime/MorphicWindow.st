@@ -9,16 +9,17 @@ MorphicWindow ![
 renderWithBuilder: renderingBuilder
     rootMorph == nil ifTrue: [^ self].
 
-    rootMorph bounds: (0@0 corner: self width @ self height).
+    rootMorph bounds: (0@0 corner: width @ height).
     rootMorph renderWithBuilder: renderingBuilder
 ].
 
 Morph ![
 openInWindow
-    MorphicWindow new
+    ^ MorphicWindow new
         extent: bounds extent;
         rootMorph: self;
-        open
+        open;
+        yourself
 ].
 
 MorphicWindow ![

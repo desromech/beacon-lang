@@ -1039,7 +1039,7 @@ static beacon_oop_t beacon_BehaviorCompilationEnvironment_lookupSymbolRecursivel
     beacon_BytecodeCodeBuilder_t *bytecodeBuilder = (beacon_BytecodeCodeBuilder_t*)arguments[1];
 
     beacon_Behavior_t *currentBehavior = environment->behavior;
-    if(currentBehavior)
+    while(currentBehavior)
     {
         beacon_Array_t *slots = (beacon_Array_t *)currentBehavior->slots;
         size_t slotCount = slots->super.super.super.super.super.header.slotCount;
