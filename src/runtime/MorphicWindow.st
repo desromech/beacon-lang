@@ -10,7 +10,7 @@ renderWithBuilder: renderingBuilder
     rootMorph == nil ifTrue: [^ self].
 
     rootMorph bounds: (0@0 corner: width @ height).
-    rootMorph renderWithBuilder: renderingBuilder
+    rootMorph fullRenderWithBuilder: renderingBuilder
 ].
 
 Morph ![

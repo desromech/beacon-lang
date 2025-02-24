@@ -12,6 +12,7 @@ FilesToLoad := #(
     'FormRendering.st'
     'WindowEvents.st'
     'Window.st'
+    'MorphicEvents.st'
     'Morphic.st'
     'MorphicWindow.st'
 ).
