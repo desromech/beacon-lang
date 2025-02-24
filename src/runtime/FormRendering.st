@@ -1,15 +1,13 @@
 Object subclass: #FormRenderingElementBuilder instanceVariables: #(scaleFactorX scaleFactorY renderingElements).
 
-Stdio stdout nextPutAll: FormRenderingElementBuilder instSize printString; lf.
-
 FormRenderingElementBuilder ![
 initialize
     renderingElements := ArrayList new.
-    "scaleFactorX = 1.
-    scaleFactorY = 1."
+    scaleFactorX := 1.
+    scaleFactorY := 1.
 ].
 
-"FormRenderingElementBuilder ![
+FormRenderingElementBuilder ![
 scaleFactorX
     ^ scaleFactorX
 ].
@@ -27,7 +25,7 @@ scaleFactorY
 FormRenderingElementBuilder ![
 scaleFactorY: newScaleFactor
     scaleFactorY := newScaleFactor
-]."
+].
 
 FormRenderingElement ![
 borderRoundRadius

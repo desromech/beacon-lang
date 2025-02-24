@@ -61,8 +61,8 @@ render
     self ensureDrawingFormHasCorrectExtent.
     
     formRenderingBuilder := FormRenderingElementBuilder new
-        "scaleFactorX: textureWidth // width;
-        scaleFactorY: textureHeight // height;"
+        scaleFactorX: textureWidth // width;
+        scaleFactorY: textureHeight // height;
         yourself.
     self renderWithBuilder: formRenderingBuilder.
     formRenderingBuilder drawInForm: drawingForm.
@@ -98,4 +98,9 @@ onKeyPressed: event
 Window ![
 onKeyReleased: event
     Stdio stdout nextPutAll: 'Window onKeyReleased.'; lf
+].
+
+Window ![
+onSizeChanged
+    Stdio stdout nextPutAll: 'Window onSizeChanged.'; lf
 ].

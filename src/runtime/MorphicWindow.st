@@ -45,3 +45,8 @@ MorphicWindow ![
 onKeyReleased: event
     Stdio stdout nextPutAll: 'MorphicWindow onKeyReleased.'; lf
 ].
+
+MorphicWindow ![
+onSizeChanged
+    rootMorph bounds: (0@0 corner: self width @ self height).
+].

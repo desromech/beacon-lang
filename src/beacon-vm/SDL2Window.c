@@ -47,7 +47,7 @@ static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t r
 
     ensureSDL2Initialization();
 
-    SDL_Window *sdlWindow = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN /*| SDL_WINDOW_ALLOW_HIGHDPI*/);
+    SDL_Window *sdlWindow = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
     if(!sdlWindow)
         beacon_exception_error(context, "Failed to create SDL window.");
 
@@ -215,10 +215,29 @@ static void beacon_sdl2_fetchAndDispatchEvents(beacon_context_t *context)
                     beacon_WindowExposeEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowExposeEventClass, sizeof(beacon_WindowExposeEvent_t), BeaconObjectKindPointers);
                     beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onExpose:"), (beacon_oop_t)event);
                 }
-
             }
                 break;
+            case SDL_WINDOWEVENT_SIZE_CHANGED:
+            {
+                beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,
+                    (beacon_Symbol_t*)beacon_encodeSmallInteger(sdlEvent.window.windowID));
+                if(beaconWindow)
+                {
+                    SDL_Window *sdlWindow = SDL_GetWindowFromID(sdlEvent.window.windowID);
+                    int newWidth = 0;
+                    int newHeight = 0;
+
+                    SDL_GetWindowSize(sdlWindow, &newWidth, &newHeight);
+
+                    beaconWindow->width = beacon_encodeSmallInteger(newWidth);
+                    beaconWindow->height = beacon_encodeSmallInteger(newHeight);
+
+                    beacon_sdl2_updateDisplayTextureExtent(context, beaconWindow);
+                    beacon_perform(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onSizeChanged"));
+                }
             }
+            break;
+        }
             break;
         case SDL_QUIT:
             isQuitting = true;
