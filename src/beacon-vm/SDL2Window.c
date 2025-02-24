@@ -47,7 +47,7 @@ static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t r
 
     ensureSDL2Initialization();
 
-    SDL_Window *sdlWindow = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+    SDL_Window *sdlWindow = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN /*| SDL_WINDOW_ALLOW_HIGHDPI*/);
     if(!sdlWindow)
         beacon_exception_error(context, "Failed to create SDL window.");
 
