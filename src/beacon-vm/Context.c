@@ -277,11 +277,22 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
 
     context->classes.pointClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Point", sizeof(beacon_Point_t), BeaconObjectKindPointers,
         "x", "y", NULL);
+    context->classes.colorClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Color", sizeof(beacon_Color_t), BeaconObjectKindPointers,
+        "r", "g", "b", "a", NULL);
     context->classes.rectangleClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Rectangle", sizeof(beacon_Rectangle_t), BeaconObjectKindPointers,
         "origin", "corner", NULL);
 
     context->classes.formClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Form", sizeof(beacon_Form_t), BeaconObjectKindPointers,
-        "bits", "width", "height", "depth", NULL);
+        "bits", "width", "height", "depth", "pitch", NULL);
+    context->classes.formRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "FormRenderingElement", sizeof(beacon_FormRenderingElement_t), BeaconObjectKindPointers,
+        "borderRoundRadius", "borderSize", "rectangle", NULL);
+    context->classes.formSolidRectangleRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.formRenderingElementClass, "FormSolidRectangleRenderingElement", sizeof(beacon_FormSolidRectangleRenderingElement_t), BeaconObjectKindPointers,
+        "color", "borderColor", NULL);
+    context->classes.formHorizontalGradientRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.formRenderingElementClass, "FormHorizontalGradientRenderingElement", sizeof(beacon_FormHorizontalGradientRenderingElement_t), BeaconObjectKindPointers,
+        "startColor", "endColor", "borderColor", NULL);
+    context->classes.formVerticalGradientRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.formRenderingElementClass, "FormHorizontalGradientRenderingElement", sizeof(beacon_FormVerticalGradientRenderingElement_t), BeaconObjectKindPointers,
+        "startColor", "endColor", "borderColor", NULL);
+
     context->classes.windowClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Window", sizeof(beacon_Window_t), BeaconObjectKindPointers,
         "width", "height", "handle", "rendererHandle", "textureHandle", "textureWidth", "textureHeight", "drawingForm", NULL);
 

@@ -7,6 +7,7 @@ FilesToLoad := #(
     'Class.st'
     'AbstractBinaryFileStream.st'
     'Geometry.st'
+    'Form.st'
     'WindowEvents.st'
     'Window.st'
     'Morphic.st'

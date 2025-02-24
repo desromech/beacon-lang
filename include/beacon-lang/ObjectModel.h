@@ -631,12 +631,52 @@ typedef struct beacon_Point_s
     beacon_oop_t y;
 } beacon_Point_t;
 
+typedef struct beacon_Color_s
+{
+    beacon_Object_t super;
+    beacon_oop_t r;
+    beacon_oop_t g;
+    beacon_oop_t b;
+    beacon_oop_t a;
+} beacon_Color_t;
+
 typedef struct beacon_Rectangle_s
 {
     beacon_Object_t super;
     beacon_Point_t *origin;
     beacon_Point_t *corner;
 } beacon_Rectangle_t;
+
+typedef struct beacon_FormRenderingElement_s
+{
+    beacon_Object_t super;
+    beacon_oop_t borderRoundRadius;
+    beacon_oop_t borderSize;
+    beacon_Rectangle_t *rectangle;
+} beacon_FormRenderingElement_t;
+
+typedef struct beacon_FormSolidRectangleRenderingElement_s
+{
+    beacon_FormRenderingElement_t super;
+    beacon_Color_t *color;
+    beacon_Color_t *borderColor;
+} beacon_FormSolidRectangleRenderingElement_t;
+
+typedef struct beacon_FormHorizontalGradientRenderingElement_s
+{
+    beacon_FormRenderingElement_t super;
+    beacon_Color_t *startColor;
+    beacon_Color_t *endColor;
+    beacon_Color_t *borderColor;
+} beacon_FormHorizontalGradientRenderingElement_t;
+
+typedef struct beacon_FormVerticalGradientRenderingElement_s
+{
+    beacon_FormRenderingElement_t super;
+    beacon_Color_t *startColor;
+    beacon_Color_t *endColor;
+    beacon_Color_t *borderColor;
+} beacon_FormVerticalGradientRenderingElement_t;
 
 typedef struct beacon_Form_s
 {
@@ -645,6 +685,7 @@ typedef struct beacon_Form_s
     beacon_oop_t width;
     beacon_oop_t height;
     beacon_oop_t depth;
+    beacon_oop_t pitch;
 } beacon_Form_t;
 
 typedef struct beacon_Window_s
