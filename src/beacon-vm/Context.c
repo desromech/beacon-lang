@@ -117,7 +117,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "protocols", NULL);
     context->classes.metaclassClass = beacon_context_createClassAndMetaclass(context, context->classes.classDescriptionClass, "Metaclass", sizeof(beacon_Metaclass_t), BeaconObjectKindPointers,
         "thisClass", NULL);
-    context->classes.slotClass = beacon_context_createClassAndMetaclass(context, context->classes.classDescriptionClass, "Slot", sizeof(beacon_Slot_t), BeaconObjectKindPointers,
+    context->classes.slotClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Slot", sizeof(beacon_Slot_t), BeaconObjectKindPointers,
         "name", "index", NULL);
     
     beacon_context_fixEarlyMetaclass(context, context->classes.protoObjectClass);

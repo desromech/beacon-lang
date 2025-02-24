@@ -235,7 +235,7 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
     size_t receiverSlotCount = 0;
     beacon_oop_t *receiverSlots = NULL;
 
-    if(receiver)
+    if(!beacon_isImmediate(receiver))
     {
         receiverSlotCount = ((beacon_ObjectHeader_t*)receiver)->slotCount;
         receiverSlots = (beacon_oop_t*)((beacon_ObjectHeader_t*)receiver + 1);

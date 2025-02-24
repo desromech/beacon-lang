@@ -1,4 +1,4 @@
-Window subclass: #MorphicWindow instanceVariables: #().
+Window subclass: #MorphicWindow instanceVariables: #(rootMorph).
 
 MorphicWindow ![
 render
