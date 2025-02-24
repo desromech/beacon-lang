@@ -346,6 +346,8 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
         context->roots.ifFalseSelector = (beacon_oop_t)beacon_internCString(context, "ifFalse:");
         context->roots.ifTrueIfFalseSelector = (beacon_oop_t)beacon_internCString(context, "ifTrue:ifFalse:");
         context->roots.ifFalseIfTrueSelector = (beacon_oop_t)beacon_internCString(context, "ifFalse:ifTrue:");
+        context->roots.andSelector = (beacon_oop_t)beacon_internCString(context, "and:");
+        context->roots.orSelector = (beacon_oop_t)beacon_internCString(context, "or:");
         context->roots.whileTrueSelector = (beacon_oop_t)beacon_internCString(context, "whileTrue:");
         context->roots.whileFalseSelector = (beacon_oop_t)beacon_internCString(context, "whileFalse:");
         context->roots.doWhileTrueSelector = (beacon_oop_t)beacon_internCString(context, "do:whileTrue:");

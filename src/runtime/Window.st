@@ -2,6 +2,7 @@ Window ![
 initialize
     width := 640.
     height := 480.
+    drawingForm := nil.
 ].
 
 Window ![
@@ -41,8 +42,21 @@ handle
 ].
 
 Window ![
+ensureDrawingFormHasCorrectExtent
+
+    (drawingForm ~~ nil and: [
+    drawingForm width == textureWidth and: [
+    drawingForm height == textureHeight]]) ifTrue: [ ^ self ].
+
+    Stdio stdout nextPutAll: 'ensureDrawingFormHasCorrectExtent'; lf.
+    drawingForm := Form extent: textureWidth@textureHeight depth: 32.
+].
+
+Window ![
 render
-    Stdio stdout nextPutAll: 'Window render.'; lf
+    self ensureDrawingFormHasCorrectExtent.
+
+    self displayForm: drawingForm.
 ].
 
 Window ![

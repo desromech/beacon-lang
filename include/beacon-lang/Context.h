@@ -152,6 +152,8 @@ struct beacon_context_s
         beacon_oop_t ifFalseSelector;
         beacon_oop_t ifTrueIfFalseSelector;
         beacon_oop_t ifFalseIfTrueSelector;
+        beacon_oop_t andSelector;
+        beacon_oop_t orSelector;
         beacon_oop_t whileTrueSelector;
         beacon_oop_t whileFalseSelector;
         beacon_oop_t doWhileTrueSelector;

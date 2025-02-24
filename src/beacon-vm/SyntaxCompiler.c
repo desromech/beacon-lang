@@ -307,7 +307,7 @@ static beacon_oop_t beacon_SyntaxCompiler_ifTrueIfFalse(beacon_context_t *contex
 
 static beacon_oop_t beacon_SyntaxCompiler_ifFalseIfTrue(beacon_context_t *context, beacon_AbstractCompilationEnvironment_t *environment, beacon_BytecodeCodeBuilder_t *builder, beacon_BytecodeValue_t receiver, beacon_ParseTreeNode_t *firstInlineableArgument, beacon_ParseTreeNode_t *secondInlineableArgument)
 {
-    beacon_BytecodeValue_t result =  beacon_BytecodeCodeBuilder_newTemporary(context, builder, 0);;
+    beacon_BytecodeValue_t result =  beacon_BytecodeCodeBuilder_newTemporary(context, builder, 0);
     uint16_t firstBranchLocation = beacon_BytecodeCodeBuilder_jumpIfTrue(context, builder, receiver, 0);
 
     // ifFalse:
@@ -324,6 +324,36 @@ static beacon_oop_t beacon_SyntaxCompiler_ifFalseIfTrue(beacon_context_t *contex
     uint16_t mergeLocation = beacon_BytecodeCodeBuilder_label(builder);
     beacon_BytecodeCodeBuilder_fixup_jump(context, builder, jumpMergeLocation, mergeLocation);
     
+    return beacon_encodeSmallInteger(result);
+}
+
+static beacon_oop_t beacon_SyntaxCompiler_and(beacon_context_t *context, beacon_AbstractCompilationEnvironment_t *environment, beacon_BytecodeCodeBuilder_t *builder, beacon_BytecodeValue_t receiver, beacon_ParseTreeNode_t *inlineableArgument)
+{
+    beacon_BytecodeValue_t result =  beacon_BytecodeCodeBuilder_newTemporary(context, builder, 0);
+    beacon_BytecodeCodeBuilder_storeValue(context, builder, result, receiver);
+
+    uint16_t branchLocation = beacon_BytecodeCodeBuilder_jumpIfFalse(context, builder, receiver, 0);
+
+    beacon_BytecodeValue_t andNext = beacon_compileInlineNodeWithEnvironmentAndBytecodeBuilder(context, inlineableArgument, (beacon_Array_t*)context->roots.emptyArray, environment, builder);
+    beacon_BytecodeCodeBuilder_storeValue(context, builder, result, andNext);
+
+    uint16_t mergeLocation = beacon_BytecodeCodeBuilder_label(builder);
+    beacon_BytecodeCodeBuilder_fixup_jumpIf(context, builder, branchLocation, mergeLocation);
+    return beacon_encodeSmallInteger(result);
+}
+
+static beacon_oop_t beacon_SyntaxCompiler_or(beacon_context_t *context, beacon_AbstractCompilationEnvironment_t *environment, beacon_BytecodeCodeBuilder_t *builder, beacon_BytecodeValue_t receiver, beacon_ParseTreeNode_t *inlineableArgument)
+{
+    beacon_BytecodeValue_t result =  beacon_BytecodeCodeBuilder_newTemporary(context, builder, 0);
+    beacon_BytecodeCodeBuilder_storeValue(context, builder, result, receiver);
+
+    uint16_t branchLocation = beacon_BytecodeCodeBuilder_jumpIfTrue(context, builder, receiver, 0);
+
+    beacon_BytecodeValue_t orNext = beacon_compileInlineNodeWithEnvironmentAndBytecodeBuilder(context, inlineableArgument, (beacon_Array_t*)context->roots.emptyArray, environment, builder);
+    beacon_BytecodeCodeBuilder_storeValue(context, builder, result, orNext);
+
+    uint16_t mergeLocation = beacon_BytecodeCodeBuilder_label(builder);
+    beacon_BytecodeCodeBuilder_fixup_jumpIf(context, builder, branchLocation, mergeLocation);
     return beacon_encodeSmallInteger(result);
 }
 
@@ -389,6 +419,16 @@ static beacon_oop_t beacon_SyntaxCompiler_messageSend(beacon_context_t *context,
     {
         BeaconAssert(context, argumentValueCount == 2);
         return beacon_SyntaxCompiler_ifFalseIfTrue(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0], (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[1]);
+    }
+    else if(selectorEvaluatedValue == context->roots.andSelector)
+    {
+        BeaconAssert(context, argumentValueCount == 1);
+        return beacon_SyntaxCompiler_and(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0]);
+    }
+    else if(selectorEvaluatedValue == context->roots.orSelector)
+    {
+        BeaconAssert(context, argumentValueCount == 1);
+        return beacon_SyntaxCompiler_or(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0]);
     }
     else if(selectorEvaluatedValue == context->roots.toDoSelector)
     {

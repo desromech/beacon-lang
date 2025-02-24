@@ -694,10 +694,13 @@ typedef struct beacon_Window_s
     beacon_oop_t width;
     beacon_oop_t height;
     beacon_oop_t handle;
+
     beacon_oop_t rendererHandle;
+
     beacon_oop_t textureHandle;
     beacon_oop_t textureWidth;
     beacon_oop_t textureHeight;
+
     beacon_oop_t drawingForm;
 } beacon_Window_t;
 

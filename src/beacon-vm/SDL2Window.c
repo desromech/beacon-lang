@@ -15,6 +15,24 @@ static void ensureSDL2Initialization(void)
     hasInitializedSDL2 = true;
 }
 
+static void beacon_sdl2_updateDisplayTextureExtent(beacon_context_t *context, beacon_Window_t *beaconWindow)
+{
+    SDL_Renderer *renderer = beacon_unboxExternalAddress(context, beaconWindow->rendererHandle);
+    int textureWidth = beacon_decodeSmallInteger(beaconWindow->width);
+    int textureHeight = beacon_decodeSmallInteger(beaconWindow->height);
+    SDL_GetRendererOutputSize(renderer, &textureWidth, &textureHeight);
+
+    if(!beaconWindow->textureHandle ||
+        textureWidth != beacon_decodeSmallInteger(beaconWindow->textureWidth) ||
+       textureHeight != beacon_decodeSmallInteger(beaconWindow->textureHeight))
+    {
+        SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, textureWidth, textureHeight);
+        beaconWindow->textureHandle = beacon_boxExternalAddress(context, texture);
+        beaconWindow->textureWidth = beacon_encodeSmallInteger(textureWidth);
+        beaconWindow->textureHeight = beacon_encodeSmallInteger(textureHeight);    
+    }
+}
+
 static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)argumentCount;
@@ -26,7 +44,7 @@ static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t r
 
     ensureSDL2Initialization();
 
-    SDL_Window *sdlWindow = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
+    SDL_Window *sdlWindow = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
     if(!sdlWindow)
         beacon_exception_error(context, "Failed to create SDL window.");
 
@@ -37,15 +55,41 @@ static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t r
     SDL_Renderer *renderer = SDL_CreateRenderer(sdlWindow, -1, SDL_RENDERER_PRESENTVSYNC);
     beaconWindow->rendererHandle = beacon_boxExternalAddress(context, renderer);
 
-    int textureWidth = width;
-    int textureHeight = height;
-    SDL_GetRendererOutputSize(renderer, &textureWidth, &textureHeight);
+    beacon_sdl2_updateDisplayTextureExtent(context, beaconWindow);
+    return receiver;
+}
 
-    SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, textureWidth, textureHeight);
-    beaconWindow->textureHandle = beacon_boxExternalAddress(context, texture);
-    beaconWindow->textureWidth = beacon_encodeSmallInteger(textureWidth);
-    beaconWindow->textureHeight = beacon_encodeSmallInteger(textureHeight);
+static beacon_oop_t beacon_Window_close(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)argumentCount;
+    (void)arguments;
 
+    beacon_Window_t *beaconWindow = (beacon_Window_t *)receiver;
+
+    SDL_Window *sdlWindow = SDL_GetWindowFromID(beacon_decodeCharacter(beaconWindow->handle));
+
+    uint32_t sdlWindowID = SDL_GetWindowID(sdlWindow);
+    beaconWindow->handle = beacon_encodeSmallInteger(sdlWindowID);
+    beacon_MethodDictionary_atPut(context, context->roots.windowHandleMap, (beacon_Symbol_t*)beaconWindow->handle, (beacon_oop_t)beaconWindow);
+
+    SDL_Texture *texture = beacon_unboxExternalAddress(context, beaconWindow->textureHandle);
+    SDL_DestroyTexture(texture);
+
+    SDL_Renderer *renderer = beacon_unboxExternalAddress(context, beaconWindow->rendererHandle);
+    SDL_DestroyRenderer(renderer);
+    
+    SDL_DestroyWindow(sdlWindow);
+    return receiver;
+}
+
+static beacon_oop_t beacon_Window_displayForm(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    beacon_Window_t *beaconWindow = (beacon_Window_t *)receiver;
+    beacon_Form_t *form = (beacon_Form_t*)arguments[0];
+
+    SDL_Texture *texture = beacon_unboxExternalAddress(context, beaconWindow->textureHandle);
+    BeaconAssert(context, texture != NULL);
     return receiver;
 }
 
@@ -131,6 +175,7 @@ static void beacon_sdl2_fetchAndDispatchEvents(beacon_context_t *context)
                     (beacon_Symbol_t*)beacon_encodeSmallInteger(sdlEvent.window.windowID));
                 if(beaconWindow)
                 {
+                    beacon_sdl2_updateDisplayTextureExtent(context, beaconWindow);
                     beacon_WindowExposeEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowExposeEventClass, sizeof(beacon_WindowExposeEvent_t), BeaconObjectKindPointers);
                     beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onExpose:"), (beacon_oop_t)event);
                 }
@@ -164,5 +209,7 @@ static beacon_oop_t beacon_WindowClass_enterMainLoop(beacon_context_t *context, 
 void beacon_context_registerWindowSystemPrimitives(beacon_context_t *context)
 {
     beacon_addPrimitiveToClass(context, context->classes.windowClass, "open", 0, beacon_Window_open);
+    beacon_addPrimitiveToClass(context, context->classes.windowClass, "close", 0, beacon_Window_close);
+    beacon_addPrimitiveToClass(context, context->classes.windowClass, "displayForm:", 1, beacon_Window_displayForm);
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.windowClass), "enterMainLoop", 0, beacon_WindowClass_enterMainLoop);
 }
