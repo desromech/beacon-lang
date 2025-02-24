@@ -49,15 +49,17 @@ slots
 ].
 Behavior ![
     setSlotsWithInstanceVariableNames: variableNames
-        slots := Array new: variableNames size.
-        1 to: variableNames size do: [:varNameIndex |
+        | newSlots |
+        newSlots := Array basicNew: variableNames basicSize.
+        1 to: variableNames basicSize do: [:varNameIndex |
             | slot |
             self instSize: self instSize + 1.
-            slot := Slot new
-                name: (variableNames at: varNameIndex);
+            slot := Slot basicNew
+                name: (variableNames basicAt: varNameIndex);
                 index: self instSize;
                 yourself.
 
-            slots at: varNameIndex put: slot
+            slots basicAt: varNameIndex put: slot
         ].
+        slots := newSlots
 ]

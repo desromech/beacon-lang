@@ -8,6 +8,8 @@ FilesToLoad := #(
     'AbstractBinaryFileStream.st'
     'WindowEvents.st'
     'Window.st'
+    'Morphic.st'
+    'MorphicWindow.st'
 ).
 
 1 to: FilesToLoad basicSize do: [:index |

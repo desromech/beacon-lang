@@ -624,6 +624,20 @@ typedef struct beacon_StdioStream_s
     beacon_AbstractBinaryFileStream_t super;
 } beacon_StdioStream_t;
 
+typedef struct beacon_Point_s
+{
+    beacon_Object_t super;
+    beacon_oop_t x;
+    beacon_oop_t y;
+} beacon_Point_t;
+
+typedef struct beacon_Rectangle_s
+{
+    beacon_Object_t super;
+    beacon_Point_t *origin;
+    beacon_Point_t *corner;
+} beacon_Rectangle_t;
+
 typedef struct beacon_Form_s
 {
     beacon_Object_t super;
@@ -639,7 +653,11 @@ typedef struct beacon_Window_s
     beacon_oop_t width;
     beacon_oop_t height;
     beacon_oop_t handle;
-    beacon_oop_t drawingHandle;
+    beacon_oop_t rendererHandle;
+    beacon_oop_t textureHandle;
+    beacon_oop_t textureWidth;
+    beacon_oop_t textureHeight;
+    beacon_oop_t drawingForm;
 } beacon_Window_t;
 
 typedef struct beacon_WindowEvent_s

@@ -117,7 +117,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "protocols", NULL);
     context->classes.metaclassClass = beacon_context_createClassAndMetaclass(context, context->classes.classDescriptionClass, "Metaclass", sizeof(beacon_Metaclass_t), BeaconObjectKindPointers,
         "thisClass", NULL);
-    context->classes.slotClass = beacon_context_createClassAndMetaclass(context, context->classes.classDescriptionClass, "Slot", sizeof(beacon_Metaclass_t), BeaconObjectKindPointers,
+    context->classes.slotClass = beacon_context_createClassAndMetaclass(context, context->classes.classDescriptionClass, "Slot", sizeof(beacon_Slot_t), BeaconObjectKindPointers,
         "name", "index", NULL);
     
     beacon_context_fixEarlyMetaclass(context, context->classes.protoObjectClass);
@@ -275,10 +275,15 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.stdioClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Stdio", sizeof(beacon_Stdio_t), BeaconObjectKindPointers, NULL);
     context->classes.stdioStreamClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractBinaryFileStreamClass, "StdioStream", sizeof(beacon_Stdio_t), BeaconObjectKindPointers, NULL);
 
+    context->classes.pointClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Point", sizeof(beacon_Point_t), BeaconObjectKindPointers,
+        "x", "y", NULL);
+    context->classes.rectangleClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Rectangle", sizeof(beacon_Rectangle_t), BeaconObjectKindPointers,
+        "origin", "corner", NULL);
+
     context->classes.formClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Form", sizeof(beacon_Form_t), BeaconObjectKindPointers,
         "bits", "width", "height", "depth", NULL);
     context->classes.windowClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Window", sizeof(beacon_Window_t), BeaconObjectKindPointers,
-        "width", "height", "handle", NULL);
+        "width", "height", "handle", "rendererHandle", "textureHandle", "textureWidth", "textureHeight", "drawingForm", NULL);
 
     context->classes.windowEventClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "WindowEvent", sizeof(beacon_WindowEvent_t), BeaconObjectKindPointers, NULL);
     context->classes.windowExposeEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowExposeEvent", sizeof(beacon_WindowExposeEvent_t), BeaconObjectKindPointers,

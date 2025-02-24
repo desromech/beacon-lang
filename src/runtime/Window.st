@@ -1,4 +1,10 @@
 Window ![
+initialize
+    width := 640.
+    height := 480.
+].
+
+Window ![
 width
     ^ width
 ].
@@ -24,8 +30,13 @@ handle
 ].
 
 Window ![
+render
+    Stdio stdout nextPutAll: 'Window render.'; lf
+].
+
+Window ![
 onExpose: event
-    Stdio stdout nextPutAll: 'Window expose.'; lf
+    self render.
 ].
 
 Window ![

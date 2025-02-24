@@ -34,6 +34,18 @@ static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t r
     beaconWindow->handle = beacon_encodeSmallInteger(sdlWindowID);
     beacon_MethodDictionary_atPut(context, context->roots.windowHandleMap, (beacon_Symbol_t*)beaconWindow->handle, (beacon_oop_t)beaconWindow);
 
+    SDL_Renderer *renderer = SDL_CreateRenderer(sdlWindow, -1, SDL_RENDERER_PRESENTVSYNC);
+    beaconWindow->rendererHandle = beacon_boxExternalAddress(context, renderer);
+
+    int textureWidth = width;
+    int textureHeight = height;
+    SDL_GetRendererOutputSize(renderer, &textureWidth, &textureHeight);
+
+    SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, textureWidth, textureHeight);
+    beaconWindow->textureHandle = beacon_boxExternalAddress(context, texture);
+    beaconWindow->textureWidth = beacon_encodeSmallInteger(textureWidth);
+    beaconWindow->textureHeight = beacon_encodeSmallInteger(textureHeight);
+
     return receiver;
 }
 

@@ -109,7 +109,10 @@ struct beacon_context_s
         beacon_Behavior_t *stdioClass;
         beacon_Behavior_t *stdioStreamClass;
 
+        beacon_Behavior_t *pointClass;
+        beacon_Behavior_t *rectangleClass;
         beacon_Behavior_t *formClass;
+
         beacon_Behavior_t *windowClass;
         beacon_Behavior_t *windowEventClass;
         beacon_Behavior_t *windowExposeEventClass;
