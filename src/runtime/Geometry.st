@@ -18,6 +18,16 @@ y: aNumber
     y := aNumber
 ].
 
+Point ![
++ aPoint
+    ^ (x + aPoint x) @ (y + aPoint y)
+].
+
+Point ![
+- aPoint
+    ^ (x - aPoint x) @ (y - aPoint y)
+].
+
 Number ![
 @ otherNumber
     ^ Point basicNew
@@ -46,10 +56,33 @@ corner: aPoint
     corner := aPoint
 ].
 
+Rectangle ![
+extent
+    ^ corner - origin
+].
+
+Rectangle ![
+min
+    ^ origin
+].
+
+Rectangle ![
+max
+    ^ corner
+].
+
 Point ![
 corner: aCornerPoint
     ^ Rectangle basicNew
         origin: self;
         corner: aCornerPoint;
         yourself
-]
+].
+
+Point ![
+extent: anExtentPoint
+    ^ Rectangle basicNew
+        origin: self;
+        corner: self + anExtentPoint;
+        yourself
+].

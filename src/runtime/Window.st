@@ -25,6 +25,17 @@ height: aNumber
 ].
 
 Window ![
+extent
+    ^ width @ height
+].
+
+Window ![
+extent: aPoint
+    width := aPoint x.
+    height := aPoint y.
+].
+
+Window ![
 handle
     ^ handle
 ].

@@ -4,9 +4,5 @@ Morph ![
 initialize
     "super initialize."
     submorphs := #().
-].
-
-Morph ![
-openInWindow
-    Stdio stdout nextPutAll: 'TODO: Morph >> openInWindow'; lf.
+    bounds := 0@0 corner: 50@40.
 ].

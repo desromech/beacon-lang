@@ -74,10 +74,10 @@ Behavior ![
         newSlots := Array basicNew: variableNames basicSize.
         1 to: variableNames size do: [:varNameIndex |
             | slot |
-            instSize := instSize + 1.
+            instSize := instSize + 8.
             slot := Slot basicNew
                 name: (variableNames basicAt: varNameIndex);
-                index: instSize;
+                index: instSize // 8;
                 yourself.
 
             newSlots basicAt: varNameIndex put: slot
