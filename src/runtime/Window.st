@@ -59,8 +59,11 @@ Window ![
 render
     | formRenderingBuilder | 
     self ensureDrawingFormHasCorrectExtent.
-
-    formRenderingBuilder := FormRenderingElementBuilder new.
+    
+    formRenderingBuilder := FormRenderingElementBuilder new
+        "scaleFactorX: textureWidth // width;
+        scaleFactorY: textureHeight // height;"
+        yourself.
     self renderWithBuilder: formRenderingBuilder.
     formRenderingBuilder drawInForm: drawingForm.
 

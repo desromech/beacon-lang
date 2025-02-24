@@ -9,6 +9,16 @@ initialize
 ].
 
 Morph ![
+bounds
+    ^ bounds
+].
+
+Morph ![
+bounds: aRectangle
+    bounds := aRectangle
+].
+
+Morph ![
 renderWithBuilder: renderingBuilder
     renderingBuilder solidRectangle: bounds color: color
 ].
