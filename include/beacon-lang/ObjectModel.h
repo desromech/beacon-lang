@@ -78,6 +78,24 @@ static inline beacon_oop_t beacon_encodeSmallDoubleValue(double value)
     return (beacon_oop_t)withTag;
 }
 
+static inline double beacon_decodeSmallDoubleValue(double value)
+{
+    // TODO: Implement this.
+    return 0.0;
+}
+
+
+static inline double beacon_decodeNumber(intptr_t encodedNumber)
+{
+    intptr_t tag = encodedNumber & ImmediateObjectTag_BitMask;
+    if(tag == ImmediateObjectTag_SmallInteger)
+        return beacon_decodeSmallInteger(encodedNumber);
+    else if(tag == ImmediateObjectTag_SmallFloat)
+        return beacon_decodeSmallDoubleValue(encodedNumber);
+    else
+        return 0;
+}
+
 typedef struct beacon_context_s beacon_context_t;
 typedef beacon_oop_t (*beacon_NativeCodeFunction_t)(beacon_context_t *context, beacon_oop_t receiverOrCaptures, size_t argumentCount, beacon_oop_t *arguments);
 

@@ -5,6 +5,11 @@ rootMorph: aRootMorph
     rootMorph := aRootMorph
 ].
 
+MorphicWindow ![
+renderWithBuilder: renderingBuilder
+    rootMorph renderWithBuilder: renderingBuilder
+].
+
 Morph ![
 openInWindow
     MorphicWindow new

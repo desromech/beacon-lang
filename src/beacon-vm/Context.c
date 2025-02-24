@@ -12,7 +12,9 @@
 #include <unistd.h>
 
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context);
+void beacon_context_registerArrayListPrimitive(beacon_context_t *context);
 void beacon_context_registerDictionaryPrimitives(beacon_context_t *context);
+void beacon_context_registerFormRenderingPrimitives(beacon_context_t *context);
 void beacon_context_registerWindowSystemPrimitives(beacon_context_t *context);
 void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *context);
 
@@ -386,7 +388,9 @@ void beacon_context_createSystemDictionary(beacon_context_t *context)
 void beacon_context_registerBasicPrimitives(beacon_context_t *context)
 {
     beacon_context_registerObjectBasicPrimitives(context);
+    beacon_context_registerArrayListPrimitive(context);
     beacon_context_registerDictionaryPrimitives(context);
+    beacon_context_registerFormRenderingPrimitives(context);
     beacon_context_registerWindowSystemPrimitives(context);
     beacon_context_registerParseTreeCompilationPrimitives(context);
 }

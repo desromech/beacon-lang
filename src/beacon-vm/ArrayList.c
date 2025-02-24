@@ -149,3 +149,24 @@ void beacon_ByteArrayList_atPut(beacon_context_t *context, beacon_ByteArrayList_
         beacon_exception_error(context, "Index out of bounds.");
     collection->array->elements[index - 1] = element;
 }
+
+static beacon_oop_t beacon_ArrayList_addPrimitive(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, (intptr_t)argumentCount == 1);
+    beacon_ArrayList_t *arrayList = (beacon_ArrayList_t*)receiver;
+    beacon_ArrayList_add(context, arrayList, arguments[0]);
+    return arguments[0];
+}
+
+static beacon_oop_t beacon_ArrayList_asArrayPrimitive(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, (intptr_t)argumentCount == 0);
+    beacon_ArrayList_t *arrayList = (beacon_ArrayList_t*)receiver;
+    return (beacon_oop_t)beacon_ArrayList_asArray(context, arrayList);
+}
+
+void beacon_context_registerArrayListPrimitive(beacon_context_t *context)
+{
+    beacon_addPrimitiveToClass(context, context->classes.arrayListClass, "add:", 1, beacon_ArrayList_addPrimitive);
+    beacon_addPrimitiveToClass(context, context->classes.arrayListClass, "asArray", 0, beacon_ArrayList_asArrayPrimitive);
+}

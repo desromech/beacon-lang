@@ -51,7 +51,7 @@ beacon_SourceCode_t *beacon_makeSourceCodeFromFileNamed(beacon_context_t *contex
     fseek(file, 0, SEEK_SET);
 
     beacon_String_t *fileData = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_String_t) + fileSize, BeaconObjectKindBytes);
-    if(fread(fileData->data, fileSize, 1, file) != 1)
+    if(fileSize > 0 && fread(fileData->data, fileSize, 1, file) != 1)
     {
         perror("Failed to read input file data.");
         fclose(file);

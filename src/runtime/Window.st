@@ -48,13 +48,21 @@ ensureDrawingFormHasCorrectExtent
     drawingForm width == textureWidth and: [
     drawingForm height == textureHeight]]) ifTrue: [ ^ self ].
 
-    Stdio stdout nextPutAll: 'ensureDrawingFormHasCorrectExtent'; lf.
     drawingForm := Form extent: textureWidth@textureHeight depth: 32.
 ].
 
 Window ![
+renderWithBuilder: renderingBuilder
+].
+
+Window ![
 render
+    | formRenderingBuilder | 
     self ensureDrawingFormHasCorrectExtent.
+
+    formRenderingBuilder := FormRenderingElementBuilder new.
+    self renderWithBuilder: formRenderingBuilder.
+    formRenderingBuilder drawInForm: drawingForm.
 
     self displayForm: drawingForm.
 ].
