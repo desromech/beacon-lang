@@ -92,7 +92,7 @@ FormRenderingElementBuilder ![
 solidRectangle: rectangle color: color borderSize: borderSize borderColor: borderColor
     | solidRectangle |
     solidRectangle := FormSolidRectangleRenderingElement new
-        rectangle: rectangle;
+        rectangle: (rectangle scaledWithXFactor: scaleFactorX y: scaleFactorY);
         color: color;
         borderSize: borderSize;
         borderColor: borderColor;

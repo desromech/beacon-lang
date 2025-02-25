@@ -71,6 +71,14 @@ max
     ^ corner
 ].
 
+Rectangle ![
+scaledWithXFactor: scaleFactorX y: scaleFactorY
+    | scaledOrigin scaledCorner |
+    scaledOrigin := (origin x * scaleFactorX) @ (origin y * scaleFactorY).
+    scaledCorner := (corner x * scaleFactorX) @ (corner y * scaleFactorY).
+    ^ scaledOrigin corner: scaledCorner
+].
+
 Point ![
 corner: aCornerPoint
     ^ Rectangle basicNew
