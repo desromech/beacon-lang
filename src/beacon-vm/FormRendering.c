@@ -81,11 +81,53 @@ beacon_oop_t beacon_SolidRectangleRenderingElement_drawInForm(beacon_context_t *
 }
 
 void beacon_TextRenderingElement_drawCharacterInForm(beacon_context_t *context,
-        beacon_Form_t *atlasForm, int atlasMinX, int atlasMinY, int atlasMaxX, int atlasMaxY,
+        beacon_Form_t *atlasForm, int atlasMaX, int atlasMaxY, int atlasMinX, int atlasMinY,
         beacon_Form_t *targetForm, int targetMinX, int targetMinY, int targetMaxX, int targetMaxY,
         beacon_Color_t *color)
 {
-    printf("TODO: blit character\n");
+    BeaconAssert(context, beacon_decodeSmallInteger(atlasForm->depth) == 8);
+    BeaconAssert(context, beacon_decodeSmallInteger(targetForm->depth) == 32);
+ 
+    float r = clampFloat(beacon_decodeNumber(color->r), 0, 1);
+    float g = clampFloat(beacon_decodeNumber(color->g), 0, 1);
+    float b = clampFloat(beacon_decodeNumber(color->b), 0, 1);
+    float a = clampFloat(beacon_decodeNumber(color->a), 0, 1);
+
+    int br = (int)(r *255);
+    int bg = (int)(g *255);
+    int bb = (int)(b *255);
+    int ba = (int)(a *255);
+
+    int sourcePitch = beacon_decodeSmallInteger(atlasForm->pitch);
+
+    int targetWidth = beacon_decodeSmallInteger(targetForm->width);
+    int targetHeight = beacon_decodeSmallInteger(targetForm->height);
+    int targetPitch = beacon_decodeSmallInteger(targetForm->pitch); 
+    
+    uint8_t *sourcePixels = atlasForm->bits->elements;
+    uint8_t *destPixels = targetForm->bits->elements;
+
+    uint8_t *sourceRow = sourcePixels + sourcePitch * atlasMinY;
+    uint8_t *destRow = destPixels + targetPitch * targetMinY;
+    for(int y = targetMinY; y < targetMaxY; ++y)
+    {
+        uint32_t *destRow32 = (uint32_t*)destRow;
+        for(int x = targetMinX; x < targetMaxX; ++x)
+        {
+            if(0 <= x && x < targetWidth && 
+               0 <= y && y < targetHeight)
+            {
+                uint8_t alpha = sourceRow[x];
+                // TODO: perform proper alpha blending
+                if(alpha > 0.1)
+                {
+                    destRow32[x] = 0x0;
+                }
+            }
+        }
+        sourceRow += sourcePitch;
+        destRow += targetPitch;
+    }
 }
 
 beacon_oop_t beacon_TextRenderingElement_drawInForm(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -106,6 +148,9 @@ beacon_oop_t beacon_TextRenderingElement_drawInForm(beacon_context_t *context, b
     int formWidth = beacon_decodeSmallInteger(form->width);
     int formHeight = beacon_decodeSmallInteger(form->height);
 
+    int atlasFormWidth = beacon_decodeSmallInteger(fontFace->atlasForm->width);
+    int atlasFormHeight = beacon_decodeSmallInteger(fontFace->atlasForm->height);
+
     float baselineX = rectMinX;
     float baselineY = rectMinY + (rectMaxY - rectMinY) * 0.5f ;
     size_t stringSize = renderingElement->text->super.super.super.super.super.header.slotCount;
@@ -119,36 +164,11 @@ beacon_oop_t beacon_TextRenderingElement_drawInForm(beacon_context_t *context, b
         stbtt_GetBakedQuad((stbtt_bakedchar*)fontFace->charData->elements, formWidth, formHeight, c - 31, &baselineX, &baselineY, &quadToDraw, true);
 
         beacon_TextRenderingElement_drawCharacterInForm(context,
-                fontFace->atlasForm, quadToDraw.s0, quadToDraw.t0, quadToDraw.s1, quadToDraw.t1,
+                fontFace->atlasForm, atlasFormWidth*quadToDraw.s0, atlasFormHeight+quadToDraw.t0, atlasFormWidth*quadToDraw.s1, atlasFormHeight*quadToDraw.t1,
                 form, quadToDraw.x0, quadToDraw.y0, quadToDraw.x1, quadToDraw.y1,
                 renderingElement->color);
     }
 
-/*
-        Vector2 baselinePosition = initialPosition + currentTranslation;
-        for(auto c : label)
-        {
-            if(c < ' ')
-                continue;
-
-            //auto cdata = currentFont->cdata[c - ' '];
-
-            stbtt_aligned_quad quadToDraw;
-
-            stbtt_GetBakedQuad(currentFont->cdata.data(), currentFont->fontTexture->header.width, currentFont->fontTexture->header.height,
-                c - 31, &baselinePosition.x, &baselinePosition.y, &quadToDraw, true);
-
-            GuiRenderingElement element = {};
-            element.type = GuiElementType::TextCharacter;
-            element.texture = currentFont->fontTexture->gpuTextureBindingIndex;
-
-            element.imageRectangle = Rectangle{{quadToDraw.s0, quadToDraw.t0}, {quadToDraw.s1, quadToDraw.t1}};
-            element.rectangle = Rectangle{{quadToDraw.x0, quadToDraw.y0}, {quadToDraw.x1, quadToDraw.y1}};
-            element.firstColor = color;
-            renderingElements.push_back(element);
-        }
-
-*/
     return receiver;
 }
 
