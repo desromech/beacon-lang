@@ -51,6 +51,7 @@ static beacon_Behavior_t *beacon_context_createClassAndMetaclass(beacon_context_
         if(!strcmp(nextVarName, "__Meta__"))
         {
             parsingMetaVariable = true;
+            nextVarName = va_arg(varNames, const char *);
             continue;
         }
 
@@ -73,12 +74,19 @@ static beacon_Behavior_t *beacon_context_createClassAndMetaclass(beacon_context_
 
     va_end(varNames);
 
+    size_t metaClassExtraSize  = beacon_ArrayList_size(metaClassVarNames);
     beacon_Metaclass_t *metaclass = beacon_allocateObjectWithBehavior(context->heap, context->classes.metaclassClass, sizeof(beacon_Metaclass_t), BeaconObjectKindPointers);
-    metaclass->super.super.instSize = beacon_encodeSmallInteger(sizeof(beacon_Class_t) - sizeof(beacon_ObjectHeader_t));
+    metaclass->super.super.instSize = beacon_encodeSmallInteger(sizeof(beacon_Class_t) - sizeof(beacon_ObjectHeader_t) + metaClassExtraSize*sizeof(beacon_oop_t));
     metaclass->super.super.objectKind = beacon_encodeSmallInteger(BeaconObjectKindPointers);
     metaclass->super.super.slots = (beacon_oop_t)beacon_ArrayList_asArray(context, metaClassVarNames);
+    if(superclassBehavior)
+    {
+        metaclass->super.super.instSize = beacon_encodeSmallInteger(
+            beacon_decodeSmallInteger(superclassBehavior->super.super.header.behavior->instSize)
+            + metaClassExtraSize * sizeof(beacon_oop_t));
+    }
 
-    beacon_Class_t *clazz = beacon_allocateObjectWithBehavior(context->heap, (beacon_Behavior_t*)metaclass, sizeof(beacon_Class_t), BeaconObjectKindPointers);
+    beacon_Class_t *clazz = beacon_allocateObjectWithBehavior(context->heap, (beacon_Behavior_t*)metaclass, sizeof(beacon_ObjectHeader_t) + beacon_decodeSmallInteger(metaclass->super.super.instSize), BeaconObjectKindPointers);
     metaclass->thisClass = clazz;
     if(name)
         clazz->name = beacon_internCString(context, name);
@@ -288,9 +296,9 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.formClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Form", sizeof(beacon_Form_t), BeaconObjectKindPointers,
         "bits", "width", "height", "depth", "pitch", NULL);
     context->classes.fontClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Font", sizeof(beacon_Font_t), BeaconObjectKindPointers,
-        "rawData", NULL);
+        "rawData", "__Meta__", "DejaVuSans", "DejaVuSansSmallFace", "DejaVuSansSmallHiDpiFace", NULL);
     context->classes.fontFaceClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "FontFace", sizeof(beacon_FontFace_t), BeaconObjectKindPointers,
-        "atlasForm", "height", "advance", NULL);
+        "charData", "atlasForm", "height", "advance", NULL);
     context->classes.formRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "FormRenderingElement", sizeof(beacon_FormRenderingElement_t), BeaconObjectKindPointers,
         "borderRoundRadius", "borderSize", "rectangle", NULL);
     context->classes.formSolidRectangleRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.formRenderingElementClass, "FormSolidRectangleRenderingElement", sizeof(beacon_FormSolidRectangleRenderingElement_t), BeaconObjectKindPointers,

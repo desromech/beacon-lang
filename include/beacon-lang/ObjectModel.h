@@ -715,6 +715,7 @@ typedef struct beacon_Font_s
 typedef struct beacon_FontFace_s
 {
     beacon_Object_t super;
+    beacon_ByteArray_t *charData;
     beacon_oop_t height;
     beacon_oop_t advance;
     beacon_Form_t *atlasForm;
