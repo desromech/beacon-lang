@@ -84,8 +84,9 @@ defaultColor
 
 StringMorph ![
 renderWithBuilder: renderingBuilder
-    renderingBuilder solidRectangle: bounds color: backgroundColor.
-    renderingBuilder text: contents rectangle: bounds color: color
+    renderingBuilder
+        solidRectangle: bounds color: backgroundColor;
+        text: contents rectangle: bounds color: color
 ].
 
 StringMorph ![

@@ -29,7 +29,11 @@ static void beacon_sdl2_updateDisplayTextureExtent(beacon_context_t *context, be
         textureWidth != beacon_decodeSmallInteger(beaconWindow->textureWidth) ||
        textureHeight != beacon_decodeSmallInteger(beaconWindow->textureHeight))
     {
-        SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, textureWidth, textureHeight);
+        SDL_Texture *oldTexture = beacon_unboxExternalAddress(context, beaconWindow->textureHandle);
+        if(oldTexture)
+            SDL_DestroyTexture(oldTexture);
+
+        SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, textureWidth, textureHeight);
         beaconWindow->textureHandle = beacon_boxExternalAddress(context, texture);
         beaconWindow->textureWidth = beacon_encodeSmallInteger(textureWidth);
         beaconWindow->textureHeight = beacon_encodeSmallInteger(textureHeight);    

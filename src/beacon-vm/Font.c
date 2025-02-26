@@ -56,8 +56,8 @@ beacon_oop_t beacon_Font_createFaceWithHeight(beacon_context_t *context, beacon_
     BeaconAssert(context, argumentCount == 1);
     beacon_Font_t *font = (beacon_Font_t *)receiver;
     int fontHeight = beacon_decodeSmallInteger(arguments[0]);
-    size_t bitmapWidth = 256;
-    size_t bitmapHeight = 256;
+    size_t bitmapWidth = fontHeight < 20 ? 256 : 512;
+    size_t bitmapHeight = fontHeight < 30 ? 256 : 512;
     size_t bitmapDepth = 8;
     size_t bitmapByteSize = bitmapWidth*bitmapHeight*(bitmapDepth / 8);
     beacon_ByteArray_t *bitmapData = beacon_allocateObjectWithBehavior(context->heap, context->classes.byteArrayClass, sizeof(beacon_ByteArray_t) + bitmapByteSize, BeaconObjectKindBytes); 

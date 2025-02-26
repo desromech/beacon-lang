@@ -1,8 +1,8 @@
 Font class ![
 initialize
     DejaVuSans := Font loadFontFromFile: __FileDir__ , 'fonts/DejaVuSans.ttf'.
-    DejaVuSansSmallFace := DejaVuSans createFaceWithHeight: 14.
-    DejaVuSansSmallHiDpiFace := DejaVuSans createFaceWithHeight: 28.
+    DejaVuSansSmallFace := DejaVuSans createFaceWithHeight: 20.
+    DejaVuSansSmallHiDpiFace := DejaVuSans createFaceWithHeight: 40.
 ].
 
 Font class ![

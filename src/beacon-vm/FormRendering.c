@@ -42,27 +42,26 @@ beacon_oop_t beacon_SolidRectangleRenderingElement_drawInForm(beacon_context_t *
     float maxX = beacon_decodeNumber(rectangle->corner->x);
     float maxY = beacon_decodeNumber(rectangle->corner->y);
 
-    float r = clampFloat(beacon_decodeNumber(renderingElement->color->r), 0, 1);
-    float g = clampFloat(beacon_decodeNumber(renderingElement->color->g), 0, 1);
-    float b = clampFloat(beacon_decodeNumber(renderingElement->color->b), 0, 1);
-    float a = clampFloat(beacon_decodeNumber(renderingElement->color->a), 0, 1);
-
-    int br = (int)(r *255);
-    int bg = (int)(g *255);
-    int bb = (int)(b *255);
-    int ba = (int)(a *255);
-
-    uint32_t encodedColor = br | (bg << 8) | (bb << 16) | (ba << 24);
+    float colorR = clampFloat(beacon_decodeNumber(renderingElement->color->r), 0, 1);
+    float colorG = clampFloat(beacon_decodeNumber(renderingElement->color->g), 0, 1);
+    float colorB = clampFloat(beacon_decodeNumber(renderingElement->color->b), 0, 1);
+    float colorA = clampFloat(beacon_decodeNumber(renderingElement->color->a), 0, 1);
     
-    float bor = clampFloat(beacon_decodeNumber(renderingElement->borderColor->r), 0, 1);
-    float bog = clampFloat(beacon_decodeNumber(renderingElement->borderColor->g), 0, 1);
-    float bob = clampFloat(beacon_decodeNumber(renderingElement->borderColor->b), 0, 1);
-    float boa = clampFloat(beacon_decodeNumber(renderingElement->borderColor->a), 0, 1);
+    float borderColorR = clampFloat(beacon_decodeNumber(renderingElement->borderColor->r), 0, 1);
+    float borderColorG = clampFloat(beacon_decodeNumber(renderingElement->borderColor->g), 0, 1);
+    float borderColorB = clampFloat(beacon_decodeNumber(renderingElement->borderColor->b), 0, 1);
+    float borderColorA = clampFloat(beacon_decodeNumber(renderingElement->borderColor->a), 0, 1);
 
     int drawMinX = floor(clampFloat(minX, 0, formWidth) + 0.5);
     int drawMinY = floor(clampFloat(minY, 0, formHeight) + 0.5);
     int drawMaxX = floor(clampFloat(maxX, 0, formWidth) + 0.5);
     int drawMaxY = floor(clampFloat(maxY, 0, formHeight) + 0.5);
+
+    int borderSize = beacon_decodeNumber(renderingElement->super.borderSize);
+    int interiorDrawMinX = drawMinX + borderSize;
+    int interiorDrawMinY = drawMinY + borderSize;
+    int interiorDrawMaxX = drawMaxX + borderSize;
+    int interiorDrawMaxY = drawMaxY + borderSize;
 
     int drawWidth = drawMaxX - drawMinX;
     int drawHeight = drawMaxY - drawMinY;
@@ -73,7 +72,43 @@ beacon_oop_t beacon_SolidRectangleRenderingElement_drawInForm(beacon_context_t *
         uint32_t *destinationRowPixel = (uint32_t*)destinationRow;
         for(int x = 0; x < drawWidth; ++x)
         {
-            destinationRowPixel[x + drawMinX] = encodedColor;
+            if(0 <= x && x < formWidth &&
+               0 <= y && y < formHeight)
+            {
+                bool isInInterior = borderSize <= 0 ||
+                    (interiorDrawMinX <= x && x < interiorDrawMaxX &&
+                    interiorDrawMinY <= y && y < interiorDrawMaxY);
+
+                bool isInBorder = !isInInterior; 
+                float colorR = clampFloat(beacon_decodeNumber(renderingElement->color->r), 0, 1);
+                float colorG = clampFloat(beacon_decodeNumber(renderingElement->color->g), 0, 1);
+                float colorB = clampFloat(beacon_decodeNumber(renderingElement->color->b), 0, 1);
+                float colorA = clampFloat(beacon_decodeNumber(renderingElement->color->a), 0, 1);
+
+                float sourceR = isInBorder ? borderColorR : colorR;
+                float sourceG = isInBorder ? borderColorG : colorG;
+                float sourceB = isInBorder ? borderColorB : colorB;
+                float sourceA = isInBorder ? borderColorA : colorA;
+            
+                uint32_t destinationPixel = destinationRowPixel[x + drawMinX];
+                float destB = (destinationPixel & 0xFF)/255.0;
+                float destG = ((destinationPixel >> 8) & 0xFF)/255.0;
+                float destR = ((destinationPixel >> 16) & 0xFF)/255.0;
+                float destA = ((destinationPixel >> 24) & 0xFF)/255.0;
+
+                float pixelR = sourceR + destR*(1.0f - sourceA);
+                float pixelG = sourceG + destG*(1.0f - sourceA);
+                float pixelB = sourceB + destB*(1.0f - sourceA);
+                float pixelA = sourceA + destA*(1.0f - sourceA);
+
+                uint8_t blendR = (uint8_t)(pixelR*255);
+                uint8_t blendG = (uint8_t)(pixelG*255);
+                uint8_t blendB = (uint8_t)(pixelB*255);
+                uint8_t blendA = (uint8_t)(pixelA*255);
+
+                destinationRowPixel[x + drawMinX] = blendB | (blendG << 8) | (blendR << 16) | (blendA << 24);
+
+            }
         }
         destinationRow += formPitch;
     }
@@ -92,11 +127,9 @@ void beacon_TextRenderingElement_drawCharacterInForm(beacon_context_t *context,
     float g = clampFloat(beacon_decodeNumber(color->g), 0, 1);
     float b = clampFloat(beacon_decodeNumber(color->b), 0, 1);
     float a = clampFloat(beacon_decodeNumber(color->a), 0, 1);
-
-    int br = (int)(r *255);
-    int bg = (int)(g *255);
-    int bb = (int)(b *255);
-    int ba = (int)(a *255);
+    r *= a;
+    g *= a;
+    b *= a;
 
     int sourcePitch = beacon_decodeSmallInteger(atlasForm->pitch);
 
@@ -104,27 +137,55 @@ void beacon_TextRenderingElement_drawCharacterInForm(beacon_context_t *context,
     int targetHeight = beacon_decodeSmallInteger(targetForm->height);
     int targetPitch = beacon_decodeSmallInteger(targetForm->pitch); 
     
+    int blitWidth = atlasMaxX - atlasMinX;
+    int blitHeight = atlasMaxY - atlasMinY;
+
     uint8_t *sourcePixels = atlasForm->bits->elements;
     uint8_t *destPixels = targetForm->bits->elements;
 
     uint8_t *sourceRow = sourcePixels + sourcePitch * atlasMinY;
     uint8_t *destRow = destPixels + targetPitch * targetMinY;
-    for(int y = targetMinY; y < targetMaxY; ++y)
+    for(int y = 0; y < blitHeight; ++y)
     {
+        int sourceY = atlasMinY + y;
+        int destinationY = targetMinY + y;
+         
         uint32_t *destRow32 = (uint32_t*)destRow;
-        for(int x = targetMinX; x < targetMaxX; ++x)
+        for(int x = 0; x < blitWidth; ++x)
         {
-            //if(0 <= x && x < targetWidth && 
-            //   0 <= y && y < targetHeight)
+            int sourceX = atlasMinX + x;
+            int destinationX = targetMinX + x;
+    
+            if(0 <= destinationX && destinationX < targetWidth && 
+               0 <= destinationY && destinationY < targetHeight)
             {
-                uint8_t alpha = sourceRow[x];
-                // TODO: perform proper alpha blending
-                if(alpha > 0.1)
-                {
-                    destRow32[x] = 0xff000000;
-                }
+                uint8_t alpha = sourceRow[sourceX];
+                float fontAlpha = alpha/255.0f;
+                float sourceR = r*fontAlpha;
+                float sourceG = g*fontAlpha;
+                float sourceB = b*fontAlpha;
+                float sourceA = a*fontAlpha;
+
+                uint32_t destinationPixel = destRow32[destinationX];
+                float destB = (destinationPixel & 0xFF)/255.0;
+                float destG = ((destinationPixel >> 8) & 0xFF)/255.0;
+                float destR = ((destinationPixel >> 16) & 0xFF)/255.0;
+                float destA = ((destinationPixel >> 24) & 0xFF)/255.0;
+
+                float pixelR = sourceR + destR*(1.0f - sourceA);
+                float pixelG = sourceG + destG*(1.0f - sourceA);
+                float pixelB = sourceB + destB*(1.0f - sourceA);
+                float pixelA = sourceA + destA*(1.0f - sourceA);
+
+                uint8_t blendR = (uint8_t)(pixelR*255);
+                uint8_t blendG = (uint8_t)(pixelG*255);
+                uint8_t blendB = (uint8_t)(pixelB*255);
+                uint8_t blendA = (uint8_t)(pixelA*255);
+
+                destRow32[destinationX] = blendB | (blendG << 8) | (blendR << 16) | (blendA << 24);
             }
         }
+
         sourceRow += sourcePitch;
         destRow += targetPitch;
     }
@@ -174,3 +235,4 @@ void beacon_context_registerFormRenderingPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.formSolidRectangleRenderingElementClass, "drawInForm:", 1, beacon_SolidRectangleRenderingElement_drawInForm);
     beacon_addPrimitiveToClass(context, context->classes.formTextRenderingElementClass, "drawInForm:", 1, beacon_TextRenderingElement_drawInForm);
 }
+

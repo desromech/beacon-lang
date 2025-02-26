@@ -1071,6 +1071,8 @@ beacon_oop_t beacon_boxExternalAddress(beacon_context_t *context, void *pointer)
 
 void *beacon_unboxExternalAddress(beacon_context_t *context, beacon_oop_t box)
 {
+    if(!box)
+        return NULL;
     BeaconAssert(context, beacon_getClass(context, box) == context->classes.externalAddressClass);
     return ((beacon_ExternalAddress_t*)box)->address;
 }
