@@ -30,6 +30,17 @@ bounds: aRectangle
 ].
 
 Morph ![
+extent
+    ^ bounds extent
+].
+
+
+Morph ![
+extent: newExtent
+    self bounds: (bounds origin extent: newExtent)
+].
+
+Morph ![
 processEvent: anEvent
     ^ anEvent accept: self
 ].
@@ -75,6 +86,7 @@ StringMorph ![
 initialize
     super initialize.
     backgroundColor := Color transparent.
+    contents := ''.
 ].
 
 StringMorph class ![
@@ -106,7 +118,15 @@ contents
 
 StringMorph ![
 contents: aString
-    contents := aString
+    contents := aString.
+    self fitContents
+].
+
+StringMorph ![
+fitContents
+    | textExtent |
+    textExtent := Font defaultFontFace measureTextExtent: contents.
+    self extent: textExtent
 ].
 
 String ![
