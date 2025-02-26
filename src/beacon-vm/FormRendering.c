@@ -37,27 +37,27 @@ beacon_oop_t beacon_SolidRectangleRenderingElement_drawInForm(beacon_context_t *
 
     beacon_Rectangle_t *rectangle = renderingElement->super.rectangle;
 
-    float minX = beacon_decodeNumber(rectangle->origin->x);
-    float minY = beacon_decodeNumber(rectangle->origin->y);
-    float maxX = beacon_decodeNumber(rectangle->corner->x);
-    float maxY = beacon_decodeNumber(rectangle->corner->y);
+    float minX = beacon_decodeSmallNumber(rectangle->origin->x);
+    float minY = beacon_decodeSmallNumber(rectangle->origin->y);
+    float maxX = beacon_decodeSmallNumber(rectangle->corner->x);
+    float maxY = beacon_decodeSmallNumber(rectangle->corner->y);
 
-    float colorR = clampFloat(beacon_decodeNumber(renderingElement->color->r), 0, 1);
-    float colorG = clampFloat(beacon_decodeNumber(renderingElement->color->g), 0, 1);
-    float colorB = clampFloat(beacon_decodeNumber(renderingElement->color->b), 0, 1);
-    float colorA = clampFloat(beacon_decodeNumber(renderingElement->color->a), 0, 1);
+    float colorR = clampFloat(beacon_decodeSmallNumber(renderingElement->color->r), 0, 1);
+    float colorG = clampFloat(beacon_decodeSmallNumber(renderingElement->color->g), 0, 1);
+    float colorB = clampFloat(beacon_decodeSmallNumber(renderingElement->color->b), 0, 1);
+    float colorA = clampFloat(beacon_decodeSmallNumber(renderingElement->color->a), 0, 1);
     
-    float borderColorR = clampFloat(beacon_decodeNumber(renderingElement->borderColor->r), 0, 1);
-    float borderColorG = clampFloat(beacon_decodeNumber(renderingElement->borderColor->g), 0, 1);
-    float borderColorB = clampFloat(beacon_decodeNumber(renderingElement->borderColor->b), 0, 1);
-    float borderColorA = clampFloat(beacon_decodeNumber(renderingElement->borderColor->a), 0, 1);
+    float borderColorR = clampFloat(beacon_decodeSmallNumber(renderingElement->borderColor->r), 0, 1);
+    float borderColorG = clampFloat(beacon_decodeSmallNumber(renderingElement->borderColor->g), 0, 1);
+    float borderColorB = clampFloat(beacon_decodeSmallNumber(renderingElement->borderColor->b), 0, 1);
+    float borderColorA = clampFloat(beacon_decodeSmallNumber(renderingElement->borderColor->a), 0, 1);
 
     int drawMinX = floor(clampFloat(minX, 0, formWidth) + 0.5);
     int drawMinY = floor(clampFloat(minY, 0, formHeight) + 0.5);
     int drawMaxX = floor(clampFloat(maxX, 0, formWidth) + 0.5);
     int drawMaxY = floor(clampFloat(maxY, 0, formHeight) + 0.5);
 
-    int borderSize = beacon_decodeNumber(renderingElement->super.borderSize);
+    int borderSize = beacon_decodeSmallNumber(renderingElement->super.borderSize);
     int interiorDrawMinX = drawMinX + borderSize;
     int interiorDrawMinY = drawMinY + borderSize;
     int interiorDrawMaxX = drawMaxX + borderSize;
@@ -80,10 +80,10 @@ beacon_oop_t beacon_SolidRectangleRenderingElement_drawInForm(beacon_context_t *
                     interiorDrawMinY <= y && y < interiorDrawMaxY);
 
                 bool isInBorder = !isInInterior; 
-                float colorR = clampFloat(beacon_decodeNumber(renderingElement->color->r), 0, 1);
-                float colorG = clampFloat(beacon_decodeNumber(renderingElement->color->g), 0, 1);
-                float colorB = clampFloat(beacon_decodeNumber(renderingElement->color->b), 0, 1);
-                float colorA = clampFloat(beacon_decodeNumber(renderingElement->color->a), 0, 1);
+                float colorR = clampFloat(beacon_decodeSmallNumber(renderingElement->color->r), 0, 1);
+                float colorG = clampFloat(beacon_decodeSmallNumber(renderingElement->color->g), 0, 1);
+                float colorB = clampFloat(beacon_decodeSmallNumber(renderingElement->color->b), 0, 1);
+                float colorA = clampFloat(beacon_decodeSmallNumber(renderingElement->color->a), 0, 1);
 
                 float sourceR = isInBorder ? borderColorR : colorR;
                 float sourceG = isInBorder ? borderColorG : colorG;
@@ -123,10 +123,10 @@ void beacon_TextRenderingElement_drawCharacterInForm(beacon_context_t *context,
     BeaconAssert(context, beacon_decodeSmallInteger(atlasForm->depth) == 8);
     BeaconAssert(context, beacon_decodeSmallInteger(targetForm->depth) == 32);
  
-    float r = clampFloat(beacon_decodeNumber(color->r), 0, 1);
-    float g = clampFloat(beacon_decodeNumber(color->g), 0, 1);
-    float b = clampFloat(beacon_decodeNumber(color->b), 0, 1);
-    float a = clampFloat(beacon_decodeNumber(color->a), 0, 1);
+    float r = clampFloat(beacon_decodeSmallNumber(color->r), 0, 1);
+    float g = clampFloat(beacon_decodeSmallNumber(color->g), 0, 1);
+    float b = clampFloat(beacon_decodeSmallNumber(color->b), 0, 1);
+    float a = clampFloat(beacon_decodeSmallNumber(color->a), 0, 1);
     r *= a;
     g *= a;
     b *= a;
@@ -201,10 +201,10 @@ beacon_oop_t beacon_TextRenderingElement_drawInForm(beacon_context_t *context, b
     if(!renderingElement->fontFace)
         return receiver;
     
-    float rectMinX = beacon_decodeNumber(renderingElement->super.rectangle->origin->x);
-    float rectMinY = beacon_decodeNumber(renderingElement->super.rectangle->origin->y);
-    float rectMaxX = beacon_decodeNumber(renderingElement->super.rectangle->corner->x);
-    float rectMaxY = beacon_decodeNumber(renderingElement->super.rectangle->corner->y);
+    float rectMinX = beacon_decodeSmallNumber(renderingElement->super.rectangle->origin->x);
+    float rectMinY = beacon_decodeSmallNumber(renderingElement->super.rectangle->origin->y);
+    float rectMaxX = beacon_decodeSmallNumber(renderingElement->super.rectangle->corner->x);
+    float rectMaxY = beacon_decodeSmallNumber(renderingElement->super.rectangle->corner->y);
 
     int formWidth = beacon_decodeSmallInteger(form->width);
     int formHeight = beacon_decodeSmallInteger(form->height);

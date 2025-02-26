@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +39,21 @@ static inline beacon_oop_t beacon_isImmediate(beacon_oop_t oop)
     return !oop || (oop & ImmediateObjectTag_BitMask) != 0;
 }
 
+static inline beacon_oop_t beacon_isSmallInteger(beacon_oop_t oop)
+{
+    return (oop & ImmediateObjectTag_BitMask) == ImmediateObjectTag_SmallInteger;
+}
+
+static inline beacon_oop_t beacon_isCharacter(beacon_oop_t oop)
+{
+    return (oop & ImmediateObjectTag_BitMask) == ImmediateObjectTag_Character;
+}
+
+static inline beacon_oop_t beacon_isSmallFloat(beacon_oop_t oop)
+{
+    return (oop & ImmediateObjectTag_BitMask) == ImmediateObjectTag_SmallFloat;
+}
+
 static inline intptr_t beacon_decodeSmallInteger(beacon_oop_t oop)
 {
     return oop >> 3;
@@ -68,30 +84,42 @@ static inline bool beacon_isNotNil(beacon_oop_t oop)
     return oop != 0;
 }
 
-static inline beacon_oop_t beacon_encodeSmallDoubleValue(double value)
+static inline beacon_oop_t beacon_encodeSmallFloat(double value)
 {
     // See https://clementbera.wordpress.com/2018/11/09/64-bits-immediate-floats/ for this encoding.
-    uint64_t ieee754 = 0;
-    memcpy(&ieee754, &value, 4);
-    uint64_t ieee754SignRotation = (ieee754 << 1) | (ieee754 >> 63) ;
-    uint64_t withTag = (ieee754SignRotation << 3) | ImmediateObjectTag_SmallFloat;
+    uint64_t rot = 0;
+    memcpy(&rot, &value, 8);
+    rot = (rot << 1) | (rot >> 63);
+    if(rot > 1)
+        rot -= ((uint64_t)896 << 53);
+    uint64_t withTag = (rot << 3) | ImmediateObjectTag_SmallFloat;
+    assert(beacon_isImmediate(withTag));
     return (beacon_oop_t)withTag;
 }
 
-static inline double beacon_decodeSmallDoubleValue(double value)
+static inline double beacon_decodeSmallFloat(beacon_oop_t value)
 {
-    // TODO: Implement this.
-    return 0.0;
+    assert(beacon_isImmediate(value));
+ 
+    uint64_t rot = (uint64_t)value >> 3;
+    if(rot > 1)
+        rot = rot + ((uint64_t)896 << 53);
+
+    rot = (rot >> 1) | (rot << 63);
+    double decodedValue = 0;
+    memcpy(&decodedValue, &rot, 8);
+
+    return decodedValue;
 }
 
 
-static inline double beacon_decodeNumber(intptr_t encodedNumber)
+static inline double beacon_decodeSmallNumber(intptr_t encodedNumber)
 {
     intptr_t tag = encodedNumber & ImmediateObjectTag_BitMask;
     if(tag == ImmediateObjectTag_SmallInteger)
         return beacon_decodeSmallInteger(encodedNumber);
     else if(tag == ImmediateObjectTag_SmallFloat)
-        return beacon_decodeSmallDoubleValue(encodedNumber);
+        return beacon_decodeSmallFloat(encodedNumber);
     else
         return 0;
 }

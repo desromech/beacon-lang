@@ -209,15 +209,16 @@ beacon_ParseTreeNode_t *parser_parseLiteralInteger(beacon_parserState_t *state)
 beacon_ParseTreeNode_t *parser_parseLiteralFloat(beacon_parserState_t *state)
 {
     beacon_ScannerToken_t *token = parserState_next(state);
-    BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenInteger);
+    BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenFloat);
 
-    char *literalBuffer = calloc(1, beacon_decodeSmallInteger(token->textSize) + 1);
-    memcpy(literalBuffer, token->sourcePosition->sourceCode->text->data, token->textSize);
+    size_t textSize = beacon_decodeSmallInteger(token->textSize);
+    char *literalBuffer = calloc(1, textSize + 1);
+    memcpy(literalBuffer, token->sourcePosition->sourceCode->text->data, textSize);
     double value = atof(literalBuffer);
 
     beacon_ParseTreeLiteralNode_t *literal = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeLiteralNodeClass, sizeof(beacon_ParseTreeLiteralNode_t), BeaconObjectKindPointers);
     literal->super.sourcePosition = token->sourcePosition;
-    literal->value = beacon_encodeSmallDoubleValue(value);
+    literal->value = beacon_encodeSmallFloat(value);
     return &literal->super;
 }
 
