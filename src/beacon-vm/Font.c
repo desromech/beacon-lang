@@ -80,12 +80,11 @@ beacon_oop_t beacon_Font_createFaceWithHeight(beacon_context_t *context, beacon_
     fontFace->atlasForm = bitmapForm;
 
 
-    char fileNameBuffer[64];
-    snprintf(fileNameBuffer, sizeof(fileNameBuffer), "atlas-%d.data", fontHeight);
-
-    FILE *f = fopen(fileNameBuffer, "wb");
-    fwrite(bitmapData->elements, bitmapByteSize, 1, f);
-    fclose(f);
+    //char fileNameBuffer[64];
+    //snprintf(fileNameBuffer, sizeof(fileNameBuffer), "atlas-%d.data", fontHeight);
+    //FILE *f = fopen(fileNameBuffer, "wb");
+    //fwrite(bitmapData->elements, bitmapByteSize, 1, f);
+    //fclose(f);
     return (beacon_oop_t)fontFace;
 }
 
