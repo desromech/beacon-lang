@@ -1,11 +1,21 @@
 MorphEventVisitor subclass: #Morph instanceVariables: #(bounds owner submorphs color visible).
 
+Morph class ![
+defaultColor
+    ^ Color blue.
+].
+
+Morph class ![
+defaultBounds
+    ^ 0@0 corner: 50@40.
+].
+
 Morph ![
 initialize
     super initialize.
     submorphs := #().
-    bounds := 0@0 corner: 50@40.
-    color := Color blue.
+    bounds := self class defaultBounds.
+    color := self class defaultColor.
     visible := true.
 ].
 
@@ -58,3 +68,47 @@ BorderedMorph ![
 renderWithBuilder: renderingBuilder
     renderingBuilder solidRectangle: bounds color: color borderSize: borderWidth borderColor: borderColor
 ].
+
+Morph subclass: #StringMorph instanceVariables: #(backgroundColor fontFace contents).
+
+StringMorph ![
+initialize
+    super initialize.
+    backgroundColor := Color transparent.
+].
+
+StringMorph class ![
+defaultColor
+    ^ Color black.
+].
+
+StringMorph ![
+renderWithBuilder: renderingBuilder
+    renderingBuilder solidRectangle: bounds color: backgroundColor.
+    renderingBuilder text: contents rectangle: bounds color: color
+].
+
+StringMorph ![
+backgroundColor
+    ^ backgroundColor
+].
+
+StringMorph ![
+backgroundColor: aColor
+    backgroundColor := aColor
+].
+
+StringMorph ![
+contents
+    ^ contents
+].
+
+StringMorph ![
+contents: aString
+    contents := aString
+].
+
+String ![
+asMorph
+    ^ StringMorph new contents: self; yourself
+]

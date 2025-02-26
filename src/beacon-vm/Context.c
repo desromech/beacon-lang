@@ -307,6 +307,8 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "startColor", "endColor", "borderColor", NULL);
     context->classes.formVerticalGradientRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.formRenderingElementClass, "FormHorizontalGradientRenderingElement", sizeof(beacon_FormVerticalGradientRenderingElement_t), BeaconObjectKindPointers,
         "startColor", "endColor", "borderColor", NULL);
+    context->classes.formTextRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.formRenderingElementClass, "FormTextRenderingElement", sizeof(beacon_FormTextRenderingElement_t), BeaconObjectKindPointers,
+        "text", "color", "fontFace", NULL);
 
     context->classes.windowClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Window", sizeof(beacon_Window_t), BeaconObjectKindPointers,
         "width", "height", "handle", "rendererHandle", "textureHandle", "textureWidth", "textureHeight", "drawingForm", NULL);

@@ -77,6 +77,36 @@ borderColor: aColor
     borderColor := aColor
 ].
 
+FormTextRenderingElement ![
+text
+    ^ text
+].
+
+FormTextRenderingElement ![
+text: aString
+    text := aString
+].
+
+FormTextRenderingElement ![
+color
+    ^ color
+].
+
+FormTextRenderingElement ![
+color: aColor
+    color := aColor
+].
+
+FormTextRenderingElement ![
+fontFace
+    ^ fontFace
+].
+
+FormTextRenderingElement ![
+fontFace: aFontFace
+    fontFace := aFontFace
+].
+
 FormRenderingElementBuilder ![
 drawInForm: aForm
     | elements |
@@ -104,4 +134,29 @@ solidRectangle: rectangle color: color borderSize: borderSize borderColor: borde
 FormRenderingElementBuilder ![
 solidRectangle: rectangle color: color
     ^ self solidRectangle: rectangle color: color borderSize: 0 borderColor: Color black
+].
+
+FormRenderingElementBuilder ![
+text: text rectangle: rectangle color: color fontFace: fontFace
+    | textRectangle |
+    textRectangle := FormTextRenderingElement new
+        text: text;
+        rectangle: rectangle;
+        color: color;
+        fontFace: fontFace
+        yourself.
+    renderingElements add: textRectangle.
+    textRectangle
+].
+
+FormRenderingElementBuilder ![
+text: text rectangle: rectangle color: color
+    ^ self text: text rectangle: rectangle color: color fontFace: self defaultFontFace
+].
+
+FormRenderingElementBuilder ![
+defaultFontFace
+    ^ scaleFactorX >= 2
+        ifTrue: [Font defaultHiDpiFontFace]
+        ifFalse: [Font defaultFontFace]
 ].

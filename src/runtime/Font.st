@@ -19,4 +19,19 @@ Font class ![
 DejaVuSansSmallHiDpiFace
     ^ DejaVuSansSmallHiDpiFace
 ].
+
+Font class ![
+defaultFont
+    ^ DejaVuSans
+].
+
+Font class ![
+defaultFontFace
+    ^ DejaVuSansSmallFace
+].
+
+Font class ![
+defaultHiDpiFontFace
+    ^ DejaVuSansSmallHiDpiFace
+].
 Font initialize.

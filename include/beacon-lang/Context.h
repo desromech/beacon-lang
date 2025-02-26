@@ -120,6 +120,7 @@ struct beacon_context_s
         beacon_Behavior_t *formSolidRectangleRenderingElementClass;
         beacon_Behavior_t *formHorizontalGradientRenderingElementClass;
         beacon_Behavior_t *formVerticalGradientRenderingElementClass;
+        beacon_Behavior_t *formTextRenderingElementClass;
 
         beacon_Behavior_t *windowClass;
         beacon_Behavior_t *windowEventClass;

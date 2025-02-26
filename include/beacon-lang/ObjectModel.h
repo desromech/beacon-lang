@@ -721,6 +721,14 @@ typedef struct beacon_FontFace_s
     beacon_Form_t *atlasForm;
 } beacon_FontFace_t;
 
+typedef struct beacon_FormTextRenderingElement_s
+{
+    beacon_FormRenderingElement_t super;
+    beacon_String_t *text;
+    beacon_Color_t *color;
+    beacon_FontFace_t *fontFace;
+} beacon_FormTextRenderingElement_t;
+
 typedef struct beacon_Window_s
 {
     beacon_Object_t super;
