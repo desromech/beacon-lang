@@ -65,7 +65,7 @@ beacon_oop_t beacon_Font_createFaceWithHeight(beacon_context_t *context, beacon_
     beacon_ByteArray_t *charData = beacon_allocateObjectWithBehavior(context->heap, context->classes.byteArrayClass, sizeof(beacon_ByteArray_t) + sizeof(stbtt_bakedchar)*(256-31), BeaconObjectKindBytes); 
     stbtt_bakedchar *bakedChar = (stbtt_bakedchar *)charData->elements;
     
-    stbtt_BakeFontBitmap(font->rawData->elements, 0, fontHeight, bitmapData->elements, bitmapWidth, bitmapHeight, 32, 256 - 31, bakedChar);
+    stbtt_BakeFontBitmap(font->rawData->elements, 0, fontHeight, bitmapData->elements, bitmapWidth, bitmapHeight, 31, 256 - 31, bakedChar);
 
     beacon_Form_t *bitmapForm = beacon_allocateObjectWithBehavior(context->heap, context->classes.formClass, sizeof(beacon_Form_t), BeaconObjectKindPointers); 
     bitmapForm->width = beacon_encodeSmallInteger(bitmapWidth);
@@ -79,6 +79,13 @@ beacon_oop_t beacon_Font_createFaceWithHeight(beacon_context_t *context, beacon_
     fontFace->height = beacon_encodeSmallInteger(fontHeight);
     fontFace->atlasForm = bitmapForm;
 
+
+    char fileNameBuffer[64];
+    snprintf(fileNameBuffer, sizeof(fileNameBuffer), "atlas-%d.data", fontHeight);
+
+    FILE *f = fopen(fileNameBuffer, "wb");
+    fwrite(bitmapData->elements, bitmapByteSize, 1, f);
+    fclose(f);
     return (beacon_oop_t)fontFace;
 }
 
@@ -109,7 +116,7 @@ beacon_oop_t beacon_FontFace_measureTextExtent(beacon_context_t *context, beacon
         stbtt_GetBakedQuad((stbtt_bakedchar*)fontFace->charData->elements, formWidth, formHeight, c - 31, &baselineX, &baselineY, &quadToDraw, true);
 
         glyphRectangle_addPoint(&rectangle, quadToDraw.x0, quadToDraw.y0);
-        glyphRectangle_addPoint(&rectangle, quadToDraw.y0, quadToDraw.y0);
+        glyphRectangle_addPoint(&rectangle, quadToDraw.x1, quadToDraw.y1);
 
     }
 

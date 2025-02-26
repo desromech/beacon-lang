@@ -81,7 +81,7 @@ beacon_oop_t beacon_SolidRectangleRenderingElement_drawInForm(beacon_context_t *
 }
 
 void beacon_TextRenderingElement_drawCharacterInForm(beacon_context_t *context,
-        beacon_Form_t *atlasForm, int atlasMaX, int atlasMaxY, int atlasMinX, int atlasMinY,
+        beacon_Form_t *atlasForm, int atlasMinX, int atlasMinY, int atlasMaxX, int atlasMaxY,
         beacon_Form_t *targetForm, int targetMinX, int targetMinY, int targetMaxX, int targetMaxY,
         beacon_Color_t *color)
 {
@@ -114,14 +114,14 @@ void beacon_TextRenderingElement_drawCharacterInForm(beacon_context_t *context,
         uint32_t *destRow32 = (uint32_t*)destRow;
         for(int x = targetMinX; x < targetMaxX; ++x)
         {
-            if(0 <= x && x < targetWidth && 
-               0 <= y && y < targetHeight)
+            //if(0 <= x && x < targetWidth && 
+            //   0 <= y && y < targetHeight)
             {
                 uint8_t alpha = sourceRow[x];
                 // TODO: perform proper alpha blending
                 if(alpha > 0.1)
                 {
-                    destRow32[x] = 0x0;
+                    destRow32[x] = 0xff000000;
                 }
             }
         }
@@ -148,9 +148,6 @@ beacon_oop_t beacon_TextRenderingElement_drawInForm(beacon_context_t *context, b
     int formWidth = beacon_decodeSmallInteger(form->width);
     int formHeight = beacon_decodeSmallInteger(form->height);
 
-    int atlasFormWidth = beacon_decodeSmallInteger(fontFace->atlasForm->width);
-    int atlasFormHeight = beacon_decodeSmallInteger(fontFace->atlasForm->height);
-
     float baselineX = rectMinX;
     float baselineY = rectMinY + (rectMaxY - rectMinY) * 0.5f ;
     size_t stringSize = renderingElement->text->super.super.super.super.super.header.slotCount;
@@ -161,10 +158,10 @@ beacon_oop_t beacon_TextRenderingElement_drawInForm(beacon_context_t *context, b
             continue;
 
         stbtt_aligned_quad quadToDraw = {};
-        stbtt_GetBakedQuad((stbtt_bakedchar*)fontFace->charData->elements, formWidth, formHeight, c - 31, &baselineX, &baselineY, &quadToDraw, true);
+        stbtt_GetBakedQuad((stbtt_bakedchar*)fontFace->charData->elements, 1, 1, c - 31, &baselineX, &baselineY, &quadToDraw, true);
 
         beacon_TextRenderingElement_drawCharacterInForm(context,
-                fontFace->atlasForm, atlasFormWidth*quadToDraw.s0, atlasFormHeight+quadToDraw.t0, atlasFormWidth*quadToDraw.s1, atlasFormHeight*quadToDraw.t1,
+                fontFace->atlasForm, quadToDraw.s0, quadToDraw.t0, quadToDraw.s1, quadToDraw.t1,
                 form, quadToDraw.x0, quadToDraw.y0, quadToDraw.x1, quadToDraw.y1,
                 renderingElement->color);
     }
