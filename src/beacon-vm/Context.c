@@ -15,6 +15,7 @@
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context);
 void beacon_context_registerArrayListPrimitive(beacon_context_t *context);
 void beacon_context_registerDictionaryPrimitives(beacon_context_t *context);
+void beacon_context_registerExceptionPrimitives(beacon_context_t *context);
 void beacon_context_registerFormRenderingPrimitives(beacon_context_t *context);
 void beacon_context_registerFontFacePrimitives(beacon_context_t *context);
 void beacon_context_registerWindowSystemPrimitives(beacon_context_t *context);
@@ -406,6 +407,7 @@ void beacon_context_registerBasicPrimitives(beacon_context_t *context)
     beacon_context_registerObjectBasicPrimitives(context);
     beacon_context_registerArrayListPrimitive(context);
     beacon_context_registerDictionaryPrimitives(context);
+    beacon_context_registerExceptionPrimitives(context);
     beacon_context_registerFormRenderingPrimitives(context);
     beacon_context_registerFontFacePrimitives(context);
     beacon_context_registerWindowSystemPrimitives(context);

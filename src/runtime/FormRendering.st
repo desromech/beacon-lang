@@ -1,10 +1,11 @@
-Object subclass: #FormRenderingElementBuilder instanceVariables: #(scaleFactorX scaleFactorY renderingElements).
+Object subclass: #FormRenderingElementBuilder instanceVariables: #(scaleFactorX scaleFactorY translation renderingElements).
 
 FormRenderingElementBuilder ![
 initialize
     renderingElements := ArrayList new.
     scaleFactorX := 1.
     scaleFactorY := 1.
+    translation := 0@0.
 ].
 
 FormRenderingElementBuilder ![
@@ -122,7 +123,7 @@ FormRenderingElementBuilder ![
 solidRectangle: rectangle color: color borderSize: borderSize borderColor: borderColor
     | solidRectangle |
     solidRectangle := FormSolidRectangleRenderingElement new
-        rectangle: (rectangle scaledWithXFactor: scaleFactorX y: scaleFactorY);
+        rectangle: ((rectangle translatedBy: translation) scaledWithXFactor: scaleFactorX y: scaleFactorY);
         color: color;
         borderSize: borderSize*scaleFactorX;
         borderColor: borderColor;

@@ -45,3 +45,23 @@ void beacon_exception_subclassResponsibility(beacon_context_t *context, beacon_o
     );
     beacon_exception_error(context, buffer);
 }
+
+static beacon_oop_t beacon_Exception_displayException(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    return receiver;
+}
+
+static beacon_oop_t beacon_Exception_signal(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, (intptr_t)argumentCount == 0);
+    beacon_perform(context, receiver, (beacon_oop_t)beacon_internCString(context, "displayException"));
+    fprintf(stderr, "Unhandled exception. Aborting.\n");
+    abort();
+    return receiver;
+}
+
+void beacon_context_registerExceptionPrimitives(beacon_context_t *context)
+{
+    beacon_addPrimitiveToClass(context, context->classes.exceptionClass, "displayException", 0, beacon_Exception_displayException);
+    beacon_addPrimitiveToClass(context, context->classes.exceptionClass, "signal", 0, beacon_Exception_signal);
+}

@@ -97,6 +97,11 @@ max
 ].
 
 Rectangle ![
+translatedBy: aPoint
+    ^ origin + aPoint corner: corner + aPoint
+].
+
+Rectangle ![
 scaledWithXFactor: scaleFactorX y: scaleFactorY
     | scaledOrigin scaledCorner |
     scaledOrigin := (origin x * scaleFactorX) @ (origin y * scaleFactorY).
