@@ -34,10 +34,39 @@ extent
     ^ bounds extent
 ].
 
+Morph ![
+width
+    ^ bounds width
+].
+
+Morph ![
+height
+    ^ bounds height
+].
 
 Morph ![
 extent: newExtent
     self bounds: (bounds origin extent: newExtent)
+].
+
+Morph ![
+localCenter
+    ^ bounds halfExtent
+].
+
+Morph ![
+center
+    ^ bounds center
+].
+
+Morph ![
+position
+    ^ bounds origin
+].
+
+Morph ![
+position: newPosition
+    bounds := newPosition extent: bounds extent.
 ].
 
 Morph ![
@@ -52,7 +81,9 @@ renderWithBuilder: renderingBuilder
 
 Morph ![
 renderChildrenWithBuilder: renderingBuilder
+    Stdio stdout nextPutAll: self class printString; nextPutAll: ' renderChildrenWithBuilder '; nextPutAll: submorphs size printString; lf.
     1 to: submorphs size do: [:index |
+        Stdio stdout nextPutAll: 'renderChildrenWithBuilder '; nextPutAll: index printString; lf.
         (submorphs at: index) fullRenderWithBuilder: renderingBuilder
     ]
 ].
@@ -64,6 +95,30 @@ fullRenderWithBuilder: renderingBuilder
     self renderWithBuilder: renderingBuilder.
     self renderChildrenWithBuilder: renderingBuilder.
 
+].
+
+Morph ![
+owner: aMorph
+    owner := aMorph
+].
+
+Morph ![
+addMorph: aMorph
+    submorphs := submorphs copyWith: aMorph.
+    aMorph owner: self
+].
+
+Morph ![
+removeSubmorph: aMorph
+    submorphs := submorphs copyWithout: aMorph.
+    aMorph owner: nil
+].
+
+Morph ![
+delete
+    owner ~~ nil ifTrue: [
+        owner removeSubmorph: self.
+    ]
 ].
 
 Morph subclass: #BorderedMorph instanceVariables: #(borderColor borderWidth).
@@ -96,6 +151,7 @@ defaultColor
 
 StringMorph ![
 renderWithBuilder: renderingBuilder
+    Stdio stdout nextPutAll: 'StringMorph renderWithBuilder'; lf.
     renderingBuilder
         solidRectangle: bounds color: backgroundColor;
         text: contents rectangle: bounds color: color
@@ -132,4 +188,46 @@ fitContents
 String ![
 asMorph
     ^ StringMorph new contents: self; yourself
-]
+].
+
+BorderedMorph subclass: #SimpleButtonMorph instanceVariables: #(label).
+
+SimpleButtonMorph class ![
+newWithLabel: labelString
+    ^ self new
+        label: labelString;
+        yourself 
+].
+
+SimpleButtonMorph ![
+initialize
+    super initialize.
+    color := Color r: 0.4 g: 0.8 b: 0.6 a: 1.0.
+    borderWidth := 1.
+    self setDefaultLabel
+].
+
+SimpleButtonMorph ![
+defaultLabel
+    ^ 'Flash'
+].
+
+SimpleButtonMorph ![
+setDefaultLabel
+    self label: self defaultLabel
+].
+
+SimpleButtonMorph ![
+label: aString
+    self label: aString font: Font defaultFontFace
+].
+
+SimpleButtonMorph ![
+label: aLabelString font: aFontFace
+    label ~~ nil ifTrue: [label delete].
+    label := StringMorph new contents: aLabelString; yourself.
+    self extent: (label width + 16) @ (label height + 16).
+    Stdio stdout nextPutAll: self localCenter printString; lf.
+    label position: self localCenter - (label extent//(2@2)).
+    self addMorph: label
+].

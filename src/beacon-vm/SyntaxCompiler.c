@@ -148,7 +148,7 @@ static beacon_oop_t beacon_SyntaxCompiler_evaluateLiteralArray(beacon_context_t 
 
     beacon_ParseTreeByteArrayNode_t *literalArrayNode = (beacon_ParseTreeByteArrayNode_t*)receiver;
     size_t literalArraySize = literalArrayNode->elements->super.super.super.super.super.header.slotCount;
-    beacon_Array_t *literalArray = beacon_allocateObjectWithBehavior(context->heap, context->classes.byteArrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t)*literalArraySize, BeaconObjectKindPointers);
+    beacon_Array_t *literalArray = beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t)*literalArraySize, BeaconObjectKindPointers);
 
     for(size_t i = 0; i < literalArraySize; ++i)
     {

@@ -1,8 +1,10 @@
 | FilesToLoad |
 
 FilesToLoad := #(
+    'ProtoObject.st'
     'Object.st'
     'Behavior.st'
+    'Array.st'
     'Slot.st'
     'Class.st'
     'AbstractBinaryFileStream.st'

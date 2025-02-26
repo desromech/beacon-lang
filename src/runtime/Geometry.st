@@ -28,6 +28,11 @@ Point ![
     ^ (x - aPoint x) @ (y - aPoint y)
 ].
 
+Point ![
+// aPoint
+    ^ (x // aPoint x) @ (y // aPoint y)
+].
+
 Number ![
 @ otherNumber
     ^ Point basicNew
@@ -59,6 +64,26 @@ corner: aPoint
 Rectangle ![
 extent
     ^ corner - origin
+].
+
+Rectangle ![
+width
+    ^ corner x - origin x
+].
+
+Rectangle ![
+height
+    ^ corner y - origin y
+].
+
+Rectangle ![
+center
+    ^ corner + self halfExtent.
+].
+
+Rectangle ![
+halfExtent
+    ^ (corner - origin) // (2@2) .
 ].
 
 Rectangle ![
