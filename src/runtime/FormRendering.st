@@ -94,7 +94,7 @@ solidRectangle: rectangle color: color borderSize: borderSize borderColor: borde
     solidRectangle := FormSolidRectangleRenderingElement new
         rectangle: (rectangle scaledWithXFactor: scaleFactorX y: scaleFactorY);
         color: color;
-        borderSize: borderSize;
+        borderSize: borderSize*scaleFactorX;
         borderColor: borderColor;
         yourself.
     renderingElements add: solidRectangle.

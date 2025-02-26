@@ -9,6 +9,7 @@ FilesToLoad := #(
     'Geometry.st'
     'Color.st'
     'Form.st'
+    'Font.st'
     'FormRendering.st'
     'WindowEvents.st'
     'Window.st'

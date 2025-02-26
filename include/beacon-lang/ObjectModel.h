@@ -706,6 +706,20 @@ typedef struct beacon_Form_s
     beacon_oop_t pitch;
 } beacon_Form_t;
 
+typedef struct beacon_Font_s
+{
+    beacon_Object_t super;
+    beacon_ByteArray_t *rawData;
+} beacon_Font_t;
+
+typedef struct beacon_FontFace_s
+{
+    beacon_Object_t super;
+    beacon_oop_t height;
+    beacon_oop_t advance;
+    beacon_Form_t *atlasForm;
+} beacon_FontFace_t;
+
 typedef struct beacon_Window_s
 {
     beacon_Object_t super;

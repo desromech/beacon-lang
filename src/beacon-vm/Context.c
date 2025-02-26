@@ -15,6 +15,7 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context);
 void beacon_context_registerArrayListPrimitive(beacon_context_t *context);
 void beacon_context_registerDictionaryPrimitives(beacon_context_t *context);
 void beacon_context_registerFormRenderingPrimitives(beacon_context_t *context);
+void beacon_context_registerFontFacePrimitives(beacon_context_t *context);
 void beacon_context_registerWindowSystemPrimitives(beacon_context_t *context);
 void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *context);
 
@@ -286,6 +287,10 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
 
     context->classes.formClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Form", sizeof(beacon_Form_t), BeaconObjectKindPointers,
         "bits", "width", "height", "depth", "pitch", NULL);
+    context->classes.fontClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Font", sizeof(beacon_Font_t), BeaconObjectKindPointers,
+        "rawData", NULL);
+    context->classes.fontFaceClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "FontFace", sizeof(beacon_FontFace_t), BeaconObjectKindPointers,
+        "atlasForm", "height", "advance", NULL);
     context->classes.formRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "FormRenderingElement", sizeof(beacon_FormRenderingElement_t), BeaconObjectKindPointers,
         "borderRoundRadius", "borderSize", "rectangle", NULL);
     context->classes.formSolidRectangleRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.formRenderingElementClass, "FormSolidRectangleRenderingElement", sizeof(beacon_FormSolidRectangleRenderingElement_t), BeaconObjectKindPointers,
@@ -391,6 +396,7 @@ void beacon_context_registerBasicPrimitives(beacon_context_t *context)
     beacon_context_registerArrayListPrimitive(context);
     beacon_context_registerDictionaryPrimitives(context);
     beacon_context_registerFormRenderingPrimitives(context);
+    beacon_context_registerFontFacePrimitives(context);
     beacon_context_registerWindowSystemPrimitives(context);
     beacon_context_registerParseTreeCompilationPrimitives(context);
 }

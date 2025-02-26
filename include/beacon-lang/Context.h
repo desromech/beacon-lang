@@ -113,6 +113,8 @@ struct beacon_context_s
         beacon_Behavior_t *colorClass;
         beacon_Behavior_t *rectangleClass;
         beacon_Behavior_t *formClass;
+        beacon_Behavior_t *fontClass;
+        beacon_Behavior_t *fontFaceClass;
 
         beacon_Behavior_t *formRenderingElementClass;
         beacon_Behavior_t *formSolidRectangleRenderingElementClass;

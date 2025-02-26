@@ -1,6 +1,7 @@
 set(BeaconVM_Sources
     Context.c
     Exceptions.c
+    Font.c
     FormRendering.c
     Memory.c
     ArrayList.c
