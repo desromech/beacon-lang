@@ -28,8 +28,3 @@ allButFirst: skippedCount
 
     ^ result
 ].
-
-"Stdio stdout nextPutAll: ('' first: 4); lf.
-Stdio stdout nextPutAll: ('' allButFirst: 4); lf.
-Stdio stdout nextPutAll: ('Hello World' first: 4); lf.
-Stdio stdout nextPutAll: ('Hello World' allButFirst: 4); lf."

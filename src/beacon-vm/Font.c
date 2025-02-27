@@ -125,9 +125,48 @@ beacon_oop_t beacon_FontFace_measureTextExtent(beacon_context_t *context, beacon
     return (beacon_oop_t)extent;
 }
 
+beacon_oop_t beacon_FontFace_measureTextExtentUntil(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 2);
+    beacon_FontFace_t *fontFace = (beacon_FontFace_t *)receiver;
+    beacon_String_t *string = (beacon_String_t*)arguments[0];
+    size_t untilColumn = beacon_decodeSmallInteger(arguments[1]);
+    size_t stringSize = string->super.super.super.super.super.header.slotCount;
+
+    size_t height = 0;
+    size_t width = 0;
+    beacon_Form_t *atlasForm = fontFace->atlasForm;
+    int formWidth = beacon_decodeSmallInteger(atlasForm->width);
+    int formHeight = beacon_decodeSmallInteger(atlasForm->height);
+
+    // TODO: Decode UTF8
+    BeaconGlyphRectange_t rectangle = {};
+    float baselineX = 0;
+    float baselineY = 0;
+    for(size_t i = 0; i < stringSize && i < untilColumn; ++i)
+    {
+        char c = string->data[i];
+        if(c < ' ')
+            continue;
+
+        stbtt_aligned_quad quadToDraw = {};
+        stbtt_GetBakedQuad((stbtt_bakedchar*)fontFace->charData->elements, formWidth, formHeight, c - 31, &baselineX, &baselineY, &quadToDraw, true);
+
+        glyphRectangle_addPoint(&rectangle, quadToDraw.x0, quadToDraw.y0);
+        glyphRectangle_addPoint(&rectangle, quadToDraw.x1, quadToDraw.y1);
+
+    }
+
+    beacon_Point_t *extent = beacon_allocateObjectWithBehavior(context->heap, context->classes.pointClass, sizeof(beacon_Point_t), BeaconObjectKindPointers);
+    extent->x = beacon_encodeSmallInteger(rectangle.maxX - rectangle.minX);
+    extent->y = beacon_encodeSmallInteger(rectangle.maxY - rectangle.minY);
+    return (beacon_oop_t)extent;
+}
+
 void beacon_context_registerFontFacePrimitives(beacon_context_t *context)
 {
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.fontClass), "loadFontFromFile:", 1, beacon_Font_LoadFontFromFile);
     beacon_addPrimitiveToClass(context, context->classes.fontClass, "createFaceWithHeight:", 1, beacon_Font_createFaceWithHeight);
     beacon_addPrimitiveToClass(context, context->classes.fontFaceClass, "measureTextExtent:", 1, beacon_FontFace_measureTextExtent);
+    beacon_addPrimitiveToClass(context, context->classes.fontFaceClass, "measureTextExtent:until:", 2, beacon_FontFace_measureTextExtentUntil);
 }

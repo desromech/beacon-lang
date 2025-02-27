@@ -27,7 +27,7 @@ void beacon_splitFileName(beacon_context_t *context, const char *inFileName, bea
     }
 
 
-    beacon_String_t *directory = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_String_t) + separatorIndex + 2, BeaconObjectKindBytes);
+    beacon_String_t *directory = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_String_t) + separatorIndex + 1, BeaconObjectKindBytes);
     memcpy(directory->data, inFileName, separatorIndex + 1);
 
     beacon_String_t *basename = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_String_t) + stringSize - separatorIndex + 1, BeaconObjectKindBytes);

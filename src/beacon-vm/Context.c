@@ -300,7 +300,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.fontClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Font", sizeof(beacon_Font_t), BeaconObjectKindPointers,
         "rawData", "__Meta__", "DejaVuSans", "DejaVuSansSmallFace", "DejaVuSansSmallHiDpiFace", NULL);
     context->classes.fontFaceClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "FontFace", sizeof(beacon_FontFace_t), BeaconObjectKindPointers,
-        "charData", "atlasForm", "height", "advance", NULL);
+        "charData", "height", "advance", "atlasForm", NULL);
     context->classes.formRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "FormRenderingElement", sizeof(beacon_FormRenderingElement_t), BeaconObjectKindPointers,
         "borderRoundRadius", "borderSize", "rectangle", NULL);
     context->classes.formSolidRectangleRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.formRenderingElementClass, "FormSolidRectangleRenderingElement", sizeof(beacon_FormSolidRectangleRenderingElement_t), BeaconObjectKindPointers,
@@ -1185,13 +1185,14 @@ static beacon_oop_t beacon_String_concatenate(beacon_context_t *context, beacon_
     if(objectSize == 0)
         return receiver;
 
+    BeaconAssert(context, receiverHeader->objectKind == BeaconObjectKindBytes);
     BeaconAssert(context, header->objectKind == BeaconObjectKindBytes);
     uint8_t *receiverData = (uint8_t *)(receiverHeader + 1);
     uint8_t *objectData = (uint8_t *)(header + 1);
 
     beacon_String_t *concatResult = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_String_t) + receiverSize + objectSize, BeaconObjectKindBytes);
     memcpy(concatResult->data, receiverData, receiverSize);
-    memcpy(concatResult->data + receiverSize - 1, objectData, objectSize);
+    memcpy(concatResult->data + receiverSize, objectData, objectSize);
 
     return (beacon_oop_t)concatResult;
 }

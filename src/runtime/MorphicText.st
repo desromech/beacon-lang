@@ -43,18 +43,19 @@ lines
 
 TextEditorBuffer ![
 insertText: text atCursorPosition: cursor
-   | line leftText rightText insertedLine |
+   | line leftText rightText cursorColumn insertedLine |
     line := lines at: cursor line.
-    leftText := line first: cursor column.
-    rightText := line allButFirst: cursor column.
 
-    insertedLine := leftText , text, rightText.
-    Stdio stdout nextPutAll: insertedLine; lf.
+    cursorColumn := cursor column.
+    leftText := line first: cursorColumn.
+    rightText := line allButFirst: cursorColumn.
+    insertedLine := leftText , text , rightText.
+
     cursor column: cursor column + 1.
     lines at: cursor line put: insertedLine
 ].
 
-BorderedMorph subclass: #TextAreaMorph instanceVariables: #(textBuffer textColor cursor).
+BorderedMorph subclass: #TextAreaMorph instanceVariables: #(textBuffer textColor cursor cursorColor).
 
 TextAreaMorph class ![
 defaultColor
@@ -72,6 +73,7 @@ initialize
     textBuffer := TextEditorBuffer new.
     textColor := Color black.
     cursor := TextEditorCursor new.
+    cursorColor := Color blue.
 ].
 
 TextAreaMorph ![
@@ -86,12 +88,18 @@ renderWithBuilder: renderingBuilder
     linePositionY := 0.
 
     1 to: lines size do: [:lineIndex |
-        | line lineExtent lineRectangle |
+        | line lineExtent lineRectangle cursorPositionX cursorBounds |
         line := lines at: lineIndex.
         lineExtent := fontFace measureTextExtent: line.
         lineRectangle := 0@linePositionY extent: lineExtent.
 
         renderingBuilder text: line rectangle: lineRectangle color: textColor.
+
+        lineIndex = cursor line ifTrue: [
+            cursorPositionX := (fontFace measureTextExtent: line until: cursor column) x.
+            cursorBounds := cursorPositionX @ linePositionY extent: 2@lineHeight.
+            renderingBuilder solidRectangle: cursorBounds color: cursorColor.
+        ].
 
         linePositionY := linePositionY + lineHeight.
     ].
