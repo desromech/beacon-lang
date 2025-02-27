@@ -29,6 +29,11 @@ Point ![
 ].
 
 Point ![
+* aPoint
+    ^ (x * aPoint x) @ (y * aPoint y)
+].
+
+Point ![
 // aPoint
     ^ (x // aPoint x) @ (y // aPoint y)
 ].

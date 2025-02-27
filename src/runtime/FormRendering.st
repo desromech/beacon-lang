@@ -42,7 +42,7 @@ FormRenderingElementBuilder ![
 translatedBy: extraTranslation during: aBlock
     | oldTranslation |
     oldTranslation := translation.
-    translation := translation + extraTranslation.
+    translation := translation + (extraTranslation * (scaleFactorX @ scaleFactorY)).
     
     "Use an ensure block here."
     aBlock value.
