@@ -40,6 +40,32 @@ void beacon_ArrayList_add(beacon_context_t *context, beacon_ArrayList_t *collect
     collection->size = beacon_encodeSmallInteger(size + 1);
 }
 
+void beacon_ArrayList_addAfter(beacon_context_t *context, beacon_ArrayList_t *collection, beacon_oop_t element, size_t insertionIndex)
+{
+    if(collection->size == collection->capacity)
+        beacon_ArrayList_increaseCapacity(context, collection);
+    
+    intptr_t size = beacon_decodeSmallInteger(collection->size);
+    intptr_t moveElementCount = size - insertionIndex;
+    for(intptr_t i = 0; i < moveElementCount; ++i)
+        collection->array->elements[size - i] = collection->array->elements[size - i - 1];
+
+    collection->array->elements[insertionIndex] = element;
+    collection->size = beacon_encodeSmallInteger(size + 1);
+}
+
+void beacon_ArrayList_removeAt(beacon_context_t *context, beacon_ArrayList_t *collection, size_t removeIndex)
+{
+    if(collection->size == collection->capacity)
+        beacon_ArrayList_increaseCapacity(context, collection);
+    
+    intptr_t size = beacon_decodeSmallInteger(collection->size);
+    for(intptr_t i = removeIndex - 1; i < size; ++i)
+        collection->array->elements[i] = collection->array->elements[i + 1];
+
+    collection->size = beacon_encodeSmallInteger(size - 1);
+}
+
 beacon_Array_t *beacon_ArrayList_asArray(beacon_context_t *context, beacon_ArrayList_t *collection)
 {
     intptr_t size = beacon_ArrayList_size(collection);
@@ -158,6 +184,22 @@ static beacon_oop_t beacon_ArrayList_addPrimitive(beacon_context_t *context, bea
     return arguments[0];
 }
 
+static beacon_oop_t beacon_ArrayList_addAfterPrimitive(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, (intptr_t)argumentCount == 2);
+    beacon_ArrayList_t *arrayList = (beacon_ArrayList_t*)receiver;
+    beacon_ArrayList_addAfter(context, arrayList, arguments[0], beacon_decodeSmallInteger(arguments[1]));
+    return arguments[0];
+}
+
+static beacon_oop_t beacon_ArrayList_removeAtPrimitive(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, (intptr_t)argumentCount == 1);
+    beacon_ArrayList_t *arrayList = (beacon_ArrayList_t*)receiver;
+    beacon_ArrayList_removeAt(context, arrayList, beacon_decodeSmallInteger(arguments[0]));
+    return receiver;
+}
+
 static beacon_oop_t beacon_ArrayList_asArrayPrimitive(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, (intptr_t)argumentCount == 0);
@@ -168,5 +210,7 @@ static beacon_oop_t beacon_ArrayList_asArrayPrimitive(beacon_context_t *context,
 void beacon_context_registerArrayListPrimitive(beacon_context_t *context)
 {
     beacon_addPrimitiveToClass(context, context->classes.arrayListClass, "add:", 1, beacon_ArrayList_addPrimitive);
+    beacon_addPrimitiveToClass(context, context->classes.arrayListClass, "add:after:", 2, beacon_ArrayList_addAfterPrimitive);
+    beacon_addPrimitiveToClass(context, context->classes.arrayListClass, "removeAt:", 2, beacon_ArrayList_removeAtPrimitive);
     beacon_addPrimitiveToClass(context, context->classes.arrayListClass, "asArray", 0, beacon_ArrayList_asArrayPrimitive);
 }

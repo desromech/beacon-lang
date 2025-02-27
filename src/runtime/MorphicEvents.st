@@ -196,6 +196,31 @@ isDown
     ^ symbol = 1073741905
 ].
 
+MorphKeyboardEvent ![
+isPageUp
+    ^ symbol = 1073741899
+].
+
+MorphKeyboardEvent ![
+isPageDown
+    ^ symbol = 1073741902
+].
+
+MorphKeyboardEvent ![
+isHome
+    ^ symbol = 1073741898
+].
+
+MorphKeyboardEvent ![
+isEnd
+    ^ symbol = 1073741901
+].
+
+MorphKeyboardEvent ![
+isDelete
+    ^ symbol = 127
+].
+
 MorphKeyboardDownEvent ![
 accept: aVisitor
     ^ aVisitor handleMorphKeyboardDownEvent: self

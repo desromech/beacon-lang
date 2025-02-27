@@ -15,7 +15,6 @@ static void ensureSDL2Initialization(void)
 
     SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");    
     SDL_Init(SDL_INIT_VIDEO);
-    hasInitializedSDL2 = true;
 }
 
 static void beacon_sdl2_updateDisplayTextureExtent(beacon_context_t *context, beacon_Window_t *beaconWindow)

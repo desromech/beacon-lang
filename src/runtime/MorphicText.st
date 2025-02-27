@@ -64,6 +64,35 @@ moveRight
     ]
 ].
 
+TextEditorCursor ![
+moveUp
+    line > 1 ifTrue: [
+        line := line - 1.
+    ] ifFalse: [
+        line := 1.
+        column := 1
+    ]
+].
+
+TextEditorCursor ![
+moveDown
+    line < textBuffer lines size ifTrue: [
+        line := line + 1.
+    ] ifFalse: [
+        column := textBuffer lastColumnOfLine: line
+    ]
+].
+
+TextEditorCursor ![
+moveHome
+    column := 1.
+].
+
+TextEditorCursor ![
+moveEnd
+    column := textBuffer lastColumnOfLine: line
+].
+
 Object subclass: #TextEditorBuffer instanceVariables: #(lines).
 
 TextEditorBuffer ![
@@ -87,6 +116,22 @@ lastColumnOfLine: lineIndex
     ^ 1
 ].
 
+TextEditorBuffer ![
+splitLineAtCursor: cursor
+    | line cursorLine cursorColumn leftText rightText |
+    cursorLine := cursor line.
+    line := lines at: cursorLine.
+
+    cursorColumn := cursor column - 1.
+    leftText := line first: cursorColumn.
+    rightText := line allButFirst: cursorColumn.
+
+    lines at: cursorLine put: leftText.
+    lines add: rightText after: cursorLine.
+
+    cursor line: cursorLine + 1.
+    cursor column: 1.
+].
 
 TextEditorBuffer ![
 insertText: text atCursorPosition: cursor
@@ -100,6 +145,38 @@ insertText: text atCursorPosition: cursor
 
     cursor column: cursor column + 1.
     lines at: cursor line put: insertedLine
+].
+
+TextEditorBuffer ![
+backspaceDeleteAtCursor: cursor
+    | cursorColumn cursorLine line leftText rightText previousLine nextLine joinedLine |
+    cursorColumn := cursor column - 1.
+    cursorLine := cursor line.
+    cursorColumn >= 1 ifTrue: [
+        line := lines at: cursorLine.
+        leftText := line first: cursorColumn - 1.
+        rightText := line allButFirst: cursorColumn.
+
+        lines at: cursorLine put: leftText , rightText.
+        cursor column: leftText size + 1
+    ] ifFalse: [
+        cursorLine > 1 ifTrue: [
+            previousLine := lines at: cursorLine - 1.
+            nextLine := lines at: cursorLine.
+            joinedLine := previousLine , nextLine.
+
+            lines at: cursorLine - 1 put: joinedLine.
+            lines removeAt: cursorLine.
+
+            cursor line: cursorLine - 1.
+            cursor column: previousLine size + 1.
+        ]
+    ]
+].
+
+TextEditorBuffer ![
+forwardDeleteAtCursor: cursor
+
 ].
 
 BorderedMorph subclass: #TextAreaMorph instanceVariables: #(textBuffer textColor cursor cursorColor).
@@ -164,10 +241,12 @@ TextAreaMorph ![
 handleMorphKeyboardDownEvent: anEvent
     "Stdio stdout nextPutAll: 'handleMorphKeyboardDownEvent'; lf."
     anEvent isReturn ifTrue: [
-        Stdio stdout nextPutAll: 'Return'; lf
+        textBuffer splitLineAtCursor: cursor.
+        self changed.
     ].
     anEvent isBackspace ifTrue: [
-        Stdio stdout nextPutAll: 'Backspace'; lf
+        textBuffer backspaceDeleteAtCursor: cursor.
+        self changed
     ].
     anEvent isLeft ifTrue: [
         cursor moveLeft.
@@ -183,6 +262,21 @@ handleMorphKeyboardDownEvent: anEvent
     ].
     anEvent isDown ifTrue: [
         cursor moveDown.
+        self changed
+    ].
+
+    anEvent isHome ifTrue: [
+        cursor moveHome.
+        self changed
+    ].
+
+    anEvent isEnd ifTrue: [
+        cursor moveEnd.
+        self changed
+    ].
+
+    anEvent isDelete ifTrue: [
+        textBuffer forwardDeleteAtCursor: cursor.
         self changed
     ].
 
