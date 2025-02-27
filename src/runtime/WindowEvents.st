@@ -138,6 +138,16 @@ symbol: anInteger
     symbol := anInteger
 ].
 
+WindowKeyboardEvent ![
+modstate
+    ^ modstate
+].
+
+WindowKeyboardEvent ![
+modstate: anInteger
+    modstate := anInteger
+].
+
 WindowTextInputEvent ![
 text
     ^ text

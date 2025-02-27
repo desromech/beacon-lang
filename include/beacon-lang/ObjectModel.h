@@ -810,6 +810,7 @@ typedef struct beacon_WindowKeyboardEvent_s
     beacon_Object_t super;
     beacon_oop_t scancode;
     beacon_oop_t symbol;
+    beacon_oop_t modstate;
 } beacon_WindowKeyboardEvent_t;
 
 typedef struct beacon_WindowTextInputEvent_s

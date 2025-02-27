@@ -64,6 +64,7 @@ onKeyPressed: event
     rootMorph processEvent: (MorphKeyboardDownEvent new
         scancode: event scancode;
         symbol: event symbol;
+        modstate: event modstate;
         yourself)
 ].
 
@@ -72,6 +73,7 @@ onKeyReleased: event
     rootMorph processEvent: (MorphKeyboardUpEvent new
         scancode: event scancode;
         symbol: event symbol;
+        modstate: event modstate;
         yourself)
 ].
 

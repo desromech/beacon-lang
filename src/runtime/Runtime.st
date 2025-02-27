@@ -7,6 +7,7 @@ FilesToLoad := #(
     'Array.st'
     'ArrayList.st'
     'AbstractBinaryFileStream.st'
+    'Number.st'
     'Slot.st'
     'String.st'
     'Class.st'

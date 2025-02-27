@@ -323,7 +323,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.windowMouseMotionEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowMouseMotionEvent", sizeof(beacon_WindowMouseMotionEvent_t), BeaconObjectKindPointers,
         "buttons", "x", "y", "xrel", "yrel", NULL);
     context->classes.windowKeyboardEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowKeyboardEvent", sizeof(beacon_WindowMouseButtonEvent_t), BeaconObjectKindPointers,
-        "scancode", "symbol", NULL);
+        "scancode", "symbol", "modstate", NULL);
     context->classes.windowTextInputEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowTextInputEvent", sizeof(beacon_WindowTextInputEvent_t), BeaconObjectKindPointers,
         "text", NULL);
 }
@@ -979,6 +979,14 @@ static beacon_oop_t beacon_SmallInteger_negated(beacon_context_t *context, beaco
     return beacon_encodeSmallInteger(-beacon_decodeSmallInteger(receiver));
 }
 
+static beacon_oop_t beacon_SmallInteger_bitInvert(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    return beacon_encodeSmallInteger(-1 - beacon_decodeSmallInteger(receiver));
+}
+
 static beacon_oop_t beacon_SmallInteger_plus(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)context;
@@ -1018,6 +1026,41 @@ static beacon_oop_t beacon_SmallInteger_integerModulo(beacon_context_t *context,
     (void)context;
     BeaconAssert(context, argumentCount == 1);
     return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) % beacon_decodeSmallInteger(arguments[0]));
+}
+
+static beacon_oop_t beacon_SmallInteger_bitAnd(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    BeaconAssert(context, argumentCount == 1);
+    return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) & beacon_decodeSmallInteger(arguments[0]));
+}
+
+static beacon_oop_t beacon_SmallInteger_bitOr(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    BeaconAssert(context, argumentCount == 1);
+    return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) | beacon_decodeSmallInteger(arguments[0]));
+}
+
+static beacon_oop_t beacon_SmallInteger_bitXor(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    BeaconAssert(context, argumentCount == 1);
+    return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) ^ beacon_decodeSmallInteger(arguments[0]));
+}
+
+static beacon_oop_t beacon_SmallInteger_shiftLeft(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    BeaconAssert(context, argumentCount == 1);
+    return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) << beacon_decodeSmallInteger(arguments[0]));
+}
+
+static beacon_oop_t beacon_SmallInteger_shiftRight(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    BeaconAssert(context, argumentCount == 1);
+    return beacon_encodeSmallInteger(beacon_decodeSmallInteger(receiver) >> beacon_decodeSmallInteger(arguments[0]));
 }
 
 static beacon_oop_t beacon_SmallInteger_equals(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -1273,6 +1316,16 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "*", 1, beacon_SmallInteger_times);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "//", 1, beacon_SmallInteger_integerDivision);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "\\", 1, beacon_SmallInteger_integerModulo);
+
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "bitInvert", 0, beacon_SmallInteger_bitInvert);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "|", 1, beacon_SmallInteger_bitOr);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "bitOr:", 1, beacon_SmallInteger_bitOr);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "&", 1, beacon_SmallInteger_bitAnd);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "bitAnd:", 1, beacon_SmallInteger_bitAnd);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "^", 1, beacon_SmallInteger_bitXor);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "bitXor:", 1, beacon_SmallInteger_bitXor);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "<<", 1, beacon_SmallInteger_shiftLeft);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, ">>", 1, beacon_SmallInteger_shiftRight);
 
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "=", 1, beacon_SmallInteger_equals);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "~=", 1, beacon_SmallInteger_notEquals);

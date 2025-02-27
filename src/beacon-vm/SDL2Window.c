@@ -193,6 +193,7 @@ static void beacon_sdl2_fetchAndDispatchEvents(beacon_context_t *context)
                 beacon_WindowKeyboardEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowKeyboardEventClass, sizeof(beacon_WindowKeyboardEvent_t), BeaconObjectKindPointers);
                 event->scancode = beacon_encodeSmallInteger(sdlEvent.key.keysym.scancode);
                 event->symbol = beacon_encodeSmallInteger(sdlEvent.key.keysym.sym);
+                event->modstate = beacon_encodeSmallInteger(sdlEvent.key.keysym.mod);
                 beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onKeyPressed:"), (beacon_oop_t)event);
             }
         }
@@ -206,6 +207,7 @@ static void beacon_sdl2_fetchAndDispatchEvents(beacon_context_t *context)
                 beacon_WindowKeyboardEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowKeyboardEventClass, sizeof(beacon_WindowKeyboardEvent_t), BeaconObjectKindPointers);
                 event->scancode = beacon_encodeSmallInteger(sdlEvent.key.keysym.scancode);
                 event->symbol = beacon_encodeSmallInteger(sdlEvent.key.keysym.sym);
+                event->modstate = beacon_encodeSmallInteger(sdlEvent.key.keysym.mod);
                 beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onKeyReleased:"), (beacon_oop_t)event);
             }
         }
