@@ -174,8 +174,13 @@ static void beacon_sdl2_fetchAndDispatchEvents(beacon_context_t *context)
                 (beacon_Symbol_t*)beacon_encodeSmallInteger(sdlEvent.motion.windowID));
             if(beaconWindow)
             {
-                beacon_WindowMouseMotionEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowKeyboardEventClass, sizeof(beacon_WindowMouseMotionEvent_t), BeaconObjectKindPointers);
+                beacon_WindowMouseMotionEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowMouseMotionEventClass, sizeof(beacon_WindowMouseMotionEvent_t), BeaconObjectKindPointers);
+                event->buttons = beacon_encodeSmallInteger(sdlEvent.motion.state);
                 event->x = beacon_encodeSmallInteger(sdlEvent.motion.x);
+                event->y = beacon_encodeSmallInteger(sdlEvent.motion.y);
+                event->xrel = beacon_encodeSmallInteger(sdlEvent.motion.xrel);
+                event->yrel = beacon_encodeSmallInteger(sdlEvent.motion.yrel);
+
                 beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onMouseMotion:"), (beacon_oop_t)event);
             }
         }

@@ -69,6 +69,16 @@ y: anInteger
 ].
 
 WindowMouseMotionEvent ![
+buttons
+    ^ buttons
+].
+
+WindowMouseMotionEvent ![
+buttons: aSetOfButtons
+    buttons := aSetOfButtons
+].
+
+WindowMouseMotionEvent ![
 x
     ^ x
 ].

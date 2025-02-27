@@ -228,3 +228,12 @@ label: aLabelString font: aFontFace
     label position: self localCenter - (label extent//(2@2)).
     self addMorph: label
 ].
+
+SimpleButtonMorph ![
+extent: newExtent
+    super extent: newExtent.
+
+    label ~~ nil ifTrue: [
+        label position: self localCenter - (label extent//(2@2)).
+    ].
+].

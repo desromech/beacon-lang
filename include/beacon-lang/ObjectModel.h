@@ -798,6 +798,7 @@ typedef struct beacon_WindowMouseButtonEvent_s
 typedef struct beacon_WindowMouseMotionEvent_s
 {
     beacon_Object_t super;
+    beacon_oop_t buttons;
     beacon_oop_t x;
     beacon_oop_t y;
     beacon_oop_t xrel;

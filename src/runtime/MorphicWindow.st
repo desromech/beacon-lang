@@ -9,7 +9,8 @@ MorphicWindow ![
 renderWithBuilder: renderingBuilder
     rootMorph == nil ifTrue: [^ self].
 
-    rootMorph bounds: (0@0 corner: width @ height).
+    rootMorph position: 0@0.
+    rootMorph extent: width @ height..
     rootMorph fullRenderWithBuilder: renderingBuilder
 ].
 
@@ -24,27 +25,43 @@ openInWindow
 
 MorphicWindow ![
 onMouseButtonDown: event
-    Stdio stdout nextPutAll: 'MorphicWindow onMouseButtonDown.'; lf
+    rootMorph processEvent: (MorphMouseButtonDownEvent new
+        button: event button;
+        position: event x @ event y;
+        yourself)
 ].
 
 MorphicWindow ![
 onMouseButtonUp: event
-    Stdio stdout nextPutAll: 'MorphicWindow onMouseButtonUp.'; lf
+    rootMorph processEvent: (MorphMouseButtonUpEvent new
+        button: event button;
+        position: event x @ event y;
+        yourself)
 ].
 
 MorphicWindow ![
 onMouseMotion: event
-    Stdio stdout nextPutAll: 'MorphicWindow onMouseMotion.'; lf
+    rootMorph processEvent: (MorphMouseMotionEvent new
+        buttons: event buttons;
+        position: event x @ event y;
+        deltaPosition: event xrel @ event yrel;
+        yourself)
 ].
 
 MorphicWindow ![
 onKeyPressed: event
-    Stdio stdout nextPutAll: 'MorphicWindow onKeyPressed.'; lf
+    rootMorph processEvent: (MorphKeyboardDownEvent new
+        scancode: event scancode;
+        symbol: event symbol;
+        yourself)
 ].
 
 MorphicWindow ![
 onKeyReleased: event
-    Stdio stdout nextPutAll: 'MorphicWindow onKeyReleased.'; lf
+    rootMorph processEvent: (MorphKeyboardUpEvent new
+        scancode: event scancode;
+        symbol: event symbol;
+        yourself)
 ].
 
 MorphicWindow ![

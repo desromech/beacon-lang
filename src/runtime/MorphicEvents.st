@@ -148,3 +148,23 @@ MorphMouseMotionEvent ![
 deltaPosition: aPoint
     deltaPosition := aPoint
 ].
+
+MorphKeyboardEvent ![
+scancode
+    ^ scancode
+].
+
+MorphKeyboardEvent ![
+scancode: aScancode
+    scancode := aScancode
+].
+
+MorphKeyboardEvent ![
+symbol
+    ^ symbol
+].
+
+MorphKeyboardEvent ![
+symbol: aSymbol
+    symbol := aSymbol
+].
