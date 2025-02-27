@@ -18,7 +18,10 @@ Morph ![
 openInWindow
     ^ MorphicWindow new
         extent: extent;
-        rootMorph: self;
+        rootMorph: (RootMorph new
+            extent: extent;
+            addMorph: self;
+            yourself);
         open;
         yourself
 ].

@@ -72,8 +72,34 @@ position: newPosition
 ].
 
 Morph ![
-processEvent: anEvent
+handleEvent: anEvent
     ^ anEvent accept: self
+].
+
+Morph ![
+processMouseEvent: anEvent
+    anEvent translatedBy: self position negated during: [
+        1 to: submorphs size do: [:i |
+            | submorph |
+            submorph := submorphs at: i.
+            (submorph bounds containsPoint: anEvent position) ifTrue:[
+                submorph processEvent: anEvent
+            ]
+        ].
+
+        anEvent wasHandled ifFalse: [
+            self handleEvent: anEvent
+        ]
+    ].
+].
+
+Morph ![
+processEvent: anEvent
+    anEvent isMouseEvent ifTrue: [
+        ^ self processMouseEvent: anEvent
+
+    ].
+    self handleEvent: anEvent
 ].
 
 Morph ![
@@ -120,6 +146,27 @@ delete
     owner ~~ nil ifTrue: [
         owner removeSubmorph: self.
     ]
+].
+
+Morph ![
+rootMorph
+    ^ owner rootMorph
+].
+
+Morph subclass: #RootMorph instanceVariables: #(keyboardFocus mouseFocus).
+
+RootMorph ![
+extent: newExtent
+    | submorph |
+    super extent: newExtent.
+    submorphs size > 0 ifTrue: [
+        (submorphs at: 1) extent: extent
+    ]
+].
+
+RootMorph ![
+rootMorph
+    ^ self
 ].
 
 Morph subclass: #BorderedMorph instanceVariables: #(borderColor borderWidth).

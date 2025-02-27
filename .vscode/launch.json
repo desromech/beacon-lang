@@ -13,6 +13,7 @@
             //"args": ["src/runtime/Runtime.st"],
             //"args": ["src/runtime/Runtime.st", "-eval", "'Hello World' asMorph openInWindow. Window enterMainLoop"],
             //"args": ["src/runtime/Runtime.st", "-eval", "Window new width: 256; height: 64; open"],
+            "args": ["src/runtime/Runtime.st", "SimpleButtonMorph new openInWindow. Window enterMainLoop"],
             //"args": ["-eval", "([:x | [:y | x + y]] value: 42) value: 3"],
             "cwd": "${workspaceFolder}"
         }

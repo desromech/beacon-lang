@@ -41,10 +41,20 @@ a: aNumber
 Color class ![
 r: r g: g b: b a: a
     ^ self basicNew
-        r: r;
-        g: g;
-        b: b;
-        a: a;
+        r: r asFloat;
+        g: g asFloat;
+        b: b asFloat;
+        a: a asFloat;
+        yourself
+].
+
+Color class ![
+r: r g: g b: b
+    ^ self basicNew
+        r: r asFloat;
+        g: g asFloat;
+        b: b asFloat;
+        a: 1.0;
         yourself
 ].
 

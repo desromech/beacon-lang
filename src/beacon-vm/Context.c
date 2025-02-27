@@ -828,12 +828,45 @@ static beacon_oop_t beacon_SmallFloat_printString(beacon_context_t *context, bea
     return (beacon_oop_t)beacon_importCString(context, buffer);
 }
 
+static beacon_oop_t beacon_SmallFloat_asFloat(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    return receiver;
+}
+
+static beacon_oop_t beacon_SmallFloat_asInteger(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+
+    return beacon_encodeSmallInteger(beacon_decodeSmallFloat(receiver));
+}
+
 static beacon_oop_t beacon_SmallFloat_negated(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)context;
     (void)arguments;
     BeaconAssert(context, argumentCount == 0);
     return beacon_encodeSmallFloat(-beacon_decodeSmallNumber(receiver));
+}
+
+static beacon_oop_t beacon_SmallFloat_floor(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    return beacon_encodeSmallFloat(floor(beacon_decodeSmallNumber(receiver)));
+}
+
+static beacon_oop_t beacon_SmallFloat_ceiling(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    return beacon_encodeSmallFloat(ceil(beacon_decodeSmallNumber(receiver)));
 }
 
 static beacon_oop_t beacon_SmallFloat_plus(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -920,6 +953,20 @@ static beacon_oop_t beacon_SmallInteger_printString(beacon_context_t *context, b
     char buffer[64];
     snprintf(buffer, sizeof(buffer), "%lld", (long long int)beacon_decodeSmallInteger(receiver));
     return (beacon_oop_t)beacon_importCString(context, buffer);
+}
+
+static beacon_oop_t beacon_SmallInteger_asFloat(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    return beacon_encodeSmallFloat(beacon_decodeSmallInteger(receiver));
+}
+
+static beacon_oop_t beacon_SmallInteger_asInteger(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    return receiver;
 }
 
 static beacon_oop_t beacon_SmallInteger_negated(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -1211,6 +1258,8 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.stringClass, "printString", 0, beacon_String_printString);
 
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "printString", 0, beacon_SmallInteger_printString);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "asFloat", 0, beacon_SmallInteger_asFloat);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "asInteger", 0, beacon_SmallInteger_asInteger);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "negated", 0, beacon_SmallInteger_negated);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "+", 1, beacon_SmallInteger_plus);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "-", 1, beacon_SmallInteger_minus);
@@ -1226,6 +1275,10 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, ">=", 1, beacon_SmallInteger_greaterOrEquals);
 
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "printString", 0, beacon_SmallFloat_printString);
+    beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "asFloat", 0, beacon_SmallFloat_asFloat);
+    beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "asInteger", 0, beacon_SmallFloat_asInteger);
+    beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "floor", 0, beacon_SmallFloat_floor);
+    beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "celing", 0, beacon_SmallFloat_ceiling);
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "negated", 0, beacon_SmallFloat_negated);
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "sqrt", 0, beacon_SmallFloat_sqrt);
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "+", 1, beacon_SmallFloat_plus);

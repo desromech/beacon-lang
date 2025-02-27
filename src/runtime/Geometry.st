@@ -19,23 +19,81 @@ y: aNumber
 ].
 
 Point ![
-+ aPoint
+asPoint
+    ^ self
+].
+
+Number ![
+asPoint
+    ^ self @ self
+].
+
+Point ![
+negated
+    ^ (x negated) @ (y negated)
+].
+
+Point ![
++ aPointOrNumber
+    | aPoint |
+    aPoint := aPointOrNumber asPoint.
     ^ (x + aPoint x) @ (y + aPoint y)
 ].
 
 Point ![
-- aPoint
+- aPointOrNumber
+    | aPoint |
+    aPoint := aPointOrNumber asPoint.
     ^ (x - aPoint x) @ (y - aPoint y)
 ].
 
 Point ![
-* aPoint
+* aPointOrNumber
+    | aPoint |
+    aPoint := aPointOrNumber asPoint.
     ^ (x * aPoint x) @ (y * aPoint y)
 ].
 
 Point ![
-// aPoint
+// aPointOrNumber
+    | aPoint |
+    aPoint := aPointOrNumber asPoint.
     ^ (x // aPoint x) @ (y // aPoint y)
+].
+
+Point ![
+= aPointOrNumber
+    | aPoint |
+    aPoint := aPointOrNumber asPoint.
+    ^ (x = aPoint x) and: [y = aPoint y]
+].
+
+Point ![
+< aPointOrNumber
+    | aPoint |
+    aPoint := aPointOrNumber asPoint.
+    ^ (x < aPoint x) and: [y < aPoint y]
+].
+
+Point ![
+<= aPointOrNumber
+    | aPoint |
+    aPoint := aPointOrNumber asPoint.
+    ^ (x <= aPoint x) and: [y <= aPoint y]
+].
+
+Point ![
+> aPointOrNumber
+    | aPoint |
+    aPoint := aPointOrNumber asPoint.
+    ^ (x > aPoint x) and: [y > aPoint y]
+].
+
+Point ![
+>= aPointOrNumber
+    | aPoint |
+    aPoint := aPointOrNumber asPoint.
+    ^ (x >= aPoint x) and: [y >= aPoint y]
 ].
 
 Number ![
@@ -99,6 +157,11 @@ min
 Rectangle ![
 max
     ^ corner
+].
+
+Rectangle ![
+containsPoint: aPoint
+    ^ (origin <= aPoint) and: [aPoint <= corner]
 ].
 
 Rectangle ![

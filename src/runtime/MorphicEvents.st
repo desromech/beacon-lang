@@ -1,13 +1,55 @@
-Object subclass: #MorphEvent instanceVariables: #().
+Object subclass: #MorphEvent instanceVariables: #(wasHandled).
+
 Object subclass: #MorphEventVisitor instanceVariables: #().
 
-MorphEvent subclass: #MorphMouseButtonEvent instanceVariables: #(button position).
+MorphEvent subclass: #MorphMouseEvent instanceVariables: #(position).
+MorphMouseEvent subclass: #MorphMouseButtonEvent instanceVariables: #(button).
 MorphMouseButtonEvent subclass: #MorphMouseButtonDownEvent.
 MorphMouseButtonEvent subclass: #MorphMouseButtonUpEvent.
-MorphEvent subclass: #MorphMouseMotionEvent instanceVariables: #(buttons position deltaPosition).
+MorphMouseEvent subclass: #MorphMouseMotionEvent instanceVariables: #(buttons deltaPosition).
+
+MorphMouseEvent subclass: #MorphMouseEnterEvent instanceVariables: #().
+MorphMouseEvent subclass: #MorphMouseLeaveEvent instanceVariables: #().
+
 MorphEvent subclass: #MorphKeyboardEvent instanceVariables: #(scancode symbol).
 MorphKeyboardEvent subclass: #MorphKeyboardDownEvent instanceVariables: #().
 MorphKeyboardEvent subclass: #MorphKeyboardUpEvent instanceVariables: #().
+
+MorphEvent ![
+isMouseEvent
+    ^ false
+].
+
+MorphMouseEvent ![
+isMouseEvent
+    ^ true
+].
+
+MorphEvent ![
+isKeyboardEvent
+    ^ false
+].
+
+MorphKeyboardEvent ![
+isKeyboardEvent
+    ^ false
+].
+
+MorphEvent ![
+initialize
+    super initialize.
+    wasHandled := false
+].
+
+MorphEvent ![
+wasHandled
+    ^ wasHandled
+].
+
+MorphEvent ![
+wasHandled: aBoolean
+    wasHandled := aBoolean
+].
 
 MorphEvent ![
 accept: aVisitor
@@ -69,6 +111,26 @@ handleMorphMouseMotionEvent: anEvent
     ^ self handleMorphMouseEvent: anEvent
 ].
 
+MorphMouseEnterEvent ![
+accept: aVisitor
+    ^ aVisitor handleMorphMouseEnterEvent: self
+].
+
+MorphEventVisitor ![
+handleMorphMouseEnterEvent: anEvent
+    ^ self handleMorphMouseEvent: anEvent
+].
+
+MorphMouseLeaveEvent ![
+accept: aVisitor
+    ^ aVisitor handleMorphMouseLeaveEvent: self
+].
+
+MorphEventVisitor ![
+handleMorphMouseLeaveEvent: anEvent
+    ^ self handleMorphMouseEvent: anEvent
+].
+
 MorphKeyboardEvent ![
 accept: aVisitor
     ^ aVisitor handleMorphKeyboardEvent: self
@@ -99,6 +161,27 @@ handleMorphKeyboardUpEvent: anEvent
     ^ self handleMorphKeyboardEvent: anEvent
 ].
 
+MorphMouseEvent ![
+position
+    ^ position
+].
+
+MorphMouseEvent ![
+position: aPoint
+    position := aPoint
+].
+
+MorphMouseEvent ![
+translatedBy: deltaPosition during: aBlock
+    | oldPosition |
+    oldPosition := position.
+    position := position + deltaPosition.
+
+    aBlock value.
+
+    position := oldPosition.
+].
+
 MorphMouseButtonEvent ![
 button
     ^ button
@@ -109,16 +192,6 @@ button: anInteger
     button := anInteger
 ].
 
-MorphMouseButtonEvent ![
-position
-    ^ position
-].
-
-MorphMouseButtonEvent ![
-position: aPoint
-    position := aPoint
-].
-
 MorphMouseMotionEvent ![
 buttons
     ^ buttons
@@ -127,16 +200,6 @@ buttons
 MorphMouseMotionEvent ![
 buttons: anInteger
     buttons := anInteger
-].
-
-MorphMouseMotionEvent ![
-position
-    ^ position
-].
-
-MorphMouseMotionEvent ![
-position: aPoint
-    position := aPoint
 ].
 
 MorphMouseMotionEvent ![
