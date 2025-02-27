@@ -10,14 +10,14 @@ renderWithBuilder: renderingBuilder
     rootMorph == nil ifTrue: [^ self].
 
     rootMorph position: 0@0.
-    rootMorph extent: width @ height..
+    rootMorph extent: width @ height.
     rootMorph fullRenderWithBuilder: renderingBuilder
 ].
 
 Morph ![
 openInWindow
     ^ MorphicWindow new
-        extent: bounds extent;
+        extent: extent;
         rootMorph: self;
         open;
         yourself
@@ -66,5 +66,5 @@ onKeyReleased: event
 
 MorphicWindow ![
 onSizeChanged
-    rootMorph bounds: (0@0 corner: self width @ self height).
+    rootMorph extent: self width @ self height.
 ].

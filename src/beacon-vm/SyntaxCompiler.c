@@ -627,7 +627,12 @@ static beacon_oop_t beacon_SyntaxCompiler_identifierReference(beacon_context_t *
 
     beacon_oop_t result = beacon_performWithWith(context, (beacon_oop_t)environment, context->roots.lookupSymbolRecursivelyWithBytecodeBuilderSelector, identifierReference->identifier, (beacon_oop_t)builder);
     if(result == 0)
-        beacon_exception_error(context, "Symbol binding not found.");
+    {
+        beacon_Symbol_t *symbol = (beacon_Symbol_t *)identifierReference->identifier;
+        char errorBuffer[256];
+        snprintf(errorBuffer, sizeof(errorBuffer), "Symbol binding not found for #%.*s.", symbol->super.super.super.super.super.header.slotCount, symbol->data);
+        beacon_exception_error(context, errorBuffer);
+    }
 
     return result;
 }

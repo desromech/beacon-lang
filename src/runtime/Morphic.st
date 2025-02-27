@@ -1,4 +1,4 @@
-MorphEventVisitor subclass: #Morph instanceVariables: #(bounds owner submorphs color visible).
+MorphEventVisitor subclass: #Morph instanceVariables: #(position extent owner submorphs color visible).
 
 Morph class ![
 defaultColor
@@ -6,7 +6,7 @@ defaultColor
 ].
 
 Morph class ![
-defaultBounds
+defaultExtent
     ^ 0@0 corner: 50@40.
 ].
 
@@ -14,59 +14,61 @@ Morph ![
 initialize
     super initialize.
     submorphs := #().
-    bounds := self class defaultBounds.
+    position := 0@0.
+    extent := self class defaultExtent.
     color := self class defaultColor.
     visible := true.
 ].
 
 Morph ![
 bounds
-    ^ bounds
+    ^ position extent: extent 
 ].
 
 Morph ![
 bounds: aRectangle
-    bounds := aRectangle
+    self position: aRectangle origin.
+    self extent: aRectangle extent.
+].
+
+Morph ![
+localBounds
+    ^ 0@0 corner: extent
 ].
 
 Morph ![
 extent
-    ^ bounds extent
-].
-
-Morph ![
-width
-    ^ bounds width
-].
-
-Morph ![
-height
-    ^ bounds height
+    ^ extent
 ].
 
 Morph ![
 extent: newExtent
-    self bounds: (bounds origin extent: newExtent)
+    extent := newExtent
+].
+
+Morph ![
+width
+    ^ extent x
+].
+
+Morph ![
+height
+    ^ extent y
 ].
 
 Morph ![
 localCenter
-    ^ bounds halfExtent
-].
-
-Morph ![
-center
-    ^ bounds center
+    ^ extent // (2@2)
 ].
 
 Morph ![
 position
-    ^ bounds origin
+    ^ position
 ].
 
 Morph ![
 position: newPosition
-    bounds := newPosition extent: bounds extent.
+    position := newPosition
 ].
 
 Morph ![
@@ -76,7 +78,7 @@ processEvent: anEvent
 
 Morph ![
 renderWithBuilder: renderingBuilder
-    renderingBuilder solidRectangle: bounds color: color
+    renderingBuilder solidRectangle: self localBounds color: color
 ].
 
 Morph ![
@@ -131,7 +133,7 @@ initialize
 
 BorderedMorph ![
 renderWithBuilder: renderingBuilder
-    renderingBuilder solidRectangle: bounds color: color borderSize: borderWidth borderColor: borderColor
+    renderingBuilder solidRectangle: self localBounds color: color borderSize: borderWidth borderColor: borderColor
 ].
 
 Morph subclass: #StringMorph instanceVariables: #(backgroundColor fontFace contents).
@@ -151,8 +153,8 @@ defaultColor
 StringMorph ![
 renderWithBuilder: renderingBuilder
     renderingBuilder
-        solidRectangle: bounds color: backgroundColor;
-        text: contents rectangle: bounds color: color
+        solidRectangle: self bounds color: backgroundColor;
+        text: contents rectangle: self bounds color: color
 ].
 
 StringMorph ![
