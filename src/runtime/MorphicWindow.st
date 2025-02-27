@@ -61,6 +61,7 @@ onMouseMotion: event
 
 MorphicWindow ![
 onKeyPressed: event
+    Stdio stdout nextPutAll: 'onKeyPressed:'; lf.
     rootMorph processEvent: (MorphKeyboardDownEvent new
         scancode: event scancode;
         symbol: event symbol;
@@ -69,6 +70,7 @@ onKeyPressed: event
 
 MorphicWindow ![
 onKeyReleased: event
+    Stdio stdout nextPutAll: 'onKeyReleased:'; lf.
     rootMorph processEvent: (MorphKeyboardUpEvent new
         scancode: event scancode;
         symbol: event symbol;

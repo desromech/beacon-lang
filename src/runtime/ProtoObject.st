@@ -42,7 +42,8 @@ receiver: aReceiver
 MessageNotUnderstood ![
 displayException
     Stdio stdout nextPutAll: 'doesNotUnderstand:'; lf.
-    Stdio stdout nextPutAll: self printString; lf.
+    Stdio stdout nextPutAll: receiver class printString; lf.
+    Stdio stdout nextPutAll: receiver printString; lf.
     Stdio stdout nextPutAll: message selector; lf.
 ].
 

@@ -37,7 +37,7 @@ isKeyboardEvent
 
 MorphKeyboardEvent ![
 isKeyboardEvent
-    ^ false
+    ^ true
 ].
 
 MorphEvent ![
@@ -184,6 +184,16 @@ accept: aVisitor
 MorphEventVisitor ![
 handleMorphKeyboardUpEvent: anEvent
     ^ self handleMorphKeyboardEvent: anEvent
+].
+
+MorphEventVisitor ![
+handleMorphTextInputEvent: anEvent
+
+].
+
+MorphTextInputEvent ![
+accept: aVisitor
+    ^ aVisitor handleMorphTextInputEvent: self
 ].
 
 MorphGotFocusEvent ![

@@ -18,6 +18,7 @@ FilesToLoad := #(
     'MorphicEvents.st'
     'Morphic.st'
     'MorphicWindow.st'
+    'MorphicText.st'
 ).
 
 1 to: FilesToLoad basicSize do: [:index |

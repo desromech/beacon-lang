@@ -7,7 +7,7 @@ defaultColor
 
 Morph class ![
 defaultExtent
-    ^ 0@0 corner: 50@40.
+    ^ 50@40.
 ].
 
 Morph ![
@@ -127,8 +127,8 @@ Morph ![
 processEvent: anEvent
     anEvent isMouseEvent ifTrue: [
         ^ self processMouseEvent: anEvent
-
     ].
+
     self handleEvent: anEvent
 ].
 
