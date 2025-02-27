@@ -137,3 +137,13 @@ WindowKeyboardEvent ![
 symbol: anInteger
     symbol := anInteger
 ].
+
+WindowTextInputEvent ![
+text
+    ^ text
+].
+
+WindowTextInputEvent ![
+text: aString
+    text := aString
+].

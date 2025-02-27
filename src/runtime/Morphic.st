@@ -233,6 +233,33 @@ setMouseFocus: newMouseFocus
 ].
 
 RootMorph ![
+setKeyboardFocus: newKeyboardFocus
+    keyboardFocus == newKeyboardFocus ifTrue: [ ^ self ].
+    keyboardFocus ~~ nil ifTrue: [
+        keyboardFocus handleEvent: MorphLostFocusEvent new.
+    ].
+
+    keyboardFocus := newKeyboardFocus.
+
+    keyboardFocus ~~ nil ifTrue: [
+        keyboardFocus handleEvent: MorphGotFocusEvent new.
+    ].
+
+    ^ self
+].
+
+
+RootMorph ![
+processEvent: anEvent
+    (anEvent isKeyboardEvent or: [anEvent isTextInputEvent]) ifTrue: [
+        keyboardFocus == nil ifTrue: [^self].
+        ^ keyboardFocus processEvent: anEvent
+    ].
+
+    super processEvent: anEvent
+].
+
+RootMorph ![
 getMouseFocus
     ^ mouseFocus
 ].
@@ -240,6 +267,16 @@ getMouseFocus
 Morph ![
 hasMouseFocus
     ^ self rootMorph getMouseFocus == self
+].
+
+Morph ![
+grabMouseFocus
+    self rootMorph setMouseFocus: self
+].
+
+Morph ![
+grabKeyboardFocus
+    self rootMorph setKeyboardFocus: self
 ].
 
 Morph subclass: #BorderedMorph instanceVariables: #(borderColor borderWidth).
@@ -375,7 +412,7 @@ onClickAction: aBlock
 
 SimpleButtonMorph ![
 handleMorphMouseMotionEvent: anEvent
-    self rootMorph setMouseFocus: self.
+    self grabMouseFocus.
     anEvent wasHandled: true.
     self changed
 ].

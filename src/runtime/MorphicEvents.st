@@ -15,6 +15,11 @@ MorphEvent subclass: #MorphKeyboardEvent instanceVariables: #(scancode symbol).
 MorphKeyboardEvent subclass: #MorphKeyboardDownEvent instanceVariables: #().
 MorphKeyboardEvent subclass: #MorphKeyboardUpEvent instanceVariables: #().
 
+MorphEvent subclass: #MorphTextInputEvent instanceVariables: #(text).
+
+MorphEvent subclass: #MorphGotFocusEvent instanceVariables: #().
+MorphEvent subclass: #MorphLostFocusEvent instanceVariables: #().
+
 MorphEvent ![
 isMouseEvent
     ^ false
@@ -33,6 +38,26 @@ isKeyboardEvent
 MorphKeyboardEvent ![
 isKeyboardEvent
     ^ false
+].
+
+MorphEvent ![
+isTextInputEvent
+    ^ false
+].
+
+MorphTextInputEvent ![
+isTextInputEvent
+    ^ true
+].
+
+MorphTextInputEvent ![
+text
+    ^ text
+].
+
+MorphTextInputEvent ![
+text: aString
+    text := aString
 ].
 
 MorphEvent ![
@@ -159,6 +184,24 @@ accept: aVisitor
 MorphEventVisitor ![
 handleMorphKeyboardUpEvent: anEvent
     ^ self handleMorphKeyboardEvent: anEvent
+].
+
+MorphGotFocusEvent ![
+accept: aVisitor
+    ^ aVisitor handleMorphGotFocusEvent: self
+].
+
+MorphEventVisitor ![
+handleMorphGotFocusEvent: anEvent
+].
+
+MorphLostFocusEvent ![
+accept: aVisitor
+    ^ aVisitor handleMorphLostFocusEvent: self
+].
+
+MorphEventVisitor ![
+handleMorphLostFocusEvent: anEvent
 ].
 
 MorphMouseEvent ![

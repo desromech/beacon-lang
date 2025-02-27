@@ -805,12 +805,18 @@ typedef struct beacon_WindowMouseMotionEvent_s
     beacon_oop_t yrel;
 } beacon_WindowMouseMotionEvent_t;
 
-typedef struct beacon_WindowKeyboardEvent_t
+typedef struct beacon_WindowKeyboardEvent_s
 {
     beacon_Object_t super;
     beacon_oop_t scancode;
     beacon_oop_t symbol;
 } beacon_WindowKeyboardEvent_t;
+
+typedef struct beacon_WindowTextInputEvent_s
+{
+    beacon_Object_t super;
+    beacon_oop_t text;
+} beacon_WindowTextInputEvent_t;
 
 #ifdef __cplusplus
 }

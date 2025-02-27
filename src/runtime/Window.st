@@ -101,6 +101,11 @@ onKeyReleased: event
 ].
 
 Window ![
+onTextInput: event
+    Stdio stdout nextPutAll: 'Window onTextInput: '; nextPutAll: event text; lf
+].
+
+Window ![
 onSizeChanged
     Stdio stdout nextPutAll: 'Window onSizeChanged.'; lf
 ].

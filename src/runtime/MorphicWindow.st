@@ -76,6 +76,13 @@ onKeyReleased: event
 ].
 
 MorphicWindow ![
+onTextInput: event
+    rootMorph processEvent: (MorphTextInputEvent new
+        text: event text;
+        yourself)
+].
+
+MorphicWindow ![
 onSizeChanged
     rootMorph extent: self width @ self height.
 ].

@@ -211,6 +211,19 @@ static void beacon_sdl2_fetchAndDispatchEvents(beacon_context_t *context)
             }
         }
             break;
+        case SDL_TEXTINPUT:
+        {
+            beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,
+                (beacon_Symbol_t*)beacon_encodeSmallInteger(sdlEvent.key.windowID));
+            if(beaconWindow)
+            {
+                beacon_WindowTextInputEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowTextInputEventClass, sizeof(beacon_WindowTextInputEvent_t), BeaconObjectKindPointers);
+                event->text = (beacon_oop_t)beacon_importCString(context, sdlEvent.text.text);
+                beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onTextInput:"), (beacon_oop_t)event);
+            }
+
+        }
+            break;
         case SDL_WINDOWEVENT:
             switch(sdlEvent.window.event)
             {

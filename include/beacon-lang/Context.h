@@ -128,6 +128,7 @@ struct beacon_context_s
         beacon_Behavior_t *windowMouseButtonEventClass;
         beacon_Behavior_t *windowMouseMotionEventClass;
         beacon_Behavior_t *windowKeyboardEventClass;
+        beacon_Behavior_t *windowTextInputEventClass;
     } classes;
 
     struct ContextGCRoots
