@@ -1,10 +1,20 @@
-Object subclass: #TextEditorCursor instanceVariables: #(line column).
+Object subclass: #TextEditorCursor instanceVariables: #(textBuffer line column).
 
 TextEditorCursor ![
 initialize
     super initialize.
     line := 1.
     column := 1.
+].
+
+TextEditorCursor ![
+textBuffer
+    ^ textBuffer
+].
+
+TextEditorCursor ![
+textBuffer: aTextBuffer
+    textBuffer := aTextBuffer
 ].
 
 TextEditorCursor ![
@@ -27,6 +37,33 @@ column: anInteger
     column := anInteger
 ].
 
+TextEditorCursor ![
+moveLeft
+    column > 1 ifTrue: [
+        column := column - 1.
+    ] ifFalse: [
+        line > 1 ifTrue: [
+            line := line - 1.
+            column := (textBuffer lastColumnOfLine: line)
+        ]
+    ]
+].
+
+TextEditorCursor ![
+moveRight
+    | columnCounts | 
+    column := column + 1.
+    columnCounts := textBuffer lastColumnOfLine: line.
+    column > columnCounts ifTrue: [
+        line < textBuffer lines size ifTrue: [
+            line := line + 1.
+            column := column + 1.
+        ] ifFalse: [
+            column := columnCounts.
+        ]
+    ]
+].
+
 Object subclass: #TextEditorBuffer instanceVariables: #(lines).
 
 TextEditorBuffer ![
@@ -42,11 +79,21 @@ lines
 ].
 
 TextEditorBuffer ![
+lastColumnOfLine: lineIndex
+    lineIndex <= lines size ifTrue: [
+        ^ (lines at: lineIndex) size + 1
+    ].
+
+    ^ 1
+].
+
+
+TextEditorBuffer ![
 insertText: text atCursorPosition: cursor
    | line leftText rightText cursorColumn insertedLine |
     line := lines at: cursor line.
 
-    cursorColumn := cursor column.
+    cursorColumn := cursor column - 1.
     leftText := line first: cursorColumn.
     rightText := line allButFirst: cursorColumn.
     insertedLine := leftText , text , rightText.
@@ -73,6 +120,7 @@ initialize
     textBuffer := TextEditorBuffer new.
     textColor := Color black.
     cursor := TextEditorCursor new.
+    cursor textBuffer: textBuffer.
     cursorColor := Color blue.
 ].
 
@@ -96,7 +144,7 @@ renderWithBuilder: renderingBuilder
         renderingBuilder text: line rectangle: lineRectangle color: textColor.
 
         lineIndex = cursor line ifTrue: [
-            cursorPositionX := (fontFace measureTextExtent: line until: cursor column) x.
+            cursorPositionX := (fontFace measureTextExtent: line until: cursor column - 1) x.
             cursorBounds := cursorPositionX @ linePositionY extent: 2@lineHeight.
             renderingBuilder solidRectangle: cursorBounds color: cursorColor.
         ].
@@ -115,6 +163,29 @@ handleMorphMouseButtonDownEvent: anEvent
 TextAreaMorph ![
 handleMorphKeyboardDownEvent: anEvent
     "Stdio stdout nextPutAll: 'handleMorphKeyboardDownEvent'; lf."
+    anEvent isReturn ifTrue: [
+        Stdio stdout nextPutAll: 'Return'; lf
+    ].
+    anEvent isBackspace ifTrue: [
+        Stdio stdout nextPutAll: 'Backspace'; lf
+    ].
+    anEvent isLeft ifTrue: [
+        cursor moveLeft.
+        self changed
+    ].
+    anEvent isRight ifTrue: [
+        cursor moveRight.
+        self changed
+    ].
+    anEvent isUp ifTrue: [
+        cursor moveUp.
+        self changed
+    ].
+    anEvent isDown ifTrue: [
+        cursor moveDown.
+        self changed
+    ].
+
     anEvent wasHandled: true
 ].
 

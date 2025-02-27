@@ -166,6 +166,36 @@ handleMorphKeyboardEvent: anEvent
     ^ self handleMorphEvent: anEvent
 ].
 
+MorphKeyboardEvent ![
+isReturn
+    ^ symbol = 13
+].
+
+MorphKeyboardEvent ![
+isBackspace
+    ^ symbol = 8
+].
+
+MorphKeyboardEvent ![
+isLeft
+    ^ symbol = 1073741904
+].
+
+MorphKeyboardEvent ![
+isRight
+    ^ symbol = 1073741903
+].
+
+MorphKeyboardEvent ![
+isUp
+    ^ symbol = 1073741906
+].
+
+MorphKeyboardEvent ![
+isDown
+    ^ symbol = 1073741905
+].
+
 MorphKeyboardDownEvent ![
 accept: aVisitor
     ^ aVisitor handleMorphKeyboardDownEvent: self
