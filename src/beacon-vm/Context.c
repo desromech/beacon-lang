@@ -1177,9 +1177,13 @@ static beacon_oop_t beacon_String_concatenate(beacon_context_t *context, beacon_
 
     beacon_ObjectHeader_t *receiverHeader = (beacon_ObjectHeader_t *)receiver;
     ssize_t receiverSize = receiverHeader->slotCount;
+    if(receiverSize == 0)
+        return arguments[0];
 
     beacon_ObjectHeader_t *header = (beacon_ObjectHeader_t *)arguments[0];
     ssize_t objectSize = header->slotCount;
+    if(objectSize == 0)
+        return receiver;
 
     BeaconAssert(context, header->objectKind == BeaconObjectKindBytes);
     uint8_t *receiverData = (uint8_t *)(receiverHeader + 1);

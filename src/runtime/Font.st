@@ -35,3 +35,13 @@ defaultHiDpiFontFace
     ^ DejaVuSansSmallHiDpiFace
 ].
 Font initialize.
+
+FontFace ![
+height
+    ^ height
+].
+
+FontFace ![
+advance
+    ^ advance
+].
