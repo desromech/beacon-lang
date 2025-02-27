@@ -21,6 +21,22 @@ initialize
 ].
 
 Morph ![
+color
+    ^ color
+].
+
+Morph ![
+color: aColor
+    color := aColor
+].
+
+Morph ![
+bounds: aRectangle
+    self position: aRectangle origin.
+    self extent: aRectangle extent.
+].
+
+Morph ![
 bounds
     ^ position extent: extent 
 ].
@@ -29,6 +45,20 @@ Morph ![
 bounds: aRectangle
     self position: aRectangle origin.
     self extent: aRectangle extent.
+].
+
+Morph ![
+childChanged: aChild
+    owner ~~ nil ifTrue: [
+        owner childChanged: aChild
+    ].
+].
+
+Morph ![
+changed
+    owner ~~ nil ifTrue: [
+        owner childChanged: self
+    ].
 ].
 
 Morph ![
@@ -153,7 +183,7 @@ rootMorph
     ^ owner rootMorph
 ].
 
-Morph subclass: #RootMorph instanceVariables: #(keyboardFocus mouseFocus).
+Morph subclass: #RootMorph instanceVariables: #(keyboardFocus mouseFocus ownerWindow).
 
 RootMorph ![
 extent: newExtent
@@ -169,6 +199,49 @@ rootMorph
     ^ self
 ].
 
+RootMorph ![
+ownerWindow
+    ^ ownerWindow
+].
+
+RootMorph ![
+ownerWindow: aWindow
+    ownerWindow := aWindow
+].
+
+RootMorph ![
+childChanged: childChanged
+    ownerWindow ~~ nil ifTrue: [
+        ownerWindow childChanged: childChanged
+    ].
+].
+
+RootMorph ![
+setMouseFocus: newMouseFocus
+    mouseFocus == newMouseFocus ifTrue: [ ^ self ].
+    mouseFocus ~~ nil ifTrue: [
+        mouseFocus handleEvent: MorphMouseLeaveEvent new.
+    ].
+
+    mouseFocus := newMouseFocus.
+
+    mouseFocus ~~ nil ifTrue: [
+        mouseFocus handleEvent: MorphMouseEnterEvent new.
+    ].
+
+    ^ self
+].
+
+RootMorph ![
+getMouseFocus
+    ^ mouseFocus
+].
+
+Morph ![
+hasMouseFocus
+    ^ self rootMorph getMouseFocus == self
+].
+
 Morph subclass: #BorderedMorph instanceVariables: #(borderColor borderWidth).
 
 BorderedMorph ![
@@ -180,7 +253,27 @@ initialize
 
 BorderedMorph ![
 renderWithBuilder: renderingBuilder
-    renderingBuilder solidRectangle: self localBounds color: color borderSize: borderWidth borderColor: borderColor
+    renderingBuilder solidRectangle: self localBounds color: self color borderSize: self borderWidth borderColor: self borderColor
+].
+
+BorderedMorph ![
+borderColor
+    ^ borderColor
+].
+
+BorderedMorph ![
+borderColor: aColor
+    borderColor := aColor
+].
+
+BorderedMorph ![
+borderWidth
+    ^ borderWidth
+].
+
+BorderedMorph ![
+borderWidth: aSize
+    borderWidth := aSize
 ].
 
 Morph subclass: #StringMorph instanceVariables: #(backgroundColor fontFace contents).
@@ -237,7 +330,7 @@ asMorph
     ^ StringMorph new contents: self; yourself
 ].
 
-BorderedMorph subclass: #SimpleButtonMorph instanceVariables: #(label).
+BorderedMorph subclass: #SimpleButtonMorph instanceVariables: #(label focusColor hasButtonDown clickColor onClickAction).
 
 SimpleButtonMorph class ![
 newWithLabel: labelString
@@ -249,14 +342,67 @@ newWithLabel: labelString
 SimpleButtonMorph ![
 initialize
     super initialize.
-    color := Color r: 0.4 g: 0.8 b: 0.6 a: 1.0.
+    color := Color r: 0.7 g: 0.7 b: 0.7 a: 1.0.
+    focusColor := Color r: 0.8 g: 0.8 b: 0.8 a: 1.0.
+    clickColor := Color r: 0.9 g: 0.9 b: 0.9 a: 1.0.
+    hasButtonDown := false.
     borderWidth := 1.
+    onClickAction := [].
     self setDefaultLabel
+].
+
+SimpleButtonMorph ![
+color
+    hasButtonDown ifTrue: [ ^ clickColor ].
+    self hasMouseFocus ifTrue: [ ^ focusColor ].
+    ^ color
 ].
 
 SimpleButtonMorph ![
 defaultLabel
     ^ 'Flash'
+].
+
+SimpleButtonMorph ![
+onClickAction
+    ^ onClickAction
+].
+
+SimpleButtonMorph ![
+onClickAction: aBlock
+    onClickAction := aBlock
+].
+
+SimpleButtonMorph ![
+handleMorphMouseMotionEvent: anEvent
+    self rootMorph setMouseFocus: self.
+    anEvent wasHandled: true.
+    self changed
+].
+
+SimpleButtonMorph ![
+handleMorphMouseButtonDownEvent: anEvent
+    hasButtonDown := true.
+    anEvent wasHandled: true.
+    self changed.
+].
+
+SimpleButtonMorph ![
+handleMorphMouseButtonUpEvent: anEvent
+    hasButtonDown := false.
+    anEvent wasHandled: true.
+    self changed.
+    onClickAction value.
+].
+
+SimpleButtonMorph ![
+handleMorphMouseEnterEvent: anEvent
+    self changed.
+].
+
+SimpleButtonMorph ![
+handleMorphMouseLeaveEvent: anEvent
+    self changed.
 ].
 
 SimpleButtonMorph ![

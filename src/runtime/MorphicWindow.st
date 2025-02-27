@@ -14,12 +14,20 @@ renderWithBuilder: renderingBuilder
     rootMorph fullRenderWithBuilder: renderingBuilder
 ].
 
+MorphicWindow ![
+childChanged: aChild
+    self render
+].
+
 Morph ![
 openInWindow
-    ^ MorphicWindow new
+    | morphicWindow |
+    morphicWindow := MorphicWindow new.
+    ^ morphicWindow
         extent: extent;
         rootMorph: (RootMorph new
             extent: extent;
+            ownerWindow: morphicWindow;
             addMorph: self;
             yourself);
         open;
