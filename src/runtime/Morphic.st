@@ -81,9 +81,7 @@ renderWithBuilder: renderingBuilder
 
 Morph ![
 renderChildrenWithBuilder: renderingBuilder
-    Stdio stdout nextPutAll: self class printString; nextPutAll: ' renderChildrenWithBuilder '; nextPutAll: submorphs size printString; lf.
     1 to: submorphs size do: [:index |
-        Stdio stdout nextPutAll: 'renderChildrenWithBuilder '; nextPutAll: index printString; lf.
         (submorphs at: index) fullRenderWithBuilder: renderingBuilder
     ]
 ].
@@ -92,9 +90,10 @@ Morph ![
 fullRenderWithBuilder: renderingBuilder
     visible ifFalse: [^ self].
 
-    self renderWithBuilder: renderingBuilder.
-    self renderChildrenWithBuilder: renderingBuilder.
-
+    renderingBuilder translatedBy: self position during: [
+        self renderWithBuilder: renderingBuilder.
+        self renderChildrenWithBuilder: renderingBuilder.
+    ]
 ].
 
 Morph ![
@@ -151,7 +150,6 @@ defaultColor
 
 StringMorph ![
 renderWithBuilder: renderingBuilder
-    Stdio stdout nextPutAll: 'StringMorph renderWithBuilder'; lf.
     renderingBuilder
         solidRectangle: bounds color: backgroundColor;
         text: contents rectangle: bounds color: color
@@ -227,7 +225,6 @@ label: aLabelString font: aFontFace
     label ~~ nil ifTrue: [label delete].
     label := StringMorph new contents: aLabelString; yourself.
     self extent: (label width + 16) @ (label height + 16).
-    Stdio stdout nextPutAll: self localCenter printString; lf.
     label position: self localCenter - (label extent//(2@2)).
     self addMorph: label
 ].

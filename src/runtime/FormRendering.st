@@ -28,6 +28,29 @@ scaleFactorY: newScaleFactor
     scaleFactorY := newScaleFactor
 ].
 
+FormRenderingElementBuilder ![
+translation
+    ^ translation
+].
+
+FormRenderingElementBuilder ![
+translation: newTranslation
+    translation := newTranslation
+].
+
+FormRenderingElementBuilder ![
+translatedBy: extraTranslation during: aBlock
+    | oldTranslation |
+    oldTranslation := translation.
+    translation := translation + extraTranslation.
+    
+    "Use an ensure block here."
+    aBlock value.
+    
+    translation := oldTranslation.
+].
+
+
 FormRenderingElement ![
 borderRoundRadius
     ^ borderRoundRadius
