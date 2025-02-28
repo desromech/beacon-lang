@@ -34,6 +34,7 @@ beacon_oop_t beacon_Font_LoadFontFromFile(beacon_context_t *context, beacon_oop_
     FILE *fontFile = fopen(fileNameCString, "rb");
     if(!fontFile)
     {
+        free(fileNameCString);
         fprintf(stderr, "Failed to open font file.");
         return 0;
     }
@@ -45,6 +46,8 @@ beacon_oop_t beacon_Font_LoadFontFromFile(beacon_context_t *context, beacon_oop_
     beacon_ByteArray_t *fontData = beacon_allocateObjectWithBehavior(context->heap, context->classes.byteArrayClass, sizeof(beacon_ByteArray_t) + fontFileSize, BeaconObjectKindBytes);
     fread(fontData->elements, fontFileSize, 1, fontFile);
     fclose(fontFile);
+
+    free(fileNameCString);
 
     beacon_Font_t *font = beacon_allocateObjectWithBehavior(context->heap, context->classes.fontClass, sizeof(beacon_Font_t), BeaconObjectKindPointers);
     font->rawData = fontData;
