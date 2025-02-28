@@ -256,7 +256,7 @@ initialize
 
 TextAreaMorph ![
 fontFace
-    ^ Font defaultFontFace
+    ^ Font defaultMonospacedFontFace
 ].
 
 TextAreaMorph ![
