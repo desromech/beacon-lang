@@ -185,6 +185,11 @@ rootMorph
 
 Morph subclass: #RootMorph instanceVariables: #(keyboardFocus mouseFocus ownerWindow).
 
+RootMorph class ![
+defaultColor
+    ^ Color transparent
+].
+
 RootMorph ![
 extent: newExtent
     | submorph |
