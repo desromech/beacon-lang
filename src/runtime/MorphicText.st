@@ -202,6 +202,42 @@ insertText: text replacingSelection: selection
     "TODO: Implement this"
 ].
 
+TextEditorBuffer ![
+getTextAsString
+    | textSize textString destIndex line |
+    textSize := 0.
+    1 to: lines size do: [:lineIndex |
+        textSize := textSize + (lines at: lineIndex) size
+    ].
+
+    textString := String basicNew: textSize.
+    destIndex := 1.
+    1 to: lines size do: [:lineIndex |
+        line := lines at: lineIndex.
+        1 to: line basicSize do: [:charIndex |
+            textString basicAt: destIndex put: (line basicAt: charIndex).
+            destIndex := destIndex + 1
+        ].
+    ].
+
+    textSize
+].
+
+TextEditorBuffer ![
+getTextAtSelection: selection
+    selection == nil ifTrue: [^ self getTextAsString]
+    "TODO: Implement this"
+].
+
+TextEditorBuffer ![
+getTextAtLine: lineIndex
+    ^ lines at: lineIndex
+].
+
+TextEditorBuffer ![
+getTextAtCursorLine: cursor
+    ^ lines at: cursor line
+].
 
 TextEditorBuffer ![
 backspaceDeleteAtCursor: cursor
@@ -440,12 +476,12 @@ TextAreaMorph ![
 handleMorphTextInputEvent: anEvent
     "Stdio stdout nextPutAll: 'handleMorphTextInputEvent '; nextPutAll: anEvent text; lf.
     Stdio stdout nextPutAll: 'handleMorphTextInputEvent '; nextPutAll: anEvent text class printString; lf."
-    selection ~~ nil ifTrue: [
+    "selection ~~ nil ifTrue: [
         textBuffer insertText: anEvent text replacingSelection: selection.
         selection := nil.
-    ] ifFalse: [
+    ] ifFalse: ["
         textBuffer insertText: anEvent text atCursorPosition: cursor.
-    ].
+    "]."
     anEvent wasHandled: true.
     self changed.
 ].
