@@ -9,6 +9,7 @@ FilesToLoad := #(
     'AbstractBinaryFileStream.st'
     'Number.st'
     'Slot.st'
+    'SourceCode.st'
     'String.st'
     'Class.st'
     'Geometry.st'
@@ -22,6 +23,8 @@ FilesToLoad := #(
     'Morphic.st'
     'MorphicWindow.st'
     'MorphicText.st'
+    'MorphicCode.st'
+    'Workspace.st'
 ).
 
 1 to: FilesToLoad basicSize do: [:index |

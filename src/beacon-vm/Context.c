@@ -19,6 +19,7 @@ void beacon_context_registerExceptionPrimitives(beacon_context_t *context);
 void beacon_context_registerFormRenderingPrimitives(beacon_context_t *context);
 void beacon_context_registerFontFacePrimitives(beacon_context_t *context);
 void beacon_context_registerWindowSystemPrimitives(beacon_context_t *context);
+void beacon_context_registerSourceCodePrimitives(beacon_context_t *context);
 void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *context);
 
 static size_t beacon_context_computeBehaviorSlotCount(beacon_context_t *context, beacon_Behavior_t *behavior)
@@ -415,6 +416,7 @@ void beacon_context_registerBasicPrimitives(beacon_context_t *context)
     beacon_context_registerFormRenderingPrimitives(context);
     beacon_context_registerFontFacePrimitives(context);
     beacon_context_registerWindowSystemPrimitives(context);
+    beacon_context_registerSourceCodePrimitives(context);
     beacon_context_registerParseTreeCompilationPrimitives(context);
 }
 
@@ -950,6 +952,13 @@ static beacon_oop_t beacon_SmallFloat_greaterOrEquals(beacon_context_t *context,
         context->roots.trueValue : context->roots.falseValue;
 }
 
+static beacon_oop_t beacon_Character_asInteger(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    return beacon_encodeSmallInteger(beacon_decodeCharacter(receiver));
+}
+
 static beacon_oop_t beacon_SmallInteger_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)arguments;
@@ -1308,6 +1317,8 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.undefinedObjectClass, "printString", 0, beacon_UndefinedObject_printString);
     beacon_addPrimitiveToClass(context, context->classes.classClass, "printString", 0, beacon_Class_printString);
     beacon_addPrimitiveToClass(context, context->classes.stringClass, "printString", 0, beacon_String_printString);
+
+    beacon_addPrimitiveToClass(context, context->classes.characterClass, "asInteger", 0, beacon_Character_asInteger);
 
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "printString", 0, beacon_SmallInteger_printString);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "asFloat", 0, beacon_SmallInteger_asFloat);

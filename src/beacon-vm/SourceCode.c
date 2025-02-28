@@ -137,3 +137,40 @@ beacon_oop_t beacon_evaluateSourceCode(beacon_context_t *context, beacon_SourceC
     beacon_popStackFrameRecord(&frameRecord);
     return frameRecord.sourceCompilationRoots.evaluation;
 }
+
+static beacon_oop_t beacon_SourceCode_scan(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, (intptr_t)argumentCount == 0);
+    beacon_SourceCode_t *sourceCode = (beacon_SourceCode_t*)receiver;
+    beacon_ArrayList_t *scannedSource = beacon_scanSourceCode(context, sourceCode);
+
+    return (beacon_oop_t)scannedSource;
+}
+
+static beacon_oop_t beacon_SourceCode_parseScannedSource(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, (intptr_t)argumentCount == 1);
+    beacon_SourceCode_t *sourceCode = (beacon_SourceCode_t*)receiver;
+    beacon_ArrayList_t *scannedSource = (beacon_ArrayList_t*)arguments[0];
+
+    beacon_ParseTreeNode_t *parsedSource = beacon_parseWorkspaceTokenList(context, sourceCode, scannedSource);
+    return (beacon_oop_t)parsedSource;
+}
+
+static beacon_oop_t beacon_SourceCode_evaluateFileSyntaxWithParsedCode(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, (intptr_t)argumentCount == 1);
+    beacon_SourceCode_t *sourceCode = (beacon_SourceCode_t*)receiver;
+    beacon_ParseTreeNode_t *parseTreeNode = (beacon_ParseTreeNode_t*)arguments[0];
+
+    return beacon_evaluateFileSyntax(context, parseTreeNode, sourceCode);
+}
+
+
+void beacon_context_registerSourceCodePrimitives(beacon_context_t *context)
+{
+    beacon_addPrimitiveToClass(context, context->classes.sourceCodeClass, "scan", 0, beacon_SourceCode_scan);
+    beacon_addPrimitiveToClass(context, context->classes.sourceCodeClass, "parseScannedSource:", 1, beacon_SourceCode_parseScannedSource);
+    beacon_addPrimitiveToClass(context, context->classes.sourceCodeClass, "evaluateFileSyntaxWithParsedCode:", 1, beacon_SourceCode_evaluateFileSyntaxWithParsedCode);
+    
+}

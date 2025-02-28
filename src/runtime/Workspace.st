@@ -1,0 +1,2 @@
+CodeTextAreaMorph subclass: #Workspace.
+
