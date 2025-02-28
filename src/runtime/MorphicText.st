@@ -198,6 +198,12 @@ insertText: text atCursorPosition: cursor
 ].
 
 TextEditorBuffer ![
+insertText: text replacingSelection: selection
+    "TODO: Implement this"
+].
+
+
+TextEditorBuffer ![
 backspaceDeleteAtCursor: cursor
     | cursorColumn cursorLine line leftText rightText previousLine nextLine joinedLine |
     cursorColumn := cursor column - 1.
@@ -283,11 +289,27 @@ renderSelectionWithBuilder: renderingBuilder
 
     minLine to: maxLine do: [:lineIndex |
         lineIndex = minLine ifTrue: [
-
+            lineY := (lineIndex - 1) * lineHeight.
+            line := lines at: lineIndex.
+            startX := (fontFace measureTextExtent: line until: minColumn - 1) x.
+            endX := (fontFace measureTextExtent: line) x.
+            
+            renderingBuilder solidRectangle: (startX@lineY corner: endX@(lineY + lineHeight)) color: selectionColor.
         ] ifFalse: [
             lineIndex = maxLine ifTrue: [
-
+                lineY := (lineIndex - 1) * lineHeight.
+                line := lines at: lineIndex.
+                startX := 0.
+                endX := (fontFace measureTextExtent: line until: maxColumn - 1) x.
+                
+                renderingBuilder solidRectangle: (startX@lineY corner: endX@(lineY + lineHeight)) color: selectionColor.
             ] ifFalse: [
+                lineY := (lineIndex - 1) * lineHeight.
+                line := lines at: lineIndex.
+                startX := 0.
+                endX := (fontFace measureTextExtent: line) x.
+                
+                renderingBuilder solidRectangle: (startX@lineY corner: endX@(lineY + lineHeight)) color: selectionColor.
 
             ]
         ]
@@ -315,7 +337,7 @@ renderWithBuilder: renderingBuilder
         lineExtent := fontFace measureTextExtent: line.
         lineRectangle := 0@linePositionY extent: lineExtent.
 
-        renderingBuilder text: line rectangle: lineRectangle color: textColor.
+        renderingBuilder text: line rectangle: lineRectangle color: textColor fontFace: fontFace.
 
         lineIndex = cursor line ifTrue: [
             cursorPositionX := (fontFace measureTextExtent: line until: cursor column - 1) x.
@@ -337,13 +359,16 @@ handleMorphMouseButtonDownEvent: anEvent
 TextAreaMorph ![
 handleMorphKeyboardDownEvent: anEvent
     "Stdio stdout nextPutAll: 'handleMorphKeyboardDownEvent'; lf."
+    | hasChanged |
+    hasChanged := false.
+
     anEvent isReturn ifTrue: [
         textBuffer splitLineAtCursor: cursor.
-        self changed.
+        hasChanged := true.
     ].
     anEvent isBackspace ifTrue: [
         textBuffer backspaceDeleteAtCursor: cursor.
-        self changed
+        hasChanged := true.
     ].
 
     anEvent hasShift ifTrue: [
@@ -361,29 +386,29 @@ handleMorphKeyboardDownEvent: anEvent
 
     anEvent isLeft ifTrue: [
         cursor moveLeft.
-        self changed
+        hasChanged := true.
     ].
     anEvent isRight ifTrue: [
         cursor moveRight.
-        self changed
+        hasChanged := true.
     ].
     anEvent isUp ifTrue: [
         cursor moveUp.
-        self changed
+        hasChanged := true.
     ].
     anEvent isDown ifTrue: [
         cursor moveDown.
-        self changed
+        hasChanged := true.
     ].
 
     anEvent isHome ifTrue: [
         cursor moveHome.
-        self changed
+        hasChanged := true.
     ].
 
     anEvent isEnd ifTrue: [
         cursor moveEnd.
-        self changed
+        hasChanged := true.
     ].
 
     anEvent hasShift ifTrue: [
@@ -398,10 +423,11 @@ handleMorphKeyboardDownEvent: anEvent
 
     anEvent isDelete ifTrue: [
         textBuffer forwardDeleteAtCursor: cursor.
-        self changed
+        hasChanged := true.
     ].
 
-    anEvent wasHandled: true
+    anEvent wasHandled: true.
+    hasChanged ifTrue: [self changed].
 ].
 
 TextAreaMorph ![
@@ -414,7 +440,12 @@ TextAreaMorph ![
 handleMorphTextInputEvent: anEvent
     "Stdio stdout nextPutAll: 'handleMorphTextInputEvent '; nextPutAll: anEvent text; lf.
     Stdio stdout nextPutAll: 'handleMorphTextInputEvent '; nextPutAll: anEvent text class printString; lf."
-    textBuffer insertText: anEvent text atCursorPosition: cursor.
+    selection ~~ nil ifTrue: [
+        textBuffer insertText: anEvent text replacingSelection: selection.
+        selection := nil.
+    ] ifFalse: [
+        textBuffer insertText: anEvent text atCursorPosition: cursor.
+    ].
     anEvent wasHandled: true.
     self changed.
 ].
