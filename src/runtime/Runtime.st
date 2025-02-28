@@ -21,6 +21,7 @@ FilesToLoad := #(
     'Window.st'
     'MorphicEvents.st'
     'Morphic.st'
+    'MorphicLayout.st'
     'MorphicWindow.st'
     'MorphicTable.st'
     'MorphicText.st'

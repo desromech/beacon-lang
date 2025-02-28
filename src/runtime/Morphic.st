@@ -1,4 +1,11 @@
-MorphEventVisitor subclass: #Morph instanceVariables: #(position extent owner submorphs color visible).
+Object subclass: #MorphLayout instanceVariables: #().
+
+MorphLayout ![
+applyWithExtent: anExtent
+    self subclassResponsibility
+].
+
+MorphEventVisitor subclass: #Morph instanceVariables: #(position extent owner submorphs color visible layout).
 
 Morph class ![
 defaultColor
@@ -18,6 +25,7 @@ initialize
     extent := self class defaultExtent.
     color := self class defaultColor.
     visible := true.
+    layout := nil.
 ].
 
 Morph ![
@@ -67,13 +75,25 @@ localBounds
 ].
 
 Morph ![
+layout
+    ^ layout
+].
+
+Morph ![
+layout: aLayout
+    layout := aLayout.
+    self updateLayout
+].
+
+Morph ![
 extent
     ^ extent
 ].
 
 Morph ![
 extent: newExtent
-    extent := newExtent
+    extent := newExtent.
+    self updateLayout
 ].
 
 Morph ![
@@ -104,6 +124,12 @@ position: newPosition
 Morph ![
 handleEvent: anEvent
     ^ anEvent accept: self
+].
+
+Morph ![
+updateLayout
+    layout == nil ifTrue: [ ^ self ].
+    layout applyWithExtent: extent
 ].
 
 Morph ![

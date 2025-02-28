@@ -21,13 +21,16 @@ childChanged: aChild
 
 Morph ![
 openInWindow
-    | morphicWindow |
+    | morphicWindow fillLayout |
     morphicWindow := MorphicWindow new.
+    fillLayout := FillMorphLayout new morph: self; yourself.
+
     ^ morphicWindow
         extent: extent;
         rootMorph: (RootMorph new
             extent: extent;
             ownerWindow: morphicWindow;
+            layout: fillLayout;
             addMorph: self;
             yourself);
         open;
