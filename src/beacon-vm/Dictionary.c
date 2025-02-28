@@ -127,6 +127,6 @@ static beacon_oop_t beacon_MethodDictionaryPrimitive_atPut(beacon_context_t *con
 
 void beacon_context_registerDictionaryPrimitives(beacon_context_t *context)
 {
-    beacon_addPrimitiveToClass(context, context->classes.methodDictionaryClass, "atOrNil:", 1, beacon_MethodDictionaryPrimitive_atPut);
+    beacon_addPrimitiveToClass(context, context->classes.methodDictionaryClass, "atOrNil:", 1, beacon_MethodDictionaryPrimitive_atOrNil);
     beacon_addPrimitiveToClass(context, context->classes.methodDictionaryClass, "at:put:", 2, beacon_MethodDictionaryPrimitive_atPut);
 }

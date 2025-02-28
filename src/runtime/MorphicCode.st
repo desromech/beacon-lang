@@ -55,7 +55,7 @@ CodeTextAreaBeaconLanguage ![
 inspectIt: codeText
     | result |
     result := self compileAndRunIt: codeText.
-    Stdio stdout nextPutAll: result printString; lf
+    ((SystemDictionary atOrNil: #Inspector) for: result) openInWindow
 ].
 
 CodeTextAreaBeaconLanguage ![

@@ -363,7 +363,7 @@ renderWithBuilder: renderingBuilder
     fontFace := self fontFace.
     lineHeight := fontFace height.
 
-    renderingBuilder solidRectangle: self bounds color: self color.
+    renderingBuilder solidRectangle: self bounds color: self color borderSize: self borderWidth borderColor: self borderColor.
     
     lines := textBuffer lines.
     linePositionY := 0.
