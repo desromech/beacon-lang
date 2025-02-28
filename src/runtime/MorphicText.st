@@ -203,6 +203,11 @@ insertText: text replacingSelection: selection
 ].
 
 TextEditorBuffer ![
+insertText: text atEndOfLine: lineIndex
+    lines at: lineIndex put: (lines at: lineIndex) , text
+].
+
+TextEditorBuffer ![
 getTextAsString
     | textSize textString destIndex line |
     textSize := 0.

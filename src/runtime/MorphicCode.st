@@ -1,6 +1,16 @@
 TextAreaMorph subclass: #CodeTextAreaMorph instanceVariables: #(language).
 
-Object subclass: #CodeTextAreaLanguage.
+Object subclass: #CodeTextAreaLanguage instanceVariables: #(codeAreaMorph).
+
+CodeTextAreaLanguage ![
+codeAreaMorph
+    ^ codeAreaMorph
+].
+
+CodeTextAreaLanguage ![
+codeAreaMorph: aCodeAreaMorph
+    codeAreaMorph := aCodeAreaMorph
+].
 
 CodeTextAreaLanguage ![
 printIt: codeText
@@ -38,7 +48,7 @@ CodeTextAreaBeaconLanguage ![
 printIt: codeText
     | result |
     result := self compileAndRunIt: codeText.
-    Stdio stdout nextPutAll: result printString; lf
+    codeAreaMorph insertTextAtEndOfCurrentSelection: result printString
 ].
 
 CodeTextAreaBeaconLanguage ![
@@ -56,7 +66,9 @@ doIt: codeText
 CodeTextAreaMorph ![
 initialize
     super initialize.
-    language := CodeTextAreaBeaconLanguage new.
+    language := CodeTextAreaBeaconLanguage new
+        codeAreaMorph: self;
+        yourself.
 
 ].
 
@@ -85,6 +97,13 @@ CodeTextAreaMorph ![
 getSelectedTextCode
     ^ textBuffer lines at: cursor line
 ].
+
+CodeTextAreaMorph ![
+insertTextAtEndOfCurrentSelection: textToInsert
+    textBuffer insertText: textToInsert atEndOfLine: cursor line.
+    self changed
+].
+
 
 CodeTextAreaMorph ![
 printIt
