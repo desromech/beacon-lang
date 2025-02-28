@@ -165,7 +165,7 @@ text: text rectangle: rectangle color: color fontFace: fontFace
     | textRectangle |
     textRectangle := FormTextRenderingElement new
         text: text;
-        rectangle: rectangle;
+        rectangle: (rectangle translatedBy: translation);
         color: color;
         fontFace: fontFace
         yourself.

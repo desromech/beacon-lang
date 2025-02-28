@@ -87,6 +87,4 @@ applyWithExtent: anExtent
             destinationY := destinationY + elementHeight
         ]
     ].
-
-    Stdio stdout nextPutAll: 'TODO VerticalMorphPackingLayout'; lf.
 ].

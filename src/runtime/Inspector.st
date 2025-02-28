@@ -7,7 +7,7 @@ for: anObject
 
 Inspector class ![
 defaultColor
-    ^ Color white
+    ^ Color r: 0.9 g: 0.9 b: 0.9 a: 1.0
 ].
 
 Inspector class ![
@@ -24,10 +24,11 @@ initialize
     self addMorph: stringLabel.
     self addMorph: textCodeArea.
 
-    layout := VerticalMorphPackingLayout new
+    self layout: (VerticalMorphPackingLayout new
         addMorph: stringLabel proportion: 1;
         addMorph: textCodeArea proportion: 1;
-        yourself
+        yourself)
+    
 ].
 
 Inspector ![
