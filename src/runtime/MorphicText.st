@@ -93,6 +93,56 @@ moveEnd
     column := textBuffer lastColumnOfLine: line
 ].
 
+Object subclass: #TextEditorSelection instanceVariables: #(startLine startColumn endLine endColumn).
+
+TextEditorSelection ![
+initialize
+    startLine := 1.
+    startColumn := 1.
+    endLine := 1.
+    endColumn := 1.
+].
+
+TextEditorSelection ![
+startLine
+    ^ startLine
+].
+
+TextEditorSelection ![
+startLine: aLineIndex
+    startLine := aLineIndex 
+].
+
+TextEditorSelection ![
+startColumn
+    ^ startColumn
+].
+
+TextEditorSelection ![
+startColumn: aColumnIndex
+    startColumn := aColumnIndex 
+].
+
+TextEditorSelection ![
+endLine
+    ^ endLine
+].
+
+TextEditorSelection ![
+endLine: aLineIndex
+    endLine := aLineIndex 
+].
+
+TextEditorSelection ![
+endColumn
+    ^ endColumn
+].
+
+TextEditorSelection ![
+endColumn: aColumnIndex
+    endColumn := aColumnIndex 
+].
+
 Object subclass: #TextEditorBuffer instanceVariables: #(lines).
 
 TextEditorBuffer ![
@@ -179,7 +229,7 @@ forwardDeleteAtCursor: cursor
 
 ].
 
-BorderedMorph subclass: #TextAreaMorph instanceVariables: #(textBuffer textColor cursor cursorColor).
+BorderedMorph subclass: #TextAreaMorph instanceVariables: #(textBuffer textColor selection selectionColor cursor cursorColor).
 
 TextAreaMorph class ![
 defaultColor
@@ -199,18 +249,65 @@ initialize
     cursor := TextEditorCursor new.
     cursor textBuffer: textBuffer.
     cursorColor := Color blue.
+    selection := nil.
+    selectionColor := Color blue.
+].
+
+
+TextAreaMorph ![
+fontFace
+    ^ Font defaultFontFace
+].
+
+TextAreaMorph ![
+renderSelectionWithBuilder: renderingBuilder
+    | fontFace lineHeight lines line minLine minColumn maxLine maxColumn lineY startX endX |
+    fontFace := self fontFace.
+    lineHeight := fontFace height.
+    lines := textBuffer lines.
+
+    minLine := selection startLine min: selection endLine.
+    maxLine := selection startLine max: selection endLine.
+    minColumn := selection startColumn min: selection endColumn.
+    maxColumn := selection startColumn max: selection endColumn.
+
+    minLine = maxLine ifTrue: [
+        lineY := (minLine - 1) * lineHeight.
+        line := lines at: minLine.
+        startX := (fontFace measureTextExtent: line until: minColumn - 1) x.
+        endX := (fontFace measureTextExtent: line until: maxColumn - 1) x.
+        
+        renderingBuilder solidRectangle: (startX@lineY corner: endX@(lineY + lineHeight)) color: selectionColor.
+        ^ self
+    ].
+
+    minLine to: maxLine do: [:lineIndex |
+        lineIndex = minLine ifTrue: [
+
+        ] ifFalse: [
+            lineIndex = maxLine ifTrue: [
+
+            ] ifFalse: [
+
+            ]
+        ]
+    ].
 ].
 
 TextAreaMorph ![
 renderWithBuilder: renderingBuilder
     | fontFace lines lineHeight lineWidth linePositionY |
-    fontFace := Font defaultFontFace.
+    fontFace := self fontFace.
     lineHeight := fontFace height.
 
     renderingBuilder solidRectangle: self bounds color: self color.
     
     lines := textBuffer lines.
     linePositionY := 0.
+
+    selection ~~ nil ifTrue: [
+        self renderSelectionWithBuilder: renderingBuilder.
+    ].
 
     1 to: lines size do: [:lineIndex |
         | line lineExtent lineRectangle cursorPositionX cursorBounds |
@@ -248,6 +345,20 @@ handleMorphKeyboardDownEvent: anEvent
         textBuffer backspaceDeleteAtCursor: cursor.
         self changed
     ].
+
+    anEvent hasShift ifTrue: [
+        selection == nil ifTrue: [
+            selection := TextEditorSelection new
+                startLine: cursor line;
+                startColumn: cursor column;
+                endLine: cursor line;
+                endColumn: cursor column;
+                yourself
+        ]
+    ] ifFalse: [
+        selection := nil
+    ].
+
     anEvent isLeft ifTrue: [
         cursor moveLeft.
         self changed
@@ -273,6 +384,16 @@ handleMorphKeyboardDownEvent: anEvent
     anEvent isEnd ifTrue: [
         cursor moveEnd.
         self changed
+    ].
+
+    anEvent hasShift ifTrue: [
+        selection ~~ nil ifTrue: [
+            selection endLine: cursor line;
+                endColumn: cursor column;
+                yourself
+        ]
+    ] ifFalse: [
+        selection := nil
     ].
 
     anEvent isDelete ifTrue: [
