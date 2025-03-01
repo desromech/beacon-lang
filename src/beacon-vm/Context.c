@@ -1317,6 +1317,35 @@ static beacon_oop_t beacon_BlockClosure_value(beacon_context_t *context, beacon_
     return beacon_runBlockClosureWithArguments(context, &blockClosure->code->super, blockClosure->captures, argumentCount, arguments);
 }
 
+static beacon_oop_t beacon_BlockClosure_ensure(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_BlockClosure_t* blockClosureReceiver = (beacon_BlockClosure_t*)receiver;
+    beacon_BlockClosure_t* ensureBlock = (beacon_BlockClosure_t*)arguments[0];
+
+    beacon_StackFrameRecord_t ensureRecord = {
+        .context = context,
+        .kind = StackFrameEnsure,
+        .ensure = {
+            .ensureReceiver = (beacon_oop_t)blockClosureReceiver,
+            .ensureBlock = (beacon_oop_t)ensureBlock,
+            .resultValue = 0,
+        }
+    };
+    beacon_pushStackFrameRecord(&ensureRecord);
+
+    ensureRecord.ensure.resultValue = beacon_runBlockClosureWithArguments(context, &blockClosureReceiver->code->super, blockClosureReceiver->captures, 0, NULL);
+    beacon_runBlockClosureWithArguments(context, &ensureBlock->code->super, ensureBlock->captures, 0, NULL);
+
+    beacon_popStackFrameRecord(&ensureRecord);
+    return ensureRecord.ensure.resultValue;
+}
+
+static beacon_oop_t beacon_BlockClosure_onDo(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    printf("TODO: on:do:");
+    abort();
+}
+
 beacon_oop_t beacon_boxExternalAddress(beacon_context_t *context, void *pointer)
 {
     beacon_ExternalAddress_t *externalAddress = beacon_allocateObjectWithBehavior(context->heap, context->classes.externalAddressClass, sizeof(beacon_ExternalAddress_t), BeaconObjectKindBytes);
@@ -1420,4 +1449,8 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.blockClosureClass, "value:value:value:", 3, beacon_BlockClosure_value);
     beacon_addPrimitiveToClass(context, context->classes.blockClosureClass, "value:value:value:value:", 4, beacon_BlockClosure_value);
 
+    beacon_addPrimitiveToClass(context, context->classes.blockClosureClass, "ensure:", 1, beacon_BlockClosure_ensure);
+    beacon_addPrimitiveToClass(context, context->classes.blockClosureClass, "on:do:", 2, beacon_BlockClosure_onDo);
+
 }
+

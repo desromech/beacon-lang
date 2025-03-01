@@ -41,7 +41,9 @@ typedef enum beacon_StackFrameRecordKind_e
 {
     StackFrameBytecodeMethodRecord = 0,
     StackFrameSourceCompilationRoots,
-    StackFramePrimitiveRoots
+    StackFramePrimitiveRoots,
+    StackFrameEnsure,
+    StackFrameOnDo,
 } beacon_StackFrameRecordKind_t;
 
 typedef struct beacon_StackFrameRecord_s
@@ -83,6 +85,13 @@ typedef struct beacon_StackFrameRecord_s
             beacon_oop_t allocatedObjects[4];
             beacon_oop_t result;
         } primitiveRoots;
+
+        struct
+        {
+            beacon_oop_t ensureReceiver;
+            beacon_oop_t ensureBlock;
+            beacon_oop_t resultValue;
+        } ensure;
     };
 } beacon_StackFrameRecord_t;
 
