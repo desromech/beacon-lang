@@ -129,6 +129,16 @@ struct beacon_context_s
         beacon_Behavior_t *windowMouseMotionEventClass;
         beacon_Behavior_t *windowKeyboardEventClass;
         beacon_Behavior_t *windowTextInputEventClass;
+
+        beacon_Behavior_t *abstractPrimitiveTensorClass;
+        beacon_Behavior_t *abstractPrimitiveMatrixClass;
+        beacon_Behavior_t *matrix2x2Class;
+        beacon_Behavior_t *matrix3x3Class;
+        beacon_Behavior_t *matrix4x4Class;
+        beacon_Behavior_t *abstractPrimitiveVectorClass;
+        beacon_Behavior_t *vector2Class;
+        beacon_Behavior_t *vector3Class;
+        beacon_Behavior_t *vector4Class;
     } classes;
 
     struct ContextGCRoots

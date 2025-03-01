@@ -3,6 +3,7 @@ set(BeaconVM_Sources
     Exceptions.c
     Font.c
     FormRendering.c
+    LinearAlgebra.c
     Memory.c
     ArrayList.c
     Dictionary.c

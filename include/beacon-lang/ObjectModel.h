@@ -127,6 +127,9 @@ static inline double beacon_decodeSmallNumber(intptr_t encodedNumber)
 typedef struct beacon_context_s beacon_context_t;
 typedef beacon_oop_t (*beacon_NativeCodeFunction_t)(beacon_context_t *context, beacon_oop_t receiverOrCaptures, size_t argumentCount, beacon_oop_t *arguments);
 
+double beacon_decodeNumberAsDouble(beacon_context_t *context, beacon_oop_t encodedNumber);
+beacon_oop_t beacon_encodeDoubleAsNumber(beacon_context_t *context, double value);
+
 struct beacon_ObjectHeader_s
 {
     uint8_t objectKind : 2;
@@ -819,6 +822,69 @@ typedef struct beacon_WindowTextInputEvent_s
     beacon_Object_t super;
     beacon_oop_t text;
 } beacon_WindowTextInputEvent_t;
+
+typedef struct beacon_AbstractPrimitiveTensor_s
+{
+    beacon_Object_t super;
+} beacon_AbstractPrimitiveTensor_t;
+
+typedef struct beacon_AbstractPrimitiveMatrix_s
+{
+    beacon_AbstractPrimitiveTensor_t super;
+} beacon_AbstractPrimitiveMatrix_t;
+
+typedef struct beacon_Matrix2x2_s
+{
+    beacon_AbstractPrimitiveMatrix_t super;
+    double m11; double m21;
+    double m12; double m22;
+} beacon_Matrix2x2_t;
+
+typedef struct beacon_Matrix3x3_s
+{
+    beacon_AbstractPrimitiveMatrix_t super;
+    double m11; double m21; double m31;
+    double m12; double m22; double m32;
+    double m13; double m23; double m33;
+} beacon_Matrix3x3_t;
+
+typedef struct beacon_Matrix4x4_s
+{
+    beacon_AbstractPrimitiveMatrix_t super;
+    double m11; double m21; double m31; double m41;
+    double m12; double m22; double m32; double m42;
+    double m13; double m23; double m33; double m43;
+    double m14; double m24; double m34; double m44;
+} beacon_Matrix4x4_t;
+
+typedef struct beacon_AbstractPrimitiveVector_s
+{
+    beacon_AbstractPrimitiveTensor_t super;
+} beacon_AbstractPrimitiveVector_t;
+
+typedef struct beacon_Vector2_s
+{
+    beacon_AbstractPrimitiveVector_t super;
+    double x;
+    double y;
+} beacon_Vector2_t;
+
+typedef struct beacon_Vector3_s
+{
+    beacon_AbstractPrimitiveVector_t super;
+    double x;
+    double y;
+    double z;
+} beacon_Vector3_t;
+
+typedef struct beacon_Vector4_s
+{
+    beacon_AbstractPrimitiveVector_t super;
+    double x;
+    double y;
+    double z;
+    double w;
+} beacon_Vector4_t;
 
 #ifdef __cplusplus
 }

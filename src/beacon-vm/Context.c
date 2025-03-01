@@ -21,6 +21,7 @@ void beacon_context_registerFontFacePrimitives(beacon_context_t *context);
 void beacon_context_registerWindowSystemPrimitives(beacon_context_t *context);
 void beacon_context_registerSourceCodePrimitives(beacon_context_t *context);
 void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *context);
+void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context);
 
 static size_t beacon_context_computeBehaviorSlotCount(beacon_context_t *context, beacon_Behavior_t *behavior)
 {
@@ -332,6 +333,15 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "scancode", "symbol", "modstate", NULL);
     context->classes.windowTextInputEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowTextInputEvent", sizeof(beacon_WindowTextInputEvent_t), BeaconObjectKindPointers,
         "text", NULL);
+    context->classes.abstractPrimitiveTensorClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AbstractPrimitiveTensor", sizeof(beacon_AbstractPrimitiveTensor_t), BeaconObjectKindBytes,  NULL);
+    context->classes.abstractPrimitiveMatrixClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveTensorClass, "AbstractPrimitiveMatrix", sizeof(beacon_AbstractPrimitiveMatrix_t), BeaconObjectKindBytes,  NULL);
+    context->classes.matrix2x2Class = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveMatrixClass, "Matrix2x2", sizeof(beacon_Matrix2x2_t), BeaconObjectKindBytes,  NULL);
+    context->classes.matrix3x3Class = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveMatrixClass, "Matrix3x3", sizeof(beacon_Matrix3x3_t), BeaconObjectKindBytes,  NULL);
+    context->classes.matrix4x4Class = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveMatrixClass, "Matrix4x4", sizeof(beacon_Matrix4x4_t), BeaconObjectKindBytes,  NULL);
+    context->classes.abstractPrimitiveVectorClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveTensorClass, "AbstractPrimitiveVector", sizeof(beacon_AbstractPrimitiveVector_t), BeaconObjectKindBytes,  NULL);
+    context->classes.vector2Class = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveVectorClass, "Vector2", sizeof(beacon_Vector2_t), BeaconObjectKindBytes,  NULL);
+    context->classes.vector3Class = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveVectorClass, "Vector3", sizeof(beacon_Vector3_t), BeaconObjectKindBytes,  NULL);
+    context->classes.vector4Class = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveVectorClass, "Vector4", sizeof(beacon_Vector4_t), BeaconObjectKindBytes,  NULL);
 }
 
 void beacon_context_createImportantRoots(beacon_context_t *context)
@@ -421,6 +431,7 @@ void beacon_context_registerBasicPrimitives(beacon_context_t *context)
     beacon_context_registerWindowSystemPrimitives(context);
     beacon_context_registerSourceCodePrimitives(context);
     beacon_context_registerParseTreeCompilationPrimitives(context);
+    beacon_context_registerLinearAlgebraPrimitives(context);
 }
 
 beacon_context_t *beacon_context_new(void)
@@ -652,6 +663,18 @@ beacon_oop_t beacon_performWithWith(beacon_context_t *context, beacon_oop_t rece
         secondArgument
     };
     return beacon_performWithArguments(context, receiver, selector, 2, arguments);
+}
+
+double beacon_decodeNumberAsDouble(beacon_context_t *context, beacon_oop_t encodedNumber)
+{
+    // TODO: Support large integer and boxed double.
+    return beacon_decodeSmallNumber(encodedNumber);
+}
+
+beacon_oop_t beacon_encodeDoubleAsNumber(beacon_context_t *context, double value)
+{
+    // TODO: Support large integer and boxed double.
+    return beacon_encodeSmallFloat(value);
 }
 
 void beacon_addPrimitiveToClass(beacon_context_t *context, beacon_Behavior_t *behavior, const char *selector, size_t argumentCount, beacon_NativeCodeFunction_t primitive)
