@@ -3,10 +3,12 @@ initialize
     DejaVuSans := Font loadFontFromFile: __FileDir__ , 'fonts/DejaVuSans.ttf'.
     DejaVuSansSmallFace := DejaVuSans createFaceWithHeight: 20.
     DejaVuSansSmallHiDpiFace := DejaVuSans createFaceWithHeight: 40.
+    DejaVuSansSmallFace hiDpiScaled: DejaVuSansSmallHiDpiFace.
 
     DejaVuSansMono := Font loadFontFromFile: __FileDir__ , 'fonts/DejaVuSansMono.ttf'.
     DejaVuSansMonoSmallFace := DejaVuSansMono createFaceWithHeight: 20.
     DejaVuSansMonoSmallHiDpiFace := DejaVuSansMono createFaceWithHeight: 40.
+    DejaVuSansMonoSmallFace hiDpiScaled: DejaVuSansMonoSmallHiDpiFace.
 ].
 
 Font class ![
@@ -53,7 +55,6 @@ Font class ![
 defaultHiDpiMonospacedFontFace
     ^ DejaVuSansMonoSmallHiDpiFace
 ].
-Font initialize.
 
 FontFace ![
 height
@@ -64,3 +65,15 @@ FontFace ![
 advance
     ^ advance
 ].
+
+FontFace ![
+hiDpiScaled
+    ^ hiDpiScaled
+].
+
+FontFace ![
+hiDpiScaled: aFontFace
+    hiDpiScaled := aFontFace
+].
+
+Font initialize.

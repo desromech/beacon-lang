@@ -165,10 +165,13 @@ text: text rectangle: rectangle color: color fontFace: fontFace
     | textRectangle |
     textRectangle := FormTextRenderingElement new
         text: text;
-        rectangle: (rectangle translatedBy: translation);
+        rectangle: ((rectangle translatedBy: translation) scaledWithXFactor: scaleFactorX y: scaleFactorY);
         color: color;
         fontFace: fontFace
         yourself.
+    ((scaleFactorX = 2) and: [fontFace hiDpiScaled ~~ nil]) ifTrue: [
+        textRectangle fontFace: fontFace hiDpiScaled
+    ].
     renderingElements add: textRectangle.
     textRectangle
 ].

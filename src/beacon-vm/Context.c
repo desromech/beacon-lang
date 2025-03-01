@@ -306,7 +306,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "DejaVuSans", "DejaVuSansSmallFace", "DejaVuSansSmallHiDpiFace",
         "DejaVuSansMono", "DejaVuSansMonoSmallFace", "DejaVuSansMonoSmallHiDpiFace", NULL);
     context->classes.fontFaceClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "FontFace", sizeof(beacon_FontFace_t), BeaconObjectKindPointers,
-        "charData", "height", "advance", "atlasForm", NULL);
+        "charData", "height", "advance", "atlasForm", "hiDpiScaled", NULL);
     context->classes.formRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "FormRenderingElement", sizeof(beacon_FormRenderingElement_t), BeaconObjectKindPointers,
         "borderRoundRadius", "borderSize", "rectangle", NULL);
     context->classes.formSolidRectangleRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.formRenderingElementClass, "FormSolidRectangleRenderingElement", sizeof(beacon_FormSolidRectangleRenderingElement_t), BeaconObjectKindPointers,

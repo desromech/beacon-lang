@@ -747,6 +747,7 @@ typedef struct beacon_FontFace_s
     beacon_oop_t height;
     beacon_oop_t advance;
     beacon_Form_t *atlasForm;
+    struct beacon_FontFace_s *hiDpiScaled;
 } beacon_FontFace_t;
 
 typedef struct beacon_FormTextRenderingElement_s
