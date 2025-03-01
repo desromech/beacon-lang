@@ -112,12 +112,15 @@ static void beacon_context_fixEarlyMetaclass(beacon_context_t *context, beacon_B
     earlyMetaClass->super.super.header.behavior = context->classes.metaclassClass;
 }
 
-static void beacon_context_fixEarlyArray(beacon_context_t *context, beacon_Behavior_t *earlyClassBehavior)
+static void beacon_context_fixEarlyObjectClasses(beacon_context_t *context, beacon_Behavior_t *earlyClassBehavior)
 {
     if(!earlyClassBehavior->slots)
         return;
 
+    beacon_Class_t *class = (beacon_Class_t*)earlyClassBehavior;
+
     ((beacon_ObjectHeader_t*)earlyClassBehavior->slots)->behavior = context->classes.arrayClass;
+    ((beacon_ObjectHeader_t*)class->name)->behavior = context->classes.symbolClass;
 }
 
 static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
@@ -155,20 +158,20 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.arrayedCollectionClass = beacon_context_createClassAndMetaclass(context, context->classes.sequenceableCollectionClass, "ArrayedCollection", sizeof(beacon_ArrayedCollection_t), BeaconObjectKindPointers, NULL);
     context->classes.arrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "Array", sizeof(beacon_Array_t), BeaconObjectKindPointers, NULL);
     context->classes.symbolClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "Symbol", sizeof(beacon_Symbol_t), BeaconObjectKindBytes, NULL);
-    beacon_context_fixEarlyArray(context, context->classes.protoObjectClass);
-    beacon_context_fixEarlyArray(context, context->classes.objectClass);
-    beacon_context_fixEarlyArray(context, context->classes.behaviorClass);
-    beacon_context_fixEarlyArray(context, context->classes.classDescriptionClass);
-    beacon_context_fixEarlyArray(context, context->classes.metaclassClass);
-    beacon_context_fixEarlyArray(context, context->classes.collectionClass);
-    beacon_context_fixEarlyArray(context, context->classes.hashedCollectionClass);
-    beacon_context_fixEarlyArray(context, context->classes.associationClass);
-    beacon_context_fixEarlyArray(context, context->classes.dictionaryClass);
-    beacon_context_fixEarlyArray(context, context->classes.methodDictionaryClass);
-    beacon_context_fixEarlyArray(context, context->classes.sequenceableCollectionClass);
-    beacon_context_fixEarlyArray(context, context->classes.arrayedCollectionClass);
-    beacon_context_fixEarlyArray(context, context->classes.arrayClass);
-    beacon_context_fixEarlyArray(context, context->classes.symbolClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.protoObjectClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.objectClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.behaviorClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.classDescriptionClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.metaclassClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.collectionClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.hashedCollectionClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.associationClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.dictionaryClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.methodDictionaryClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.sequenceableCollectionClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.arrayedCollectionClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.arrayClass);
+    beacon_context_fixEarlyObjectClasses(context, context->classes.symbolClass);
     
     context->classes.byteArrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "ByteArray", sizeof(beacon_ByteArray_t), BeaconObjectKindBytes, NULL);
     context->classes.stringClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "String", sizeof(beacon_String_t), BeaconObjectKindBytes, NULL);
@@ -599,7 +602,11 @@ beacon_oop_t beacon_performWithArgumentsInSuperclass(beacon_context_t *context, 
         beacon_MessageNotUnderstood_t *exception = beacon_allocateObjectWithBehavior(context->heap, context->classes.messageNotUnderstoodClass, sizeof(beacon_MessageNotUnderstood_t), BeaconObjectKindPointers);
         exception->message = (beacon_Message_t*)arguments[0];
         exception->receiver = receiver;
-        exception->super.super.messageText = beacon_importCString(context, "Message not understood.");
+        char errorBuffer[256];
+        snprintf(errorBuffer, sizeof(errorBuffer), "Message not understood. Selector #%.*s",
+            ((beacon_Symbol_t*)exception->message->selector)->super.super.super.super.super.header.slotCount,
+            ((beacon_Symbol_t*)exception->message->selector)->data);
+        exception->super.super.messageText = beacon_importCString(context, errorBuffer);
         beacon_exception_signal(context, &exception->super.super);
         return 0;
     }
