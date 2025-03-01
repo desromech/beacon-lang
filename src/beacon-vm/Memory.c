@@ -125,6 +125,22 @@ void beacon_garbageCollect_markRootsPhase(beacon_context_t *context)
                     beacon_heap_pushReachableObject(context->heap, currentStackRecord->primitiveRoots.result);
                 }
                 break;
+            case StackFrameEnsure:
+                {
+                    beacon_heap_pushReachableObject(context->heap, currentStackRecord->ensure.ensureReceiver);
+                    beacon_heap_pushReachableObject(context->heap, currentStackRecord->ensure.ensureBlock);
+                    beacon_heap_pushReachableObject(context->heap, currentStackRecord->ensure.resultValue);
+                }
+                break;
+            case StackFrameOnDo:
+                {
+                    beacon_heap_pushReachableObject(context->heap, currentStackRecord->onDo.onReceiver);
+                    beacon_heap_pushReachableObject(context->heap, currentStackRecord->onDo.onFilter);
+                    beacon_heap_pushReachableObject(context->heap, currentStackRecord->onDo.doBlock);
+                    beacon_heap_pushReachableObject(context->heap, currentStackRecord->onDo.exception);
+                    beacon_heap_pushReachableObject(context->heap, currentStackRecord->onDo.resultValue);
+                }
+                break;
             default:
                 abort();
                 break;

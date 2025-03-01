@@ -92,6 +92,16 @@ typedef struct beacon_StackFrameRecord_s
             beacon_oop_t ensureBlock;
             beacon_oop_t resultValue;
         } ensure;
+        
+        struct
+        {
+            beacon_oop_t onReceiver;
+            beacon_oop_t onFilter;
+            beacon_oop_t doBlock;
+            beacon_oop_t resultValue;
+            beacon_oop_t exception;
+            jmp_buf handlerJumpBuffer;
+        } onDo;
     };
 } beacon_StackFrameRecord_t;
 

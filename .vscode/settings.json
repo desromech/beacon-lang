@@ -18,6 +18,7 @@
         "xcb.h": "c",
         "shm.h": "c",
         "sdl_hints.h": "c",
-        "sdl.h": "c"
+        "sdl.h": "c",
+        "exception": "c"
     }
 }

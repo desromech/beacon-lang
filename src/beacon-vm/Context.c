@@ -1319,6 +1319,7 @@ static beacon_oop_t beacon_BlockClosure_value(beacon_context_t *context, beacon_
 
 static beacon_oop_t beacon_BlockClosure_ensure(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
+    BeaconAssert(context, argumentCount == 1);
     beacon_BlockClosure_t* blockClosureReceiver = (beacon_BlockClosure_t*)receiver;
     beacon_BlockClosure_t* ensureBlock = (beacon_BlockClosure_t*)arguments[0];
 
@@ -1342,8 +1343,38 @@ static beacon_oop_t beacon_BlockClosure_ensure(beacon_context_t *context, beacon
 
 static beacon_oop_t beacon_BlockClosure_onDo(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
-    printf("TODO: on:do:");
-    abort();
+    BeaconAssert(context, argumentCount == 2);
+
+    beacon_BlockClosure_t* blockClosureReceiver = (beacon_BlockClosure_t*)receiver;
+    beacon_oop_t onFilter = arguments[0];
+    beacon_BlockClosure_t *doBlock = (beacon_BlockClosure_t*)arguments[1];
+
+    beacon_StackFrameRecord_t onDoRecord = {
+        .context = context,
+        .kind = StackFrameOnDo,
+        .onDo = {
+            .onReceiver = (beacon_oop_t)blockClosureReceiver,
+            .onFilter = onFilter,
+            .doBlock = (beacon_oop_t)doBlock,
+            .resultValue = 0,
+            .exception = 0,
+        }
+    };
+
+    beacon_pushStackFrameRecord(&onDoRecord);
+
+    if(_setjmp(onDoRecord.onDo.handlerJumpBuffer))
+    {
+        onDoRecord.onDo.resultValue = beacon_runBlockClosureWithArguments(context, &doBlock->code->super, doBlock->captures, 0, NULL); 
+    }
+    else
+    {
+        onDoRecord.onDo.resultValue = beacon_runBlockClosureWithArguments(context, &blockClosureReceiver->code->super, blockClosureReceiver->captures, 0, NULL);
+    }
+
+    beacon_popStackFrameRecord(&onDoRecord);
+    return onDoRecord.onDo.resultValue;
+
 }
 
 beacon_oop_t beacon_boxExternalAddress(beacon_context_t *context, void *pointer)
