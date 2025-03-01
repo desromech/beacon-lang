@@ -342,6 +342,9 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.vector2Class = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveVectorClass, "Vector2", sizeof(beacon_Vector2_t), BeaconObjectKindBytes,  NULL);
     context->classes.vector3Class = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveVectorClass, "Vector3", sizeof(beacon_Vector3_t), BeaconObjectKindBytes,  NULL);
     context->classes.vector4Class = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveVectorClass, "Vector4", sizeof(beacon_Vector4_t), BeaconObjectKindBytes,  NULL);
+
+    context->classes.complexClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Complex", sizeof(beacon_Complex_t), BeaconObjectKindBytes,  NULL);
+    context->classes.quaternionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Quaternion", sizeof(beacon_Quaternion_t), BeaconObjectKindBytes,  NULL);
 }
 
 void beacon_context_createImportantRoots(beacon_context_t *context)

@@ -886,6 +886,22 @@ typedef struct beacon_Vector4_s
     double w;
 } beacon_Vector4_t;
 
+typedef struct beacon_Complex_s
+{
+    beacon_Object_t super;
+    double x;
+    double y;
+} beacon_Complex_t;
+
+typedef struct beacon_Quaternion_s
+{
+    beacon_Object_t super;
+    double x;
+    double y;
+    double z;
+    double w;
+} beacon_Quaternion_t;
+
 #ifdef __cplusplus
 }
 #endif

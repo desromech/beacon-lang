@@ -139,6 +139,9 @@ struct beacon_context_s
         beacon_Behavior_t *vector2Class;
         beacon_Behavior_t *vector3Class;
         beacon_Behavior_t *vector4Class;
+
+        beacon_Behavior_t *complexClass;
+        beacon_Behavior_t *quaternionClass;
     } classes;
 
     struct ContextGCRoots
