@@ -41,3 +41,8 @@ False ![
 printOn: aStream
     aStream nextPutAll: 'false'
 ].
+
+Number ![
+printOn: aStream
+    aStream nextPutAll: self printString
+].
