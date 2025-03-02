@@ -18,7 +18,11 @@ printString
 
 Class ![
 printOn: aStream
-    aStream nextPutAll: name
+    name == nil ifTrue: [
+        aStream nextPutAll: 'AnonClass'
+    ] ifFalse: [
+        aStream nextPutAll: name
+    ]
 ].
 
 Metaclass ![
@@ -45,4 +49,17 @@ printOn: aStream
 Number ![
 printOn: aStream
     aStream nextPutAll: self printString
+].
+
+Array ![
+printOn: aStream
+    aStream nextPut: ${.
+    1 to: self size do: [:i |
+        i > 1 ifTrue: [
+            aStream nextPutAll: '. '
+        ].
+
+        aStream print: (self at: i)
+    ].
+    aStream nextPut: $}.
 ].

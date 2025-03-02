@@ -4,6 +4,29 @@
 #include "beacon-lang/Exceptions.h"
 #include "beacon-lang/ArrayList.h"
 
+beacon_Array_t *beacon_Array_copyWith(beacon_context_t *context, beacon_Array_t *originalArray, beacon_oop_t value)
+{
+    if(!originalArray || originalArray->super.super.super.super.super.header.slotCount == 0)
+    {
+        beacon_Array_t *result = beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t) + sizeof(beacon_oop_t), BeaconObjectKindPointers);
+        result->elements[0] = value;
+        return result;
+    }
+
+    size_t originalArraySize = originalArray->super.super.super.super.super.header.slotCount;
+    for(size_t i = 0; i < originalArraySize; ++i)
+    {
+        if(originalArray->elements[i] == value)
+            return originalArray;
+    }
+
+    beacon_Array_t *result = beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t) + (originalArraySize +1 )*sizeof(beacon_oop_t), BeaconObjectKindPointers);
+    for(size_t i = 0; i < originalArraySize; ++i)
+        result->elements[i] = originalArray->elements[i];
+    result->elements[originalArraySize] = value;
+    return result;
+}
+
 beacon_ArrayList_t *beacon_ArrayList_new(beacon_context_t *context)
 {
     beacon_ArrayList_t *collection = beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayListClass, sizeof(beacon_ArrayList_t), BeaconObjectKindPointers);

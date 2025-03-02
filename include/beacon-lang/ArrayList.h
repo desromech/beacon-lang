@@ -13,6 +13,11 @@ extern "C" {
 typedef struct beacon_context_s beacon_context_t;
 
 /**
+ * Make an array with the specified element.
+ */
+beacon_Array_t *beacon_Array_copyWith(beacon_context_t *context, beacon_Array_t *originalArray, beacon_oop_t value);
+
+/**
  * Constructs a new array list.
  */
 beacon_ArrayList_t *beacon_ArrayList_new(beacon_context_t *context);

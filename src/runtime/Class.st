@@ -50,3 +50,8 @@ Class ![
     subclass: subclassName.
     ^ self subclass: subclassName instanceVariables: #()
 ].
+
+Class ![
+subclasses
+    ^ subclasses
+].
