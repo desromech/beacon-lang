@@ -19,6 +19,7 @@
         "shm.h": "c",
         "sdl_hints.h": "c",
         "sdl.h": "c",
-        "exception": "c"
+        "exception": "c",
+        "locale": "c"
     }
 }

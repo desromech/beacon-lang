@@ -9,6 +9,16 @@ initialize
 ].
 
 Object ![
+= other
+    ^ self == other
+].
+
+Object ![
+~= other
+    ^ (self = other) not
+].
+
+Object ![
 size
     ^ self basicSize
 ].

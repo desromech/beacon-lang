@@ -425,7 +425,10 @@ void beacon_context_createSystemDictionary(beacon_context_t *context)
     {
         beacon_Class_t *globalClass = globalClassList[i];
         if(globalClass->name)
+        {
+            beacon_context_fixEarlyObjectClasses(context, &globalClass->super.super);
             beacon_MethodDictionary_atPut(context, context->roots.systemDictionary, globalClass->name, (beacon_oop_t)globalClass);
+        }
     }
 
     beacon_MethodDictionary_atPut(context, context->roots.systemDictionary, beacon_internCString(context, "nil"), context->roots.nilValue);

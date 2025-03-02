@@ -63,3 +63,13 @@ printOn: aStream
     ].
     aStream nextPut: $}.
 ].
+
+String ![
+printOn: aStream
+    aStream nextPutAll: self
+].
+
+Symbol ![
+printOn: aStream
+    aStream nextPut: $#; nextPutAll: self
+].

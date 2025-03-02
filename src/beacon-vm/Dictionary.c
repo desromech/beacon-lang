@@ -2,6 +2,7 @@
 #include "beacon-lang/Memory.h"
 #include "beacon-lang/Context.h"
 #include "beacon-lang/Exceptions.h"
+#include "beacon-lang/ArrayList.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -107,6 +108,25 @@ bool beacon_MethodDictionary_includesKey(beacon_context_t *context, beacon_Metho
     return dictionary->super.super.array->elements[slotIndex*2] != 0;
 }
 
+static beacon_oop_t beacon_MethodDictionaryPrimitive_keys(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, (intptr_t)argumentCount == 0);
+    beacon_MethodDictionary_t *methodDict = (beacon_MethodDictionary_t*)receiver;
+
+    beacon_Array_t *storage = methodDict->super.super.array;
+    size_t capacity = storage->super.super.super.super.super.header.slotCount / 2;
+    beacon_ArrayList_t *arrayList = beacon_ArrayList_new(context);
+
+    for(size_t i = 0; i < capacity; ++i)
+    {
+        beacon_oop_t key = storage->elements[i*2];
+        if(key)
+            beacon_ArrayList_add(context, arrayList, key);
+    }
+
+    return (beacon_oop_t)beacon_ArrayList_asArray(context, arrayList);
+}
+
 static beacon_oop_t beacon_MethodDictionaryPrimitive_atOrNil(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, (intptr_t)argumentCount == 1);
@@ -127,6 +147,7 @@ static beacon_oop_t beacon_MethodDictionaryPrimitive_atPut(beacon_context_t *con
 
 void beacon_context_registerDictionaryPrimitives(beacon_context_t *context)
 {
+    beacon_addPrimitiveToClass(context, context->classes.methodDictionaryClass, "keys", 0, beacon_MethodDictionaryPrimitive_keys);
     beacon_addPrimitiveToClass(context, context->classes.methodDictionaryClass, "atOrNil:", 1, beacon_MethodDictionaryPrimitive_atOrNil);
     beacon_addPrimitiveToClass(context, context->classes.methodDictionaryClass, "at:put:", 2, beacon_MethodDictionaryPrimitive_atPut);
 }

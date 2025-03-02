@@ -15,6 +15,7 @@ FilesToLoad := #(
     'Stream.st'
     'SequenceableCollection.st'
     'Printing.st'
+    'MethodDictionary.st'
     
     'LinearAlgebra.st'
 
