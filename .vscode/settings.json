@@ -20,6 +20,7 @@
         "sdl_hints.h": "c",
         "sdl.h": "c",
         "exception": "c",
-        "locale": "c"
+        "locale": "c",
+        "memory.h": "c"
     }
 }

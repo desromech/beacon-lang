@@ -51,11 +51,48 @@ static beacon_oop_t beacon_Exception_displayException(beacon_context_t *context,
     return receiver;
 }
 
+static void beacon_displaySourcePosition(beacon_context_t *context, beacon_SourcePosition_t *sourcePosition)
+{
+    int nameSize = sourcePosition->sourceCode->name->super.super.super.super.super.header.slotCount;
+    if(sourcePosition->sourceCode->directory)
+    {
+        int directorySize = sourcePosition->sourceCode->directory->super.super.super.super.super.header.slotCount;
+        fprintf(stderr, "%.*s%.*s:%d.%d-%d.%d\n",
+            directorySize, sourcePosition->sourceCode->directory->data,
+            nameSize, sourcePosition->sourceCode->name->data,
+            (int)beacon_decodeSmallInteger(sourcePosition->startLine), (int)beacon_decodeSmallInteger(sourcePosition->startColumn),
+            (int)beacon_decodeSmallInteger(sourcePosition->endLine), (int)beacon_decodeSmallInteger(sourcePosition->endColumn));
+    }
+    else
+    {
+        fprintf(stderr, "%.*s:%d.%d-%d.%d\n",
+            nameSize, sourcePosition->sourceCode->name->data,
+            (int)beacon_decodeSmallInteger(sourcePosition->startLine), (int)beacon_decodeSmallInteger(sourcePosition->startColumn),
+            (int)beacon_decodeSmallInteger(sourcePosition->endLine), (int)beacon_decodeSmallInteger(sourcePosition->endColumn));
+    }
+}
+
+static void beacon_displayExceptionStackTrace(beacon_context_t *context)
+{
+    beacon_StackFrameRecord_t *record =  beacon_getTopStackFrameRecord();
+    while(record)
+    {
+        switch(record->kind)
+        {
+        case StackFrameBytecodeMethodRecord:
+            beacon_displaySourcePosition(context, record->bytecodeMethodStackRecord.code->sourcePosition);
+            break;
+        }
+        record = record->previousRecord;
+    }
+}
+
 static beacon_oop_t beacon_Exception_signal(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, (intptr_t)argumentCount == 0);
     beacon_perform(context, receiver, (beacon_oop_t)beacon_internCString(context, "displayException"));
     fprintf(stderr, "Unhandled exception. Aborting.\n");
+    beacon_displayExceptionStackTrace(context);
     abort();
     return receiver;
 }
