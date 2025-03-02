@@ -307,7 +307,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "DejaVuSans", "DejaVuSansSmallFace", "DejaVuSansSmallHiDpiFace",
         "DejaVuSansMono", "DejaVuSansMonoSmallFace", "DejaVuSansMonoSmallHiDpiFace", NULL);
     context->classes.fontFaceClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "FontFace", sizeof(beacon_FontFace_t), BeaconObjectKindPointers,
-        "charData", "height", "advance", "atlasForm", "hiDpiScaled", NULL);
+        "charData", "height", "ascent", "descent", "linegap", "atlasForm", "hiDpiScaled", NULL);
     context->classes.formRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "FormRenderingElement", sizeof(beacon_FormRenderingElement_t), BeaconObjectKindPointers,
         "borderRoundRadius", "borderSize", "rectangle", NULL);
     context->classes.formSolidRectangleRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.formRenderingElementClass, "FormSolidRectangleRenderingElement", sizeof(beacon_FormSolidRectangleRenderingElement_t), BeaconObjectKindPointers,
@@ -333,6 +333,10 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "scancode", "symbol", "modstate", NULL);
     context->classes.windowTextInputEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowTextInputEvent", sizeof(beacon_WindowTextInputEvent_t), BeaconObjectKindPointers,
         "text", NULL);
+
+    context->classes.testAsserterClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "TestAsserter", sizeof(beacon_TestAsserter_t), BeaconObjectKindPointers, NULL);
+    context->classes.testCaseClass = beacon_context_createClassAndMetaclass(context, context->classes.testAsserterClass, "TestCase", sizeof(beacon_TestCase_t), BeaconObjectKindPointers, NULL);
+
     context->classes.abstractPrimitiveTensorClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AbstractPrimitiveTensor", sizeof(beacon_AbstractPrimitiveTensor_t), BeaconObjectKindBytes,  NULL);
     context->classes.abstractPrimitiveMatrixClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveTensorClass, "AbstractPrimitiveMatrix", sizeof(beacon_AbstractPrimitiveMatrix_t), BeaconObjectKindBytes,  NULL);
     context->classes.matrix2x2Class = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveMatrixClass, "Matrix2x2", sizeof(beacon_Matrix2x2_t), BeaconObjectKindBytes,  NULL);

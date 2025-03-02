@@ -308,9 +308,9 @@ fontFace
 
 TextAreaMorph ![
 renderSelectionWithBuilder: renderingBuilder
-    | fontFace lineHeight lines line minLine minColumn maxLine maxColumn lineY startX endX |
+    | fontFace lineSpace lines line minLine minColumn maxLine maxColumn lineY startX endX |
     fontFace := self fontFace.
-    lineHeight := fontFace height.
+    lineSpace := fontFace linespace.
     lines := textBuffer lines.
 
     minLine := selection startLine min: selection endLine.
@@ -319,38 +319,38 @@ renderSelectionWithBuilder: renderingBuilder
     maxColumn := selection startColumn max: selection endColumn.
 
     minLine = maxLine ifTrue: [
-        lineY := (minLine - 1) * lineHeight.
+        lineY := (minLine - 1) * lineSpace.
         line := lines at: minLine.
         startX := (fontFace measureTextExtent: line until: minColumn - 1) x.
         endX := (fontFace measureTextExtent: line until: maxColumn - 1) x.
         
-        renderingBuilder solidRectangle: (startX@lineY corner: endX@(lineY + lineHeight)) color: selectionColor.
+        renderingBuilder solidRectangle: (startX@lineY corner: endX@(lineY + lineSpace)) color: selectionColor.
         ^ self
     ].
 
     minLine to: maxLine do: [:lineIndex |
         lineIndex = minLine ifTrue: [
-            lineY := (lineIndex - 1) * lineHeight.
+            lineY := (lineIndex - 1) * lineSpace.
             line := lines at: lineIndex.
             startX := (fontFace measureTextExtent: line until: minColumn - 1) x.
             endX := (fontFace measureTextExtent: line) x.
             
-            renderingBuilder solidRectangle: (startX@lineY corner: endX@(lineY + lineHeight)) color: selectionColor.
+            renderingBuilder solidRectangle: (startX@lineY corner: endX@(lineY + lineSpace)) color: selectionColor.
         ] ifFalse: [
             lineIndex = maxLine ifTrue: [
-                lineY := (lineIndex - 1) * lineHeight.
+                lineY := (lineIndex - 1) * lineSpace.
                 line := lines at: lineIndex.
                 startX := 0.
                 endX := (fontFace measureTextExtent: line until: maxColumn - 1) x.
                 
-                renderingBuilder solidRectangle: (startX@lineY corner: endX@(lineY + lineHeight)) color: selectionColor.
+                renderingBuilder solidRectangle: (startX@lineY corner: endX@(lineY + lineSpace)) color: selectionColor.
             ] ifFalse: [
-                lineY := (lineIndex - 1) * lineHeight.
+                lineY := (lineIndex - 1) * lineSpace.
                 line := lines at: lineIndex.
                 startX := 0.
                 endX := (fontFace measureTextExtent: line) x.
                 
-                renderingBuilder solidRectangle: (startX@lineY corner: endX@(lineY + lineHeight)) color: selectionColor.
+                renderingBuilder solidRectangle: (startX@lineY corner: endX@(lineY + lineSpace)) color: selectionColor.
 
             ]
         ]
@@ -359,9 +359,9 @@ renderSelectionWithBuilder: renderingBuilder
 
 TextAreaMorph ![
 renderWithBuilder: renderingBuilder
-    | fontFace lines lineHeight lineWidth linePositionY |
+    | fontFace lines lineSpace lineWidth linePositionY |
     fontFace := self fontFace.
-    lineHeight := fontFace height.
+    lineSpace := fontFace linespace.
 
     renderingBuilder solidRectangle: self bounds color: self color borderSize: self borderWidth borderColor: self borderColor.
     
@@ -382,11 +382,11 @@ renderWithBuilder: renderingBuilder
 
         lineIndex = cursor line ifTrue: [
             cursorPositionX := (fontFace measureTextExtent: line until: cursor column - 1) x.
-            cursorBounds := cursorPositionX @ linePositionY extent: 2@lineHeight.
+            cursorBounds := cursorPositionX @ linePositionY extent: 2@lineSpace.
             renderingBuilder solidRectangle: cursorBounds color: cursorColor.
         ].
 
-        linePositionY := linePositionY + lineHeight.
+        linePositionY := linePositionY + lineSpace.
     ].
 ].
 

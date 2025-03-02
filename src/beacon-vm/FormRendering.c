@@ -209,8 +209,10 @@ beacon_oop_t beacon_TextRenderingElement_drawInForm(beacon_context_t *context, b
     int formWidth = beacon_decodeSmallInteger(form->width);
     int formHeight = beacon_decodeSmallInteger(form->height);
 
+    float ascent = beacon_decodeSmallNumber(fontFace->ascent);
+
     float baselineX = rectMinX;
-    float baselineY = rectMaxY;
+    float baselineY = rectMinY + ascent;
     size_t stringSize = renderingElement->text->super.super.super.super.super.header.slotCount;
     for(size_t i = 0; i < stringSize; ++i)
     {

@@ -749,7 +749,9 @@ typedef struct beacon_FontFace_s
     beacon_Object_t super;
     beacon_ByteArray_t *charData;
     beacon_oop_t height;
-    beacon_oop_t advance;
+    beacon_oop_t ascent;
+    beacon_oop_t descent;
+    beacon_oop_t linegap;
     beacon_Form_t *atlasForm;
     struct beacon_FontFace_s *hiDpiScaled;
 } beacon_FontFace_t;
@@ -824,6 +826,16 @@ typedef struct beacon_WindowTextInputEvent_s
     beacon_Object_t super;
     beacon_oop_t text;
 } beacon_WindowTextInputEvent_t;
+
+typedef struct beacon_TestAsserter_s
+{
+    beacon_Object_t super;
+} beacon_TestAsserter_t;
+
+typedef struct beacon_TestCase_t
+{
+    beacon_TestAsserter_t super;
+} beacon_TestCase_t;
 
 typedef struct beacon_AbstractPrimitiveTensor_s
 {

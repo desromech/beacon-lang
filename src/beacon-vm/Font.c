@@ -82,6 +82,14 @@ beacon_oop_t beacon_Font_createFaceWithHeight(beacon_context_t *context, beacon_
     fontFace->height = beacon_encodeSmallInteger(fontHeight);
     fontFace->atlasForm = bitmapForm;
 
+    float ascent;
+    float descent;
+    float linegap;
+    stbtt_GetScaledFontVMetrics(font->rawData->elements, 0, fontHeight, &ascent, &descent, &linegap);
+    fontFace->ascent = beacon_encodeSmallFloat(ascent);
+    fontFace->descent = beacon_encodeSmallFloat(descent);
+    fontFace->linegap = beacon_encodeSmallFloat(linegap);
+
 
     //char fileNameBuffer[64];
     //snprintf(fileNameBuffer, sizeof(fileNameBuffer), "atlas-%d.data", fontHeight);
@@ -111,14 +119,17 @@ beacon_oop_t beacon_FontFace_measureTextExtent(beacon_context_t *context, beacon
     for(size_t i = 0; i < stringSize; ++i)
     {
         char c = string->data[i];
-        if(c < ' ')
+        if(c <= ' ')
+        {
             continue;
+        }
 
         stbtt_aligned_quad quadToDraw = {};
         stbtt_GetBakedQuad((stbtt_bakedchar*)fontFace->charData->elements, formWidth, formHeight, c - 31, &baselineX, &baselineY, &quadToDraw, true);
 
         glyphRectangle_addPoint(&rectangle, quadToDraw.x0, quadToDraw.y0);
         glyphRectangle_addPoint(&rectangle, quadToDraw.x1, quadToDraw.y1);
+        glyphRectangle_addPoint(&rectangle, baselineX, baselineY);
 
     }
 
@@ -157,6 +168,7 @@ beacon_oop_t beacon_FontFace_measureTextExtentUntil(beacon_context_t *context, b
 
         glyphRectangle_addPoint(&rectangle, quadToDraw.x0, quadToDraw.y0);
         glyphRectangle_addPoint(&rectangle, quadToDraw.x1, quadToDraw.y1);
+        glyphRectangle_addPoint(&rectangle, baselineX, baselineY);
 
     }
 

@@ -130,6 +130,9 @@ struct beacon_context_s
         beacon_Behavior_t *windowKeyboardEventClass;
         beacon_Behavior_t *windowTextInputEventClass;
 
+        beacon_Behavior_t *testAsserterClass;
+        beacon_Behavior_t *testCaseClass;
+
         beacon_Behavior_t *abstractPrimitiveTensorClass;
         beacon_Behavior_t *abstractPrimitiveMatrixClass;
         beacon_Behavior_t *matrix2x2Class;

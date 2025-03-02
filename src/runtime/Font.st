@@ -61,9 +61,26 @@ height
     ^ height
 ].
 
+
 FontFace ![
-advance
-    ^ advance
+linespace
+    ^ ascent - descent + linegap
+].
+
+
+FontFace ![
+ascent
+    ^ ascent
+].
+
+FontFace ![
+descent
+    ^ descent
+].
+
+FontFace ![
+linegap
+    ^ linegap
 ].
 
 FontFace ![
