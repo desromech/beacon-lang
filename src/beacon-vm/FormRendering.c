@@ -60,8 +60,8 @@ beacon_oop_t beacon_SolidRectangleRenderingElement_drawInForm(beacon_context_t *
     int borderSize = beacon_decodeSmallNumber(renderingElement->super.borderSize);
     int interiorDrawMinX = drawMinX + borderSize;
     int interiorDrawMinY = drawMinY + borderSize;
-    int interiorDrawMaxX = drawMaxX + borderSize;
-    int interiorDrawMaxY = drawMaxY + borderSize;
+    int interiorDrawMaxX = drawMaxX - borderSize;
+    int interiorDrawMaxY = drawMaxY - borderSize;
 
     int drawWidth = drawMaxX - drawMinX;
     int drawHeight = drawMaxY - drawMinY;
@@ -75,16 +75,13 @@ beacon_oop_t beacon_SolidRectangleRenderingElement_drawInForm(beacon_context_t *
             if(0 <= x && x < formWidth &&
                0 <= y && y < formHeight)
             {
+                int drawX = x + drawMinX;
+                int drawY = y + drawMinY;
                 bool isInInterior = borderSize <= 0 ||
-                    (interiorDrawMinX <= x && x < interiorDrawMaxX &&
-                    interiorDrawMinY <= y && y < interiorDrawMaxY);
+                    (interiorDrawMinX <= drawX && drawX < interiorDrawMaxX &&
+                    interiorDrawMinY <= drawY && drawY < interiorDrawMaxY);
 
                 bool isInBorder = !isInInterior; 
-                float colorR = clampFloat(beacon_decodeSmallNumber(renderingElement->color->r), 0, 1);
-                float colorG = clampFloat(beacon_decodeSmallNumber(renderingElement->color->g), 0, 1);
-                float colorB = clampFloat(beacon_decodeSmallNumber(renderingElement->color->b), 0, 1);
-                float colorA = clampFloat(beacon_decodeSmallNumber(renderingElement->color->a), 0, 1);
-
                 float sourceR = isInBorder ? borderColorR : colorR;
                 float sourceG = isInBorder ? borderColorG : colorG;
                 float sourceB = isInBorder ? borderColorB : colorB;

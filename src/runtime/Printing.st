@@ -73,3 +73,13 @@ Symbol ![
 printOn: aStream
     aStream nextPut: $#; nextPutAll: self
 ].
+
+Point ![
+printOn: aStream
+    aStream nextPut: $(; print: x; nextPut: $@; print: y; nextPut: $)
+].
+
+Rectangle ![
+printOn: aStream
+    aStream print: origin; nextPutAll: ' corner: '; print: corner
+].

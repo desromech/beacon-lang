@@ -48,7 +48,7 @@ ones
 Vector4 ![
 printOn: aStream
     aStream
-        nextPutAll: '(Vector3 x: '; print: self x;
+        nextPutAll: '(Vector4 x: '; print: self x;
         nextPutAll: ' y: '; print: self y;
         nextPutAll: ' z: '; print: self z;
         nextPutAll: ' w: '; print: self w;

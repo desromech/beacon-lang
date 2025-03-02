@@ -165,8 +165,8 @@ containsPoint: aPoint
 ].
 
 Rectangle ![
-translatedBy: aPoint
-    ^ origin + aPoint corner: corner + aPoint
+translatedBy: delta
+    ^ origin + delta corner: corner + delta
 ].
 
 Rectangle ![

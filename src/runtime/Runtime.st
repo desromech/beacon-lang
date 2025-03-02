@@ -35,6 +35,7 @@ FilesToLoad := #(
     'MorphicCode.st'
     'Inspector.st'
     'Workspace.st'
+    'ClassBrowser.st'
 ).
 
 1 to: FilesToLoad basicSize do: [:index |
