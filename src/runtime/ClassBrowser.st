@@ -15,6 +15,8 @@ initialize
     super initialize.
 
     classTableMorph := TableMorph new.
+    classTableMorph dataSource: (SimpleTableDataSource elements: SystemDictionary keys).
+
     codeTextArea := CodeTextAreaMorph new.
     self addMorph: classTableMorph.
     self addMorph: codeTextArea.

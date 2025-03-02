@@ -181,6 +181,11 @@ fullRenderWithBuilder: renderingBuilder
 ].
 
 Morph ![
+owner
+    ^ owner
+].
+
+Morph ![
 owner: aMorph
     owner := aMorph
 ].

@@ -1458,7 +1458,7 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "asFloat", 0, beacon_SmallFloat_asFloat);
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "asInteger", 0, beacon_SmallFloat_asInteger);
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "floor", 0, beacon_SmallFloat_floor);
-    beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "celing", 0, beacon_SmallFloat_ceiling);
+    beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "ceiling", 0, beacon_SmallFloat_ceiling);
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "negated", 0, beacon_SmallFloat_negated);
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "sqrt", 0, beacon_SmallFloat_sqrt);
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "+", 1, beacon_SmallFloat_plus);

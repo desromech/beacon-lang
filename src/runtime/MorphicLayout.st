@@ -58,6 +58,37 @@ addMorph: morph proportion: proportion
         yourself)
 ].
 
+HorizontalMorphPackingLayout ![
+applyWithExtent: anExtent
+    | fixedWidth totalProportion eachElement remainingWidth destinationX elementWidth |
+    fixedWidth := 0.
+    totalProportion := 0.
+    1 to: elements size do: [:eachElementIndex |
+        eachElement := elements at: eachElementIndex.
+        eachElement proportion = 0 ifTrue: [
+            fixedWidth := fixedWidth + eachElement fixedExtent y
+        ] ifFalse: [
+            totalProportion := totalProportion + eachElement proportion
+        ]
+    ].
+
+    remainingWidth := anExtent y - fixedWidth.
+    destinationX := 0.
+    1 to: elements size do: [:eachElementIndex |
+        eachElement := elements at: eachElementIndex.
+        eachElement proportion = 0 ifTrue: [
+            eachElement morph position: destinationX@0.
+            destinationX := destinationX + eachElement fixedExtent y
+        ] ifFalse: [
+            elementWidth := (remainingWidth * eachElement proportion asFloat / totalProportion + 0.5) asInteger.
+            eachElement morph
+                position: destinationX@0;
+                extent: anExtent x @ elementWidth.
+            destinationX := destinationX + elementWidth
+        ]
+    ].
+].
+
 VerticalMorphPackingLayout ![
 applyWithExtent: anExtent
     | fixedHeight totalProportion eachElement remainingHeight destinationY elementHeight |
