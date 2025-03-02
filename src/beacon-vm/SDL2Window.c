@@ -260,7 +260,18 @@ static void beacon_sdl2_fetchAndDispatchEvents(beacon_context_t *context)
                 }
             }
             break;
-        }
+            case SDL_WINDOWEVENT_CLOSE:
+            {
+                beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,
+                    (beacon_Symbol_t*)beacon_encodeSmallInteger(sdlEvent.window.windowID));
+                if(beaconWindow)
+                {
+                    SDL_Window *sdlWindow = SDL_GetWindowFromID(sdlEvent.window.windowID);
+                    beacon_perform(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onCloseRequest"));
+                }
+            }
+            break;
+            }
             break;
         case SDL_QUIT:
             isQuitting = true;

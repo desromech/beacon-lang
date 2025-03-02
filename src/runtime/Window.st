@@ -109,3 +109,8 @@ Window ![
 onSizeChanged
     Stdio stdout nextPutAll: 'Window onSizeChanged.'; lf
 ].
+
+Window ![
+onCloseRequest
+    self close
+].
