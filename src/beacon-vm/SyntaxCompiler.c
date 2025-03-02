@@ -62,6 +62,7 @@ beacon_CompiledMethod_t *beacon_compileFileSyntax(beacon_context_t *context, bea
     beacon_CompiledMethod_t *compiledMethod = beacon_allocateObjectWithBehavior(context->heap, context->classes.compiledMethodClass, sizeof(beacon_CompiledMethod_t), BeaconObjectKindPointers);
     compiledMethod->super.argumentCount = bytecode->argumentCount;
     compiledMethod->super.bytecodeImplementation = bytecode;
+    compiledMethod->super.sourcePosition = parseTree->sourcePosition;
     return compiledMethod;
 }
 
@@ -750,6 +751,7 @@ static beacon_CompiledBlock_t *beacon_SyntaxCompiler_compileBlockClosureNode(bea
     beacon_CompiledBlock_t *compiledBlock = beacon_allocateObjectWithBehavior(context->heap, context->classes.compiledBlockClass, sizeof(beacon_CompiledBlock_t), BeaconObjectKindPointers);
     compiledBlock->super.argumentCount = bytecode->argumentCount;
     compiledBlock->super.bytecodeImplementation = bytecode;
+    compiledBlock->super.sourcePosition = blockClosureNode->super.sourcePosition;
     compiledBlock->captureCount = beacon_encodeSmallInteger(beacon_ArrayList_size(blockEnvironment->captureList));
 
     return compiledBlock;
@@ -872,6 +874,7 @@ static beacon_CompiledMethod_t *beacon_SyntaxCompiler_compileMethodNode(beacon_c
     compiledMethod->name = methodNode->selector;
     compiledMethod->super.argumentCount = bytecode->argumentCount;
     compiledMethod->super.bytecodeImplementation = bytecode;
+    compiledMethod->super.sourcePosition = methodNode->super.sourcePosition;
 
     return compiledMethod;
 }

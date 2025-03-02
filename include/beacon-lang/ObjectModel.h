@@ -190,6 +190,7 @@ typedef struct beacon_CompiledCode_s
     beacon_oop_t argumentCount;
     beacon_NativeCode_t *nativeImplementation;
     struct beacon_BytecodeCode_s *bytecodeImplementation;
+    struct beacon_SourcePosition_s *sourcePosition;
 } beacon_CompiledCode_t;
 
 typedef struct beacon_CompiledMethod_s
