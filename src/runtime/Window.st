@@ -3,6 +3,7 @@ initialize
     width := 640.
     height := 480.
     drawingForm := nil.
+    useCustomRenderer := false.
 ].
 
 Window ![
@@ -56,7 +57,17 @@ renderWithBuilder: renderingBuilder
 ].
 
 Window ![
-render
+useCustomRenderer
+    ^ useCustomRenderer
+].
+
+Window ![
+useCustomRenderer: aBoolean
+    useCustomRenderer := aBoolean
+].
+
+Window ![
+renderViaForm
     | formRenderingBuilder | 
     self ensureDrawingFormHasCorrectExtent.
     
@@ -68,6 +79,13 @@ render
     formRenderingBuilder drawInForm: drawingForm.
 
     self displayForm: drawingForm.
+].
+
+Window ![
+render
+    useCustomRenderer ifFalse: [
+        self renderViaForm
+    ]
 ].
 
 Window ![

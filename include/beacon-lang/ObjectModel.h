@@ -769,6 +769,7 @@ typedef struct beacon_Window_s
     beacon_oop_t height;
     beacon_oop_t handle;
 
+    beacon_oop_t useCustomRenderer;
     beacon_oop_t rendererHandle;
 
     beacon_oop_t textureHandle;

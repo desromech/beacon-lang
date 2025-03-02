@@ -58,10 +58,13 @@ static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t r
     beaconWindow->handle = beacon_encodeSmallInteger(sdlWindowID);
     beacon_MethodDictionary_atPut(context, context->roots.windowHandleMap, (beacon_Symbol_t*)beaconWindow->handle, (beacon_oop_t)beaconWindow);
 
-    SDL_Renderer *renderer = SDL_CreateRenderer(sdlWindow, -1, SDL_RENDERER_PRESENTVSYNC);
-    beaconWindow->rendererHandle = beacon_boxExternalAddress(context, renderer);
-
-    beacon_sdl2_updateDisplayTextureExtent(context, beaconWindow);
+    if(beaconWindow->useCustomRenderer != context->roots.trueValue)
+    {
+        SDL_Renderer *renderer = SDL_CreateRenderer(sdlWindow, -1, SDL_RENDERER_PRESENTVSYNC);
+        beaconWindow->rendererHandle = beacon_boxExternalAddress(context, renderer);
+    
+        beacon_sdl2_updateDisplayTextureExtent(context, beaconWindow);    
+    }
     return receiver;
 }
 
@@ -79,10 +82,12 @@ static beacon_oop_t beacon_Window_close(beacon_context_t *context, beacon_oop_t 
     beacon_MethodDictionary_atPut(context, context->roots.windowHandleMap, (beacon_Symbol_t*)beaconWindow->handle, (beacon_oop_t)beaconWindow);
 
     SDL_Texture *texture = beacon_unboxExternalAddress(context, beaconWindow->textureHandle);
-    SDL_DestroyTexture(texture);
+    if(texture)
+        SDL_DestroyTexture(texture);
 
     SDL_Renderer *renderer = beacon_unboxExternalAddress(context, beaconWindow->rendererHandle);
-    SDL_DestroyRenderer(renderer);
+    if(texture)
+        SDL_DestroyRenderer(renderer);
     
     SDL_DestroyWindow(sdlWindow);
     return receiver;
