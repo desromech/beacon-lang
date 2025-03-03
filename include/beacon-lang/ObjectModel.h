@@ -788,7 +788,7 @@ typedef struct beacon_WindowEvent_s
 
 typedef struct beacon_WindowExposeEvent_s
 {
-    beacon_Object_t super;
+    beacon_WindowEvent_t super;
     beacon_oop_t x;
     beacon_oop_t y;
     beacon_oop_t width;
@@ -797,7 +797,7 @@ typedef struct beacon_WindowExposeEvent_s
 
 typedef struct beacon_WindowMouseButtonEvent_s
 {
-    beacon_Object_t super;
+    beacon_WindowEvent_t super;
     beacon_oop_t button;
     beacon_oop_t x;
     beacon_oop_t y;
@@ -805,7 +805,7 @@ typedef struct beacon_WindowMouseButtonEvent_s
 
 typedef struct beacon_WindowMouseMotionEvent_s
 {
-    beacon_Object_t super;
+    beacon_WindowEvent_t super;
     beacon_oop_t buttons;
     beacon_oop_t x;
     beacon_oop_t y;
@@ -813,9 +813,18 @@ typedef struct beacon_WindowMouseMotionEvent_s
     beacon_oop_t yrel;
 } beacon_WindowMouseMotionEvent_t;
 
+typedef struct beacon_WindowMouseWheelEvent_s
+{
+    beacon_WindowEvent_t super;
+    beacon_oop_t x;
+    beacon_oop_t y;
+    beacon_oop_t scrollX;
+    beacon_oop_t scrollY;
+} beacon_WindowMouseWheelEvent_t;
+
 typedef struct beacon_WindowKeyboardEvent_s
 {
-    beacon_Object_t super;
+    beacon_WindowEvent_t super;
     beacon_oop_t scancode;
     beacon_oop_t symbol;
     beacon_oop_t modstate;
@@ -823,7 +832,7 @@ typedef struct beacon_WindowKeyboardEvent_s
 
 typedef struct beacon_WindowTextInputEvent_s
 {
-    beacon_Object_t super;
+    beacon_WindowEvent_t super;
     beacon_oop_t text;
 } beacon_WindowTextInputEvent_t;
 

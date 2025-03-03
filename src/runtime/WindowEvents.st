@@ -118,6 +118,46 @@ yrel: anInteger
     yrel := anInteger
 ].
 
+WindowMouseWheelEvent ![
+x
+    ^ x
+].
+
+WindowMouseWheelEvent ![
+x: anInteger
+    x := anInteger
+].
+
+WindowMouseWheelEvent ![
+y
+    ^ y
+].
+
+WindowMouseWheelEvent ![
+y: anInteger
+    y := anInteger
+].
+
+WindowMouseWheelEvent ![
+scrollX
+    ^ scrollX
+].
+
+WindowMouseWheelEvent ![
+scrollX: anInteger
+    scrollX := anInteger
+].
+
+WindowMouseWheelEvent ![
+scrollY
+    ^ scrollY
+].
+
+WindowMouseWheelEvent ![
+scrollY: anInteger
+    scrollY := anInteger
+].
+
 WindowKeyboardEvent ![
 scancode
     ^ scancode

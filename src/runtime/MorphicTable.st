@@ -11,10 +11,19 @@ table: aTable
 ].
 
 TableDataSource ![
+elementAtIndex: index
+    ^ nil
+].
+
+TableDataSource ![
+displayStringFor: anElement
+    ^ anElement printString
+].
+
+TableDataSource ![
 readyToBeDisplayed
 
 ].
-
 
 TableDataSource subclass: #SimpleTableDataSource instanceVariables: #(elements).
 
@@ -25,7 +34,7 @@ elements: aCollection
 
 SimpleTableDataSource ![
 elements
-    ^  elements.
+    ^  elements
 ].
 
 SimpleTableDataSource ![
@@ -33,7 +42,14 @@ elements: aCollection
     elements := aCollection.
 ].
 
-Morph subclass: #TableContainerMorph instanceVariables: #(headerRow exposedRows).
+SimpleTableDataSource ![
+elementAtIndex: index
+    ^ (1 <= index and: [index <= elements size])
+        ifTrue: [elements at: index]
+        ifFalse: [nil]
+].
+
+Morph subclass: #TableContainerMorph instanceVariables: #(headerRow).
 TableContainerMorph class ![
 defaultColor
     ^ Color white
@@ -51,12 +67,7 @@ renderWithBuilder: renderingBuilder
 ].
 
 TableContainerMorph ![
-exposedRows
-    ^ exposedRows
-].
-
-TableContainerMorph ![
-calculateExactVisibleRows
+computeVisibleExactRowCount
 	"Answer the rows to show in list - with possible fraction"
 
 	| visibleRows |
@@ -67,58 +78,52 @@ calculateExactVisibleRows
 ].
 
 TableContainerMorph ![
-calculateMaxVisibleRows
+computeVisibleRowCount
 	"Answer the maximal number of rows to shown in list"
 
-	^ self calculateExactVisibleRows ceiling asInteger
+	^ self computeVisibleExactRowCount ceiling asInteger
 ].
 
 TableContainerMorph ![
-calculateStartIndexWhenShowing: visibleRows
-	"Answer the first row to show when showing visibleRows rows.
-	 This works in case we are exceeding the available rows to show"
-	| currentIndex startIndex oldIndex |
-
-	currentIndex := self table showIndex.
-	currentIndex + visibleRows - 1 > self table numberOfRows
-		ifTrue: [ currentIndex := self table numberOfRows - visibleRows + 2 ].
-	startIndex := currentIndex max: 1.
-	oldIndex := self table showIndex.
-	"self table basicMoveShowIndexTo: startIndex.
-	self table announceScrollChangedFrom: oldIndex to: self table showIndex."
-	^ startIndex
-].
-
-TableContainerMorph ![
-calculateColumnWidths
-    | widths |
-    widths := Array new: self table numberOfColumns.
-    1 to: widths size do: [:i |
-        widths at: i put: 0
-    ].
-
-    ^ widths
-].
-
-TableContainerMorph ![
-updateExposedRows
-    | visibleRows columns columnWidths startIndex |
-
-    visibleRows := self calculateMaxVisibleRows.
-	startIndex := self calculateStartIndexWhenShowing: visibleRows.
-	columns := self table columns.
-	columnWidths := self calculateColumnWidths.
-
-    exposedRows := MethodDictionary new.
+computeStartingRowIndex
+    ^ (self table rowPositionY asFloat / (self table rowHeight + self table intercellSpacing y)) floor asInteger
 ].
 
 TableContainerMorph ![
 renderRowsWithBuilder: renderingBuilder
-    | x y cellWidth cellHeight |
+    | visibleRowCount startingRowIndex positionY cellHeight dataSource |
+    visibleRowCount := self computeVisibleRowCount.
+    startingRowIndex := self computeStartingRowIndex.
 
+    positionY := self table rowPositionY.
+    cellHeight := self table rowHeight + self table intercellSpacing y.
+
+    dataSource := self table dataSource.
+    dataSource == nil ifTrue: [^ self].
+
+    1 to: visibleRowCount do: [:displayIndex |
+        | rowIndex rowPositionY rowElement rowElementString |
+        rowIndex := startingRowIndex + displayIndex.
+        rowPositionY := (rowIndex - 1) * cellHeight - positionY.
+        rowElement := dataSource elementAtIndex: rowIndex.
+        rowElement ~~ nil ifTrue: [
+            rowElementString := dataSource displayStringFor: rowElement.
+            renderingBuilder text: rowElementString rectangle: (0@rowPositionY extent: self width @cellHeight) color: Color black fontFace: Font defaultFontFace.
+        ]
+    ].
+
+    "Stdio stdout nextPutAll: 'starting '; print: startingRowIndex; nextPutAll: ' rowCount '; print: visibleRowCount; lf"
 ].
 
-BorderedMorph subclass: #TableMorph instanceVariables: #(dataSource showIndex columns container rowHeight intercellSpacing).
+TableContainerMorph ![
+handleMorphMouseWheelEvent: event
+    | rowPositionY |
+    rowPositionY := self table rowPositionY.
+    
+    self table rowPositionY: (rowPositionY + (event scrollDelta y * 10) max: 0)
+].
+
+BorderedMorph subclass: #TableMorph instanceVariables: #(dataSource container rowPositionY rowHeight intercellSpacing).
 
 TableMorph class ![
 defaultExtent
@@ -133,8 +138,7 @@ defaultColor
 TableMorph ![
 initialize
     super initialize.
-    showIndex := 0.
-    columns := #().
+    rowPositionY := 0.
     self initializeContainer.
 
     self layout: (HorizontalMorphPackingLayout new
@@ -155,24 +159,8 @@ initializeContainer
 ].
 
 TableMorph ![
-columns
-    ^ columns
-].
-
-TableMorph ![
-columns: aCollection
-    columns := aCollection asArray
-].
-
-TableMorph ![
 container
     ^ container
-].
-
-TableMorph ![
-resetPosition
-    showIndex := 0.
-    self container updateExposedRows
 ].
 
 TableMorph ![
@@ -193,7 +181,7 @@ rowHeight
 ].
 
 TableMorph class ![
-defaultIntercelSpacing
+defaultIntercellSpacing
 	^ 0@0
 ].
 
@@ -201,22 +189,12 @@ TableMorph ![
 intercellSpacing
     ^ intercellSpacing ~~ nil
         ifTrue: [intercellSpacing]
-        ifFalse: [intercellSpacing := self class defaultIntercelSpacing]
-].
-
-TableMorph ![
-showIndex
-    ^ showIndex
+        ifFalse: [intercellSpacing := self class defaultIntercellSpacing]
 ].
 
 TableMorph ![
 hasDataSource
     ^ dataSource == nil
-].
-
-TableMorph ![
-numberOfColumns
-	^ columns size
 ].
 
 TableMorph ![
@@ -228,6 +206,22 @@ numberOfRows
 TableMorph ![
 dataSource
     ^ dataSource
+].
+
+TableMorph ![
+resetPosition
+    rowPositionY := 0.
+].
+
+TableMorph ![
+rowPositionY
+    ^ rowPositionY
+].
+
+TableMorph ![
+rowPositionY: anInteger
+    rowPositionY := anInteger.
+    self changed
 ].
 
 TableMorph ![

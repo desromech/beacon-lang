@@ -63,6 +63,14 @@ onMouseMotion: event
 ].
 
 MorphicWindow ![
+onMouseWheel: event
+    rootMorph processEvent: (MorphMouseWheelEvent new
+        position: event x @ event y;
+        scrollDelta: event scrollX @ event scrollY;
+        yourself)
+].
+
+MorphicWindow ![
 onKeyPressed: event
     rootMorph processEvent: (MorphKeyboardDownEvent new
         scancode: event scancode;

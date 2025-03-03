@@ -189,6 +189,26 @@ static void beacon_sdl2_fetchAndDispatchEvents(beacon_context_t *context)
             }
         }
             break;
+        case SDL_MOUSEWHEEL:
+        {
+            beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,
+                (beacon_Symbol_t*)beacon_encodeSmallInteger(sdlEvent.motion.windowID));
+            if(beaconWindow)
+            {
+                beacon_WindowMouseWheelEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowMouseWheelEventClass, sizeof(beacon_WindowMouseWheelEvent_t), BeaconObjectKindPointers);
+                int x = 0;
+                int y = 0;
+                SDL_GetMouseState(&x, &y);
+
+                event->x = beacon_encodeSmallInteger(x);
+                event->y = beacon_encodeSmallInteger(y);
+                event->scrollX = beacon_encodeSmallInteger(sdlEvent.wheel.x);
+                event->scrollY = beacon_encodeSmallInteger(sdlEvent.wheel.y);
+
+                beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onMouseWheel:"), (beacon_oop_t)event);
+            }
+        }
+            break;     
         case SDL_KEYDOWN:
         {
             beacon_Window_t *beaconWindow = (beacon_Window_t*)beacon_MethodDictionary_atOrNil(context, context->roots.windowHandleMap,

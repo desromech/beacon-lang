@@ -7,6 +7,7 @@ MorphMouseEvent subclass: #MorphMouseButtonEvent instanceVariables: #(button).
 MorphMouseButtonEvent subclass: #MorphMouseButtonDownEvent.
 MorphMouseButtonEvent subclass: #MorphMouseButtonUpEvent.
 MorphMouseEvent subclass: #MorphMouseMotionEvent instanceVariables: #(buttons deltaPosition).
+MorphMouseEvent subclass: #MorphMouseWheelEvent instanceVariables: #(scrollDelta).
 
 MorphMouseEvent subclass: #MorphMouseEnterEvent instanceVariables: #().
 MorphMouseEvent subclass: #MorphMouseLeaveEvent instanceVariables: #().
@@ -133,6 +134,16 @@ accept: aVisitor
 
 MorphEventVisitor ![
 handleMorphMouseMotionEvent: anEvent
+    ^ self handleMorphMouseEvent: anEvent
+].
+
+MorphMouseWheelEvent ![
+accept: aVisitor
+    ^ aVisitor handleMorphMouseWheelEvent: self
+].
+
+MorphEventVisitor ![
+handleMorphMouseWheelEvent: anEvent
     ^ self handleMorphMouseEvent: anEvent
 ].
 
@@ -363,6 +374,16 @@ deltaPosition
 MorphMouseMotionEvent ![
 deltaPosition: aPoint
     deltaPosition := aPoint
+].
+
+MorphMouseWheelEvent ![
+scrollDelta
+    ^ scrollDelta
+].
+
+MorphMouseWheelEvent ![
+scrollDelta: aPoint
+    scrollDelta := aPoint
 ].
 
 MorphKeyboardEvent ![
