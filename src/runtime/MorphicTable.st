@@ -90,8 +90,13 @@ computeStartingRowIndex
 ].
 
 TableContainerMorph ![
+computeRowIndexAtPosition: aPosition
+    ^ ((aPosition y + self table rowPositionY asFloat) / (self table rowHeight + self table intercellSpacing y)) floor asInteger + 1
+].
+
+TableContainerMorph ![
 renderRowsWithBuilder: renderingBuilder
-    | visibleRowCount startingRowIndex positionY cellHeight dataSource |
+    | visibleRowCount startingRowIndex positionY cellHeight selectionSet dataSource |
     visibleRowCount := self computeVisibleRowCount.
     startingRowIndex := self computeStartingRowIndex.
 
@@ -101,14 +106,23 @@ renderRowsWithBuilder: renderingBuilder
     dataSource := self table dataSource.
     dataSource == nil ifTrue: [^ self].
 
+    selectionSet := self table selectionSet.
+
     1 to: visibleRowCount do: [:displayIndex |
-        | rowIndex rowPositionY rowElement rowElementString |
+        | rowIndex rowPositionY isSelected rowElement rowElementString rowBounds |
         rowIndex := startingRowIndex + displayIndex.
         rowPositionY := (rowIndex - 1) * cellHeight - positionY.
         rowElement := dataSource elementAtIndex: rowIndex.
         rowElement ~~ nil ifTrue: [
+            rowBounds := 0@rowPositionY extent: self width @cellHeight.
+
+            isSelected := selectionSet includes: rowIndex.
+            isSelected ifTrue: [
+                renderingBuilder solidRectangle: rowBounds color: Color blue
+            ].
+
             rowElementString := dataSource displayStringFor: rowElement.
-            renderingBuilder text: rowElementString rectangle: (0@rowPositionY extent: self width @cellHeight) color: Color black fontFace: Font defaultFontFace.
+            renderingBuilder text: rowElementString rectangle: rowBounds color: Color black fontFace: Font defaultFontFace.
         ]
     ].
 
@@ -116,14 +130,24 @@ renderRowsWithBuilder: renderingBuilder
 ].
 
 TableContainerMorph ![
+handleMorphMouseButtonDownEvent: event
+    | selectionRowIndex |
+    selectionRowIndex := self computeRowIndexAtPosition: event position.
+    self table selectionSet: {selectionRowIndex}.
+
+    event wasHandled: true
+].
+
+TableContainerMorph ![
 handleMorphMouseWheelEvent: event
     | rowPositionY |
     rowPositionY := self table rowPositionY.
     
-    self table rowPositionY: (rowPositionY + (event scrollDelta y * 10) max: 0)
+    self table rowPositionY: (rowPositionY + (event scrollDelta y negated * 10) max: 0).
+    event wasHandled: true
 ].
 
-BorderedMorph subclass: #TableMorph instanceVariables: #(dataSource container rowPositionY rowHeight intercellSpacing).
+BorderedMorph subclass: #TableMorph instanceVariables: #(dataSource container rowPositionY rowHeight intercellSpacing selectionSet).
 
 TableMorph class ![
 defaultExtent
@@ -139,6 +163,7 @@ TableMorph ![
 initialize
     super initialize.
     rowPositionY := 0.
+    selectionSet := #().
     self initializeContainer.
 
     self layout: (HorizontalMorphPackingLayout new
@@ -221,6 +246,17 @@ rowPositionY
 TableMorph ![
 rowPositionY: anInteger
     rowPositionY := anInteger.
+    self changed
+].
+
+TableMorph ![
+selectionSet
+    ^ selectionSet
+].
+
+TableMorph ![
+selectionSet: aSetOfSelectedIndices
+    selectionSet := aSetOfSelectedIndices.
     self changed
 ].
 

@@ -49,6 +49,17 @@ collect: aBlock
     ^ result
 ].
 
+SequenceableCollection ![
+includes: anElement
+    1 to: self size do: [:i |
+        anElement = (self at: i) ifTrue: [
+            ^ true
+        ]
+    ].
+
+    ^ false
+].
+
 SequenceableCollection class ![
 ofSize: size
 	^ self new: size
