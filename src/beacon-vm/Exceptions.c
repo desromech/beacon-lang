@@ -82,6 +82,8 @@ static void beacon_displayExceptionStackTrace(beacon_context_t *context)
         case StackFrameBytecodeMethodRecord:
             beacon_displaySourcePosition(context, record->bytecodeMethodStackRecord.code->sourcePosition);
             break;
+        default:
+            break;
         }
         record = record->previousRecord;
     }
