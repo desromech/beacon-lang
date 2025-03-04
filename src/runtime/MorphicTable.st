@@ -140,7 +140,7 @@ handleMorphMouseWheelEvent: event
     | rowPositionY |
     rowPositionY := self table rowPositionY.
     
-    self table rowPositionY: (rowPositionY + (event scrollDelta y negated * 10) max: 0).
+    self table rowPositionY: (rowPositionY + (event scrollDelta y negated * 30) max: 0).
     event wasHandled: true
 ].
 
