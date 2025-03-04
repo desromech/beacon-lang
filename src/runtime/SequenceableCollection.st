@@ -9,6 +9,56 @@ species
 ].
 
 SequenceableCollection ![
+first
+    ^ self at: 1
+].
+
+SequenceableCollection ![
+second
+    ^ self at: 2
+].
+
+SequenceableCollection ![
+third
+    ^ self at: 3
+].
+
+SequenceableCollection ![
+fourth
+    ^ self at: 4
+].
+
+SequenceableCollection ![
+fifth
+    ^ self at: 5
+].
+
+SequenceableCollection ![
+sixth
+    ^ self at: 6
+].
+
+SequenceableCollection ![
+seventh
+    ^ self at: 7
+].
+
+SequenceableCollection ![
+eighth
+    ^ self at: 8
+].
+
+SequenceableCollection ![
+ninth
+    ^ self at: 9
+].
+
+SequenceableCollection ![
+tenth
+    ^ self at: 10
+].
+
+SequenceableCollection ![
 copyFrom: start to: stop
     | newSize |
     newSize := stop - start + 1.

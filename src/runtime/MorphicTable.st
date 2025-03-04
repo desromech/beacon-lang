@@ -144,7 +144,7 @@ handleMorphMouseWheelEvent: event
     event wasHandled: true
 ].
 
-BorderedMorph subclass: #TableMorph instanceVariables: #(dataSource container rowPositionY rowHeight intercellSpacing selectionSet).
+BorderedMorph subclass: #TableMorph instanceVariables: #(dataSource container rowPositionY rowHeight intercellSpacing selectionSet onSelectionChangedBlock).
 
 TableMorph class ![
 defaultExtent
@@ -254,7 +254,19 @@ selectionSet
 TableMorph ![
 selectionSet: aSetOfSelectedIndices
     selectionSet := aSetOfSelectedIndices.
+    onSelectionChangedBlock ~~ nil ifTrue: [onSelectionChangedBlock value: self].
     self changed
+].
+
+TableMorph ![
+selectedElements
+    ^ selectionSet collect: [:eachIndex | dataSource elementAtIndex: eachIndex].
+].
+
+
+TableMorph ![
+onSelectionChangedDo: aBlock
+    onSelectionChangedBlock := aBlock
 ].
 
 TableMorph ![

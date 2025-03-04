@@ -12,6 +12,7 @@ FilesToLoad := #(
     'SourceCode.st'
     'String.st'
     'Class.st'
+    'CompiledCode.st'
     'Stream.st'
     'SequenceableCollection.st'
     'Printing.st'

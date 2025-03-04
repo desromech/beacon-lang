@@ -1,26 +1,36 @@
-Class ![
-    name
-        ^  name
+Object ![
+isClass
+    ^ false.
 ].
 
 Class ![
-    name: aNameSymbol
-        name := aNameSymbol
+isClass
+    ^ true.
+].
+
+Class ![
+name
+    ^  name
+].
+
+Class ![
+name: aNameSymbol
+    name := aNameSymbol
 ].
 
 Metaclass ![
-    thisClass
-        ^ thisClass
+thisClass
+    ^ thisClass
 ].
 
 Metaclass ![
-    thisClass: aClass
-        thisClass := aClass
+thisClass: aClass
+    thisClass := aClass
 ].
 
 Class ![
-    subclass: subclassName instanceVariables: instanceVariables metaInstanceVariables: metaInstanceVariables
-        | metaclass subclass |
+subclass: subclassName instanceVariables: instanceVariables metaInstanceVariables: metaInstanceVariables
+    | metaclass subclass |
 
     metaclass := Metaclass new.
     metaclass superclass: self class.
@@ -42,12 +52,12 @@ Class ![
 ].
 
 Class ![
-    subclass: subclassName instanceVariables: instanceVariables
+subclass: subclassName instanceVariables: instanceVariables
     ^ self subclass: subclassName instanceVariables: instanceVariables metaInstanceVariables: #()
 ].
 
 Class ![
-    subclass: subclassName.
+subclass: subclassName.
     ^ self subclass: subclassName instanceVariables: #()
 ].
 

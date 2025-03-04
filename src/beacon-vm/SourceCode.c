@@ -58,7 +58,7 @@ beacon_SourceCode_t *beacon_makeSourceCodeFromFileNamed(beacon_context_t *contex
     }
     fclose(file);
 
-    beacon_SourceCode_t *sourceCode = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_SourceCode_t), BeaconObjectKindPointers);
+    beacon_SourceCode_t *sourceCode = beacon_allocateObjectWithBehavior(context->heap, context->classes.sourceCodeClass, sizeof(beacon_SourceCode_t), BeaconObjectKindPointers);
     beacon_splitFileName(context, fileName, &sourceCode->directory, &sourceCode->name);
     sourceCode->text = fileData;
     sourceCode->textSize = beacon_encodeSmallInteger(fileSize);
@@ -70,7 +70,7 @@ beacon_SourceCode_t *beacon_makeSourceCodeFromString(beacon_context_t *context, 
     beacon_String_t *importedName = beacon_importCString(context, name);
     beacon_String_t *importedString = beacon_importCString(context, string);
     size_t stringSize = strlen(string);
-    beacon_SourceCode_t *sourceCode = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_SourceCode_t), BeaconObjectKindPointers);
+    beacon_SourceCode_t *sourceCode = beacon_allocateObjectWithBehavior(context->heap, context->classes.sourceCodeClass, sizeof(beacon_SourceCode_t), BeaconObjectKindPointers);
     sourceCode->name = importedName;
     sourceCode->text = importedString;
     sourceCode->textSize = beacon_encodeSmallInteger(stringSize);

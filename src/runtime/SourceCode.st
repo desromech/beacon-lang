@@ -45,3 +45,48 @@ compileAndRunIt
     parsedSource := self parseScannedSource: scannedSource.
     ^ self evaluateFileSyntaxWithParsedCode: parsedSource
 ].
+
+SourcePosition ![
+sourceCode
+    ^ sourceCode
+].
+
+SourcePosition ![
+sourceCode: aSourceCode
+    sourceCode := aSourceCode
+].
+
+SourcePosition ![
+startIndex
+    ^ startIndex
+].
+
+SourcePosition ![
+endIndex
+    ^ endIndex
+].
+
+SourcePosition ![
+startLine
+    ^ startLine
+].
+
+SourcePosition ![
+endLine
+    ^ endLine
+].
+
+SourcePosition ![
+startColumn
+    ^ startColumn
+].
+
+SourcePosition ![
+endColumn
+    ^ endColumn
+].
+
+SourcePosition ![
+sourceText
+    ^ sourceCode text copyFrom: startIndex to: endIndex
+].

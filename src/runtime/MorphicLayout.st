@@ -107,11 +107,11 @@ applyWithLocalBounds: bounds
     1 to: elements size do: [:eachElementIndex |
         eachElement := elements at: eachElementIndex.
         eachElement proportion = 0 ifTrue: [
-            eachElement applyRectangle (eachElement extent: destinationX@0.)
+            eachElement applyRectangle: (destinationX @ bounds origin y extent: eachElement fixedExtent).
             destinationX := destinationX + eachElement fixedExtent y
         ] ifFalse: [
             elementWidth := (remainingWidth * eachElement proportion asFloat / totalProportion + 0.5) asInteger.
-            eachElement applyRectangle: (destinationX@0 extent: boundsExtent x @ elementWidth).
+            eachElement applyRectangle: (destinationX@bounds origin y extent: elementWidth @ boundsExtent y).
             destinationX := destinationX + elementWidth
         ]
     ].
@@ -137,11 +137,11 @@ applyWithLocalBounds: bounds
     1 to: elements size do: [:eachElementIndex |
         eachElement := elements at: eachElementIndex.
         eachElement proportion = 0 ifTrue: [
-            eachElement applyRectangle: (0@destinationY extent: eachElement).
+            eachElement applyRectangle: (bounds origin x @destinationY extent: eachElement fixedExtent).
             destinationY := destinationY + eachElement fixedExtent y
         ] ifFalse: [
             elementHeight := (remainingHeight * eachElement proportion asFloat / totalProportion + 0.5) asInteger.
-            eachElement applyRectangle: (0@destinationY extent: boundsExtent x @ elementHeight).
+            eachElement applyRectangle: (bounds origin x @destinationY extent: boundsExtent x @ elementHeight).
             destinationY := destinationY + elementHeight
         ]
     ].
