@@ -1,5 +1,8 @@
 #include "Context.c"
 #include "Exceptions.c"
+#include "Font.c"
+#include "FormRendering.c"
+#include "LinearAlgebra.c"
 #include "Memory.c"
 #include "ArrayList.c"
 #include "Dictionary.c"
@@ -8,5 +11,6 @@
 #include "Parser.c"
 #include "Bytecode.c"
 #include "SyntaxCompiler.c"
+
 #include "NullWindow.c"
 #include "Main.c"
