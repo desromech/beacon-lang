@@ -28,3 +28,45 @@ allButFirst: skippedCount
 
     ^ result
 ].
+
+String ![
+lines
+    | list line startLineIndex index size cr lf char |
+    list := ArrayList new.
+    cr := Character cr.
+    lf := Character lf.
+
+    startLineIndex := 1.
+    index := 1.
+    size := self size.
+    [index <= size] whileTrue: [
+        char := self at: index.
+        char = cr ifTrue: [
+            ((index + 1 <= size) and: [(self at: index + 1) = lf]) ifTrue: [
+                index := index + 1.
+                line := self copyFrom: startLineIndex to: index - 1.
+                list add: line.
+                startLineIndex := index + 1
+            ] ifFalse: [
+                line := self copyFrom: startLineIndex to: index - 1.
+                list add: line.
+                startLineIndex := index + 1
+            ]
+        ] ifFalse: [
+            char = lf ifTrue: [
+                line := self copyFrom: startLineIndex to: index - 1.
+                list add: line.
+                startLineIndex := index + 1
+            ]
+        ].
+
+        index := index + 1
+    ].
+
+    startLineIndex <= size ifTrue: [
+        line := self copyFrom: startLineIndex to: size.
+        list add: line.
+    ].
+
+    ^ list asArray
+].

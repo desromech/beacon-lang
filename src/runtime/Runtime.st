@@ -11,12 +11,12 @@ FilesToLoad := #(
     'Slot.st'
     'SourceCode.st'
     'Character.st'
-    'String.st'
     'Class.st'
     'CompiledCode.st'
     'Stream.st'
     'SequenceableCollection.st'
     'Printing.st'
+    'String.st'
     'MethodDictionary.st'
     
     'LinearAlgebra.st'

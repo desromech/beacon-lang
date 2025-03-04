@@ -232,7 +232,10 @@ TextEditorBuffer ![
 setTextFromString: aString
     | newLines |
     newLines := ArrayList new.
-    newLines add: aString.
+    aString lines do: [:each |
+        newLines add: each
+    ].
+
     lines := newLines.
 ].
 
