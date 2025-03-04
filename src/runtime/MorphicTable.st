@@ -17,7 +17,7 @@ elementAtIndex: index
 
 TableDataSource ![
 displayStringFor: anElement
-    ^ anElement printString
+    ^ anElement asString
 ].
 
 TableDataSource ![

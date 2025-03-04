@@ -1325,6 +1325,41 @@ static beacon_oop_t beacon_String_fileIn(beacon_context_t *context, beacon_oop_t
     return beacon_evaluateSourceCode(context, sourceCode);
 }
 
+static beacon_oop_t beacon_String_asString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)argumentCount;
+    (void)arguments;
+    return receiver;
+}
+
+static beacon_oop_t beacon_String_asSymbol(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)argumentCount;
+    (void)arguments;
+    return (beacon_oop_t)beacon_internString(context, (beacon_String_t*)receiver);
+}
+
+static beacon_oop_t beacon_Symbol_asString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)argumentCount;
+    (void)arguments;
+    beacon_Symbol_t *symbol = (beacon_Symbol_t *)receiver;
+    size_t symbolSize = symbol->super.super.super.super.super.header.slotCount;
+    beacon_String_t *string = beacon_allocateObjectWithBehavior(context->heap, context->classes.stringClass, sizeof(beacon_String_t) + symbolSize, BeaconObjectKindBytes);
+    memcpy(string->data, symbol->data, symbolSize);
+    return (beacon_oop_t)string;
+}
+
+static beacon_oop_t beacon_Symbol_asSymbol(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    (void)argumentCount;
+    (void)arguments;
+    return receiver;
+}
+
 static beacon_oop_t beacon_Object_value(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)context;
@@ -1497,6 +1532,11 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
 
     beacon_addPrimitiveToClass(context, context->classes.stringClass, ",", 1, beacon_String_concatenate);
     beacon_addPrimitiveToClass(context, context->classes.stringClass, "fileIn", 1, beacon_String_fileIn);
+    beacon_addPrimitiveToClass(context, context->classes.stringClass, "asString", 1, beacon_String_asString);
+    beacon_addPrimitiveToClass(context, context->classes.stringClass, "asSymbol", 1, beacon_String_asSymbol);
+
+    beacon_addPrimitiveToClass(context, context->classes.symbolClass, "asString", 1, beacon_Symbol_asString);
+    beacon_addPrimitiveToClass(context, context->classes.symbolClass, "asSymbol", 1, beacon_Symbol_asSymbol);
 
     beacon_addPrimitiveToClass(context, context->classes.objectClass, "value", 0, beacon_Object_value);
 

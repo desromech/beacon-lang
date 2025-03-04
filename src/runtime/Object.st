@@ -9,6 +9,11 @@ initialize
 ].
 
 Object ![
+asString
+    ^ self printString
+].
+
+Object ![
 = other
     ^ self == other
 ].
