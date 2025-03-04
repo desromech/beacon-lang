@@ -229,6 +229,14 @@ getTextAsString
 ].
 
 TextEditorBuffer ![
+setTextFromString: aString
+    | newLines |
+    newLines := ArrayList new.
+    newLines add: aString.
+    lines := newLines.
+].
+
+TextEditorBuffer ![
 getTextAtSelection: selection
     selection == nil ifTrue: [^ self getTextAsString]
     "TODO: Implement this"
@@ -300,6 +308,16 @@ initialize
     selectionColor := Color blue.
 ].
 
+TextAreaMorph ![
+contents
+    ^ textBuffer getTextAsString
+].
+
+TextAreaMorph ![
+contents: aString
+    textBuffer setTextFromString: aString.
+    self changed
+].
 
 TextAreaMorph ![
 fontFace
