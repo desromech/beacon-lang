@@ -389,6 +389,25 @@ static beacon_oop_t beacon_SyntaxCompiler_toDo(beacon_context_t *context, beacon
     return 0;
 }
 
+static beacon_oop_t beacon_SyntaxCompiler_whileTrueDo(beacon_context_t *context, beacon_AbstractCompilationEnvironment_t *environment, beacon_BytecodeCodeBuilder_t *builder, beacon_ParseTreeNode_t *receiverBlock, beacon_ParseTreeNode_t *doBlock)
+{
+    // Loop header
+    uint16_t loopHeader = beacon_BytecodeCodeBuilder_label(builder);
+    beacon_BytecodeValue_t conditionValue = beacon_compileInlineNodeWithEnvironmentAndBytecodeBuilder(context, receiverBlock, (beacon_Array_t*)context->roots.emptyArray, environment, builder);
+    uint16_t headerJump = beacon_BytecodeCodeBuilder_jumpIfFalse(context, builder, conditionValue, 0);
+
+    // Do section.
+    if(doBlock)
+        beacon_compileInlineNodeWithEnvironmentAndBytecodeBuilder(context, doBlock, (beacon_Array_t*)context->roots.emptyArray, environment, builder);
+    beacon_BytecodeCodeBuilder_jump(context, builder, loopHeader);
+
+    // Merge section
+    uint16_t loopMerge = beacon_BytecodeCodeBuilder_label(builder);
+    beacon_BytecodeCodeBuilder_fixup_jumpIf(context, builder, headerJump, loopMerge);
+
+    return 0;
+}
+
 static beacon_oop_t beacon_SyntaxCompiler_messageSend(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 2);
@@ -397,9 +416,23 @@ static beacon_oop_t beacon_SyntaxCompiler_messageSend(beacon_context_t *context,
     beacon_BytecodeCodeBuilder_t *builder = (beacon_BytecodeCodeBuilder_t *)arguments[1];
 
     beacon_oop_t selectorEvaluatedValue = beacon_performWith(context, (beacon_oop_t)messageSendNode->selector, context->roots.evaluateWithEnvironmentSelector, (beacon_oop_t)environment);
+    bool receiverIsBlock = beacon_getClass(context, (beacon_oop_t)messageSendNode->receiver) == context->classes.parseTreeBlockClosureNodeClass;
+    size_t argumentValueCount = messageSendNode->arguments->super.super.super.super.super.header.slotCount;
+    if(receiverIsBlock)
+    {
+        if(selectorEvaluatedValue == context->roots.whileTrueSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 0);
+            return beacon_SyntaxCompiler_whileTrueDo(context, environment, builder, messageSendNode->receiver, 0);
+        }
+        else if(selectorEvaluatedValue == context->roots.whileTrueDoSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 1);
+            return beacon_SyntaxCompiler_whileTrueDo(context, environment, builder, messageSendNode->receiver, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0]);
+        }
+    }
 
     beacon_BytecodeValue_t receiverValue = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, messageSendNode->receiver, environment, builder);
-    size_t argumentValueCount = messageSendNode->arguments->super.super.super.super.super.header.slotCount;
     BeaconAssert(context, argumentValueCount <= BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS);
     bool isSuperSend = beacon_BytecodeValue_getType(receiverValue) == BytecodeArgumentTypeSuperReceiver;
     if(!isSuperSend)

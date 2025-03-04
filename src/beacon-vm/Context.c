@@ -401,8 +401,10 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
         context->roots.ifFalseIfTrueSelector = (beacon_oop_t)beacon_internCString(context, "ifFalse:ifTrue:");
         context->roots.andSelector = (beacon_oop_t)beacon_internCString(context, "and:");
         context->roots.orSelector = (beacon_oop_t)beacon_internCString(context, "or:");
-        context->roots.whileTrueSelector = (beacon_oop_t)beacon_internCString(context, "whileTrue:");
-        context->roots.whileFalseSelector = (beacon_oop_t)beacon_internCString(context, "whileFalse:");
+        context->roots.whileTrueSelector = (beacon_oop_t)beacon_internCString(context, "whileTrue");
+        context->roots.whileFalseSelector = (beacon_oop_t)beacon_internCString(context, "whileFalse");
+        context->roots.whileTrueDoSelector = (beacon_oop_t)beacon_internCString(context, "whileTrue:");
+        context->roots.whileFalseDoSelector = (beacon_oop_t)beacon_internCString(context, "whileFalse:");
         context->roots.doWhileTrueSelector = (beacon_oop_t)beacon_internCString(context, "do:whileTrue:");
         context->roots.doWhileFalseSelector = (beacon_oop_t)beacon_internCString(context, "do:whileFalse:");
         context->roots.toDoSelector = (beacon_oop_t)beacon_internCString(context, "to:do:");
@@ -1031,6 +1033,13 @@ static beacon_oop_t beacon_SmallInteger_asInteger(beacon_context_t *context, bea
     return receiver;
 }
 
+static beacon_oop_t beacon_SmallInteger_asCharacter(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)arguments;
+    BeaconAssert(context, argumentCount == 0);
+    return beacon_encodeCharacter(beacon_decodeSmallInteger(receiver));
+}
+
 static beacon_oop_t beacon_SmallInteger_negated(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)context;
@@ -1432,6 +1441,7 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "printString", 0, beacon_SmallInteger_printString);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "asFloat", 0, beacon_SmallInteger_asFloat);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "asInteger", 0, beacon_SmallInteger_asInteger);
+    beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "asCharacter", 0, beacon_SmallInteger_asCharacter);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "negated", 0, beacon_SmallInteger_negated);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "+", 1, beacon_SmallInteger_plus);
     beacon_addPrimitiveToClass(context, context->classes.smallIntegerClass, "-", 1, beacon_SmallInteger_minus);

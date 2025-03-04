@@ -10,6 +10,7 @@ FilesToLoad := #(
     'Number.st'
     'Slot.st'
     'SourceCode.st'
+    'Character.st'
     'String.st'
     'Class.st'
     'CompiledCode.st'

@@ -177,6 +177,8 @@ struct beacon_context_s
         beacon_oop_t orSelector;
         beacon_oop_t whileTrueSelector;
         beacon_oop_t whileFalseSelector;
+        beacon_oop_t whileTrueDoSelector;
+        beacon_oop_t whileFalseDoSelector;
         beacon_oop_t doWhileTrueSelector;
         beacon_oop_t doWhileFalseSelector;
         beacon_oop_t toDoSelector;
