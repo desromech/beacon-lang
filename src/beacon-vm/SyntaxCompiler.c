@@ -408,6 +408,25 @@ static beacon_oop_t beacon_SyntaxCompiler_whileTrueDo(beacon_context_t *context,
     return 0;
 }
 
+static beacon_oop_t beacon_SyntaxCompiler_whileFalseDo(beacon_context_t *context, beacon_AbstractCompilationEnvironment_t *environment, beacon_BytecodeCodeBuilder_t *builder, beacon_ParseTreeNode_t *receiverBlock, beacon_ParseTreeNode_t *doBlock)
+{
+    // Loop header
+    uint16_t loopHeader = beacon_BytecodeCodeBuilder_label(builder);
+    beacon_BytecodeValue_t conditionValue = beacon_compileInlineNodeWithEnvironmentAndBytecodeBuilder(context, receiverBlock, (beacon_Array_t*)context->roots.emptyArray, environment, builder);
+    uint16_t headerJump = beacon_BytecodeCodeBuilder_jumpIfTrue(context, builder, conditionValue, 0);
+
+    // Do section.
+    if(doBlock)
+        beacon_compileInlineNodeWithEnvironmentAndBytecodeBuilder(context, doBlock, (beacon_Array_t*)context->roots.emptyArray, environment, builder);
+    beacon_BytecodeCodeBuilder_jump(context, builder, loopHeader);
+
+    // Merge section
+    uint16_t loopMerge = beacon_BytecodeCodeBuilder_label(builder);
+    beacon_BytecodeCodeBuilder_fixup_jumpIf(context, builder, headerJump, loopMerge);
+
+    return 0;
+}
+
 static beacon_oop_t beacon_SyntaxCompiler_messageSend(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 2);
@@ -429,6 +448,16 @@ static beacon_oop_t beacon_SyntaxCompiler_messageSend(beacon_context_t *context,
         {
             BeaconAssert(context, argumentValueCount == 1);
             return beacon_SyntaxCompiler_whileTrueDo(context, environment, builder, messageSendNode->receiver, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0]);
+        }
+        if(selectorEvaluatedValue == context->roots.whileFalseSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 0);
+            return beacon_SyntaxCompiler_whileTrueDo(context, environment, builder, messageSendNode->receiver, 0);
+        }
+        else if(selectorEvaluatedValue == context->roots.whileFalseDoSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 1);
+            return beacon_SyntaxCompiler_whileFalseDo(context, environment, builder, messageSendNode->receiver, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0]);
         }
     }
 
