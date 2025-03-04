@@ -45,9 +45,6 @@ set(LIBRARY_OUTPUT_PATH "${BeaconLanguage_BINARY_DIR}/dist")
 # Enable tsting
 include(CTest)
 
-# Build the program
-find_library(XCB xcb)
-
 # Use pkg-config.
 # For VisualStudio or mingw in Window
 find_path(SDL2_INCLUDE_DIR
@@ -67,11 +64,14 @@ else()
 endif()
 include_directories("${SDL2_INCLUDE_DIR}")
 
+add_subdirectory(third-party)
+
 # Add the current directory.
 include_directories(
 .
 "${PROJECT_SOURCE_DIR}/include"
 "${PROJECT_SOURCE_DIR}/include/beacon-lang"
+"${PROJECT_SOURCE_DIR}/third-party/abstract-gpu/include"
 )
 
 add_subdirectory(src)
