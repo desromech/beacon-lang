@@ -1,12 +1,12 @@
 MorphLayout subclass: #FillMorphLayout instanceVariables: #(morph).
 MorphLayout subclass: #MorphPackingLayout instanceVariables: #(elements).
-Object subclass: #MorphPackingLayoutElement instanceVariables: #(morph proportion expanded).
+Object subclass: #MorphPackingLayoutElement instanceVariables: #(morph sublayout proportion expanded).
 MorphPackingLayout subclass: #HorizontalMorphPackingLayout instanceVariables: #().
 MorphPackingLayout subclass: #VerticalMorphPackingLayout instanceVariables: #().
 
 FillMorphLayout ![
-applyWithExtent: anExtent
-    morph extent: anExtent
+applyWithLocalBounds: bounds
+    morph bounds: bounds
 ].
 
 FillMorphLayout ![
@@ -27,6 +27,16 @@ morph
 MorphPackingLayoutElement ![
 morph: aMorph
     morph := aMorph
+].
+
+MorphPackingLayoutElement ![
+sublayout
+    ^ sublayout
+].
+
+MorphPackingLayoutElement ![
+sublayout: aLayout
+    sublayout := aLayout
 ].
 
 MorphPackingLayoutElement ![
@@ -45,6 +55,17 @@ proportion: anInteger
     proportion := anInteger
 ].
 
+MorphPackingLayoutElement ![
+applyRectangle: aRectangle
+    morph ~~ nil ifTrue: [
+        ^ morph bounds: aRectangle
+    ].
+
+    sublayout ~~ nil ifTrue: [
+        ^ sublayout applyWithLocalBounds: aRectangle
+    ].
+].
+
 MorphPackingLayout ![
 initialize
     elements := ArrayList new.
@@ -58,9 +79,18 @@ addMorph: morph proportion: proportion
         yourself)
 ].
 
+MorphPackingLayout ![
+addLayout: sublayout proportion: proportion
+    elements add: (MorphPackingLayoutElement new
+        sublayout: sublayout;
+        proportion: proportion;
+        yourself)
+].
+
 HorizontalMorphPackingLayout ![
-applyWithExtent: anExtent
-    | fixedWidth totalProportion eachElement remainingWidth destinationX elementWidth |
+applyWithLocalBounds: bounds
+    | boundsExtent fixedWidth totalProportion eachElement remainingWidth destinationX elementWidth |
+    boundsExtent := bounds extent. 
     fixedWidth := 0.
     totalProportion := 0.
     1 to: elements size do: [:eachElementIndex |
@@ -72,26 +102,25 @@ applyWithExtent: anExtent
         ]
     ].
 
-    remainingWidth := anExtent y - fixedWidth.
-    destinationX := 0.
+    remainingWidth := boundsExtent x - fixedWidth.
+    destinationX := bounds origin x.
     1 to: elements size do: [:eachElementIndex |
         eachElement := elements at: eachElementIndex.
         eachElement proportion = 0 ifTrue: [
-            eachElement morph position: destinationX@0.
+            eachElement applyRectangle (eachElement extent: destinationX@0.)
             destinationX := destinationX + eachElement fixedExtent y
         ] ifFalse: [
             elementWidth := (remainingWidth * eachElement proportion asFloat / totalProportion + 0.5) asInteger.
-            eachElement morph
-                position: destinationX@0;
-                extent: anExtent x @ elementWidth.
+            eachElement applyRectangle: (destinationX@0 extent: boundsExtent x @ elementWidth).
             destinationX := destinationX + elementWidth
         ]
     ].
 ].
 
 VerticalMorphPackingLayout ![
-applyWithExtent: anExtent
-    | fixedHeight totalProportion eachElement remainingHeight destinationY elementHeight |
+applyWithLocalBounds: bounds
+    | boundsExtent fixedHeight totalProportion eachElement remainingHeight destinationY elementHeight |
+    boundsExtent := bounds extent. 
     fixedHeight := 0.
     totalProportion := 0.
     1 to: elements size do: [:eachElementIndex |
@@ -103,18 +132,16 @@ applyWithExtent: anExtent
         ]
     ].
 
-    remainingHeight := anExtent y - fixedHeight.
-    destinationY := 0.
+    remainingHeight := boundsExtent y - fixedHeight.
+    destinationY := bounds origin y.
     1 to: elements size do: [:eachElementIndex |
         eachElement := elements at: eachElementIndex.
         eachElement proportion = 0 ifTrue: [
-            eachElement morph position: 0@destinationY.
+            eachElement applyRectangle: (0@destinationY extent: eachElement).
             destinationY := destinationY + eachElement fixedExtent y
         ] ifFalse: [
             elementHeight := (remainingHeight * eachElement proportion asFloat / totalProportion + 0.5) asInteger.
-            eachElement morph
-                position: 0@destinationY;
-                extent: anExtent x @ elementHeight.
+            eachElement applyRectangle: (0@destinationY extent: boundsExtent x @ elementHeight).
             destinationY := destinationY + elementHeight
         ]
     ].

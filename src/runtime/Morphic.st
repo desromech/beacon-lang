@@ -1,7 +1,7 @@
 Object subclass: #MorphLayout instanceVariables: #().
 
 MorphLayout ![
-applyWithExtent: anExtent
+applyWithLocalBounds: localBounds
     self subclassResponsibility
 ].
 
@@ -129,7 +129,7 @@ handleEvent: anEvent
 Morph ![
 updateLayout
     layout == nil ifTrue: [ ^ self ].
-    layout applyWithExtent: extent
+    layout applyWithLocalBounds: self localBounds
 ].
 
 Morph ![

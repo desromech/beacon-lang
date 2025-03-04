@@ -1,4 +1,4 @@
-BorderedMorph subclass: #ClassBrowser instanceVariables: #(classTableMorph codeTextArea).
+BorderedMorph subclass: #ClassBrowser instanceVariables: #(classTableMorph methodTableMorph codeTextArea).
 
 ClassBrowser class ![
 defaultColor
@@ -17,12 +17,19 @@ initialize
     classTableMorph := TableMorph new.
     classTableMorph dataSource: (SimpleTableDataSource elements: SystemDictionary keys).
 
+    methodTableMorph := TableMorph new.
     codeTextArea := CodeTextAreaMorph new.
     self addMorph: classTableMorph.
+    self addMorph: methodTableMorph.
     self addMorph: codeTextArea.
 
     self layout: (VerticalMorphPackingLayout new
-        addMorph: classTableMorph proportion: 1;
+        addLayout: (HorizontalMorphPackingLayout new
+            addMorph: classTableMorph proportion: 1;
+            addMorph: methodTableMorph proportion: 1;
+            yourself
+            ) proportion: 1;
+        
         addMorph: codeTextArea proportion: 1;
         yourself).
     self updateLayout

@@ -49,7 +49,7 @@ elementAtIndex: index
         ifFalse: [nil]
 ].
 
-Morph subclass: #TableContainerMorph instanceVariables: #(headerRow).
+BorderedMorph subclass: #TableContainerMorph instanceVariables: #().
 TableContainerMorph class ![
 defaultColor
     ^ Color white
@@ -71,10 +71,7 @@ computeVisibleExactRowCount
 	"Answer the rows to show in list - with possible fraction"
 
 	| visibleRows |
-	visibleRows := self height asFloat / (self table rowHeight + self table intercellSpacing y).
-	^ headerRow ~~ nil 
-		ifTrue: [ visibleRows - 1 ]
-		ifFalse: [ visibleRows ]
+	^ visibleRows := self height asFloat / (self table rowHeight + self table intercellSpacing y).
 ].
 
 TableContainerMorph ![
