@@ -1,4 +1,5 @@
 set(BeaconVM_Sources
+    AgpuRendering.c
     Context.c
     Exceptions.c
     Font.c
@@ -14,13 +15,14 @@ set(BeaconVM_Sources
     SyntaxCompiler.c
 )
 
+
 if(SDL2_LIBRARY AND SDL2_INCLUDE_DIR)
     set(BeaconVM_SDL2Sources
         SDL2Window.c
     )
 
     add_library(BeaconVMCore ${BeaconVM_Sources} ${BeaconVM_SDL2Sources})
-    target_link_libraries(BeaconVMCore ${SDL2_LIBRARY})
+    target_link_libraries(BeaconVMCore ${SDL2_LIBRARY} Agpu)
     if(UNIX)
         target_link_libraries(BeaconVMCore m)
     endif()

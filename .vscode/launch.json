@@ -9,12 +9,12 @@
             "request": "launch",
             "name": "Debug",
             "program": "${workspaceFolder}/build/dist/beacon-vm",
-            //"args": ["-eval", "(Vector2 x: 1 y: 2) x"],
+            "args": ["-eval", "AGPU"],
             //"args": ["src/runtime/Runtime.st"],
             //"args": ["src/runtime/Runtime.st", "-eval", "'Hello World' asMorph openInWindow. Window enterMainLoop"],
             //"args": ["src/runtime/Runtime.st", "-eval", "Window new width: 256; height: 64; open"],
             //"args": ["src/runtime/Runtime.st", "-eval", "TextAreaMorph new openInWindow. Window enterMainLoop"],
-            "args": ["src/runtime/Runtime.st", "-eval", "ClassBrowser new openInWindow. Window enterMainLoop"],
+            //"args": ["src/runtime/Runtime.st", "-eval", "ClassBrowser new openInWindow. Window enterMainLoop"],
             //"args": ["-eval", "([:x | [:y | x + y]] value: 42) value: 3"],
             "cwd": "${workspaceFolder}"
         }

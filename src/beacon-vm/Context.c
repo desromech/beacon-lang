@@ -16,6 +16,7 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context);
 void beacon_context_registerArrayListPrimitive(beacon_context_t *context);
 void beacon_context_registerDictionaryPrimitives(beacon_context_t *context);
 void beacon_context_registerExceptionPrimitives(beacon_context_t *context);
+void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context);
 void beacon_context_registerFormRenderingPrimitives(beacon_context_t *context);
 void beacon_context_registerFontFacePrimitives(beacon_context_t *context);
 void beacon_context_registerWindowSystemPrimitives(beacon_context_t *context);
@@ -327,7 +328,8 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "text", "color", "fontFace", NULL);
 
     context->classes.windowClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Window", sizeof(beacon_Window_t), BeaconObjectKindPointers,
-        "width", "height", "handle", "useCustomRenderer", "rendererHandle", "textureHandle", "textureWidth", "textureHeight", "drawingForm", NULL);
+        "width", "height", "handle", "rendererHandle", "textureHandle", "textureWidth", "textureHeight", "drawingForm",
+        "useAcceleratedRendering", "swapChainHandle", NULL);
 
     context->classes.windowEventClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "WindowEvent", sizeof(beacon_WindowEvent_t), BeaconObjectKindPointers, NULL);
     context->classes.windowExposeEventClass = beacon_context_createClassAndMetaclass(context, context->classes.windowEventClass, "WindowExposeEvent", sizeof(beacon_WindowExposeEvent_t), BeaconObjectKindPointers,
@@ -358,6 +360,8 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
 
     context->classes.complexClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Complex", sizeof(beacon_Complex_t), BeaconObjectKindBytes,  NULL);
     context->classes.quaternionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Quaternion", sizeof(beacon_Quaternion_t), BeaconObjectKindBytes,  NULL);
+    
+    context->classes.agpuClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPU", sizeof(beacon_AGPU_t), BeaconObjectKindPointers, NULL);
 }
 
 void beacon_context_createImportantRoots(beacon_context_t *context)
@@ -416,6 +420,8 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
     }
 
     context->roots.windowHandleMap = beacon_MethodDictionary_new(context);
+    context->roots.agpuPlatformIndex = beacon_encodeSmallInteger(0);
+    context->roots.agpuDeviceIndex = beacon_encodeSmallInteger(0);
 }
 
 void beacon_context_createSystemDictionary(beacon_context_t *context)
@@ -447,6 +453,7 @@ void beacon_context_registerBasicPrimitives(beacon_context_t *context)
     beacon_context_registerArrayListPrimitive(context);
     beacon_context_registerDictionaryPrimitives(context);
     beacon_context_registerExceptionPrimitives(context);
+    beacon_context_registerAgpuRenderingPrimitives(context);
     beacon_context_registerFormRenderingPrimitives(context);
     beacon_context_registerFontFacePrimitives(context);
     beacon_context_registerWindowSystemPrimitives(context);

@@ -145,19 +145,6 @@ thirdparty/glm
 thirdparty/opengl/include
 )
 
-# Set output dir.
-set(MainOutputDirectory "${AGPU_BINARY_DIR}/dist")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${MainOutputDirectory} )
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${MainOutputDirectory} )
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${MainOutputDirectory} )
-foreach(Config ${CMAKE_CONFIGURATION_TYPES} )
-	set(OutputDirectory "${AGPU_BINARY_DIR}/dist/${Config}")
-    string( TOUPPER ${Config} OUTPUTCONFIG )
-    set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${OutputDirectory} )
-    set( CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${OutputDirectory} )
-    set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${OutputDirectory} )
-endforeach()
-
 # Find unittest++
 #pkg_check_modules(UNITTESTMM unittest++)
 #if(UNITTESTMM_FOUND)

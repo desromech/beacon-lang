@@ -21,6 +21,8 @@
         "sdl.h": "c",
         "exception": "c",
         "locale": "c",
-        "memory.h": "c"
+        "memory.h": "c",
+        "stdio.h": "c",
+        "agpurendering.h": "c"
     }
 }
