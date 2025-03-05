@@ -23,6 +23,7 @@
         "locale": "c",
         "memory.h": "c",
         "stdio.h": "c",
-        "agpurendering.h": "c"
+        "agpurendering.h": "c",
+        "string.h": "c"
     }
 }

@@ -4,6 +4,7 @@
 #include "beacon-lang/Parser.h"
 #include "beacon-lang/SyntaxCompiler.h"
 #include "beacon-lang/Exceptions.h"
+#include "beacon-lang/AgpuRendering.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -70,6 +71,14 @@ int main(int argc, const char **argv)
             {
                 const char *script = argv[++i];
                 evaluateStringAndPrint(script);
+            }
+            else if(!strcmp(arg, "-gplatform"))
+            {
+                context->roots.agpuCommon->platformIndex = atoi(argv[++i]);
+            }
+            else if(!strcmp(arg, "-gpu"))
+            {
+                context->roots.agpuCommon->deviceIndex = atoi(argv[++i]);
             }
         }
         else

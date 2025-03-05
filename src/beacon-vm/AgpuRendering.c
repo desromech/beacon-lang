@@ -494,11 +494,6 @@ static void beacon_agpuWindowRenderer_renderText(beacon_context_t *context, beac
         };
 
         thisFrameState->renderingDataUploadBuffer[thisFrameState->renderingDataUploadSize++] = quad;
-        /*beacon_TextRenderingElement_drawCharacterInForm(context,
-                fontFace->atlasForm, quadToDraw.s0, quadToDraw.t0, quadToDraw.s1, quadToDraw.t1,
-                form, quadToDraw.x0, quadToDraw.y0, quadToDraw.x1, quadToDraw.y1,
-                renderingElement->color);
-        */
     }
 }
 
