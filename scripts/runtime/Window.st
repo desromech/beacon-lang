@@ -3,7 +3,7 @@ initialize
     width := 640.
     height := 480.
     drawingForm := nil.
-    useAcceleratedRendering := false.
+    useAcceleratedRendering := true.
 ].
 
 Window ![
@@ -90,7 +90,11 @@ renderViaQuadCommands
         scaleFactorY: textureHeight // height;
         yourself.
     self renderWithBuilder: formRenderingBuilder.
-    
+
+    rendererHandle
+        beginFrame;
+        renderQuadList: formRenderingBuilder allQuads;
+        endFrame
 ].
 
 Window ![

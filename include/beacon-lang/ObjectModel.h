@@ -736,6 +736,7 @@ typedef struct beacon_Form_s
     beacon_oop_t height;
     beacon_oop_t depth;
     beacon_oop_t pitch;
+    beacon_oop_t textureHandle;
 } beacon_Form_t;
 
 typedef struct beacon_Font_s

@@ -44,7 +44,7 @@ static void beacon_sdl2_updateDisplayTextureExtent(beacon_context_t *context, be
 
 void beacon_sdl2_createOrUpdateSwapChain(beacon_context_t *context, beacon_Window_t *beaconWindow, SDL_Window *sdlWindow)
 {
-    agpu_device *device = beacon_agpu_getDevice(context);
+    agpu_device *device = beacon_agpu_getDevice(context, context->roots.agpuCommon);
     agpuFinishDeviceExecution(device);
 
     agpu_swap_chain *oldSwapChain = 0;
@@ -115,6 +115,8 @@ void beacon_sdl2_createOrUpdateSwapChain(beacon_context_t *context, beacon_Windo
 
     beaconWindow->textureWidth = beacon_encodeSmallInteger(swapChainWidth);
     beaconWindow->textureHeight = beacon_encodeSmallInteger(swapChainHeight);
+    if(beaconWindow->rendererHandle)
+        ((beacon_AGPUWindowRenderer_t*)beaconWindow->rendererHandle)->swapChain = swapChainHandle;
 }
 
 static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -145,6 +147,8 @@ static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t r
     }
     else
     {
+        beacon_AGPUWindowRenderer_t *windowRenderer = beacon_agpu_createWindowRenderer(context);
+        beaconWindow->rendererHandle = (beacon_oop_t)windowRenderer;
         beacon_sdl2_createOrUpdateSwapChain(context, beaconWindow, sdlWindow);
     }
 
@@ -164,15 +168,34 @@ static beacon_oop_t beacon_Window_close(beacon_context_t *context, beacon_oop_t 
     beaconWindow->handle = beacon_encodeSmallInteger(sdlWindowID);
     beacon_MethodDictionary_atPut(context, context->roots.windowHandleMap, (beacon_Symbol_t*)beaconWindow->handle, (beacon_oop_t)beaconWindow);
 
-    SDL_Texture *texture = beacon_unboxExternalAddress(context, beaconWindow->textureHandle);
-    if(texture)
-        SDL_DestroyTexture(texture);
+    if(beaconWindow->useAcceleratedRendering == context->roots.trueValue)
+    {
+        agpuFinishDeviceExecution(beacon_agpu_getDevice(context, context->roots.agpuCommon));
+        if(beaconWindow->swapChainHandle)
+        {
+            agpuReleaseSwapChain(beaconWindow->swapChainHandle->swapChain);
+            beaconWindow->swapChainHandle->swapChain = NULL;
 
-    SDL_Renderer *renderer = beacon_unboxExternalAddress(context, beaconWindow->rendererHandle);
-    if(texture)
-        SDL_DestroyRenderer(renderer);
+            agpuReleaseCommandQueue(beaconWindow->swapChainHandle->commandQueue);
+            beaconWindow->swapChainHandle->commandQueue = NULL;
+        }
+
+        beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t*)beaconWindow->rendererHandle;
+        if(renderer)
+            beacon_agpu_destroyWindowRenderer(context, renderer);
+    }
+    else
+    {
+        SDL_Texture *texture = beacon_unboxExternalAddress(context, beaconWindow->textureHandle);
+        if(texture)
+            SDL_DestroyTexture(texture);
     
-    SDL_DestroyWindow(sdlWindow);
+        SDL_Renderer *renderer = beacon_unboxExternalAddress(context, beaconWindow->rendererHandle);
+        if(texture)
+            SDL_DestroyRenderer(renderer);
+        
+        SDL_DestroyWindow(sdlWindow);    
+    }
     return receiver;
 }
 
@@ -342,7 +365,9 @@ static void beacon_sdl2_fetchAndDispatchEvents(beacon_context_t *context)
                     (beacon_Symbol_t*)beacon_encodeSmallInteger(sdlEvent.window.windowID));
                 if(beaconWindow)
                 {
-                    beacon_sdl2_updateDisplayTextureExtent(context, beaconWindow);
+                    SDL_Window *sdlWindow = SDL_GetWindowFromID(sdlEvent.window.windowID);
+                    if (beaconWindow->useAcceleratedRendering != context->roots.trueValue)
+                        beacon_sdl2_updateDisplayTextureExtent(context, beaconWindow);
                     beacon_WindowExposeEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowExposeEventClass, sizeof(beacon_WindowExposeEvent_t), BeaconObjectKindPointers);
                     beacon_performWith(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onExpose:"), (beacon_oop_t)event);
                 }

@@ -132,6 +132,12 @@ fontFace: aFontFace
 ].
 
 FormRenderingElementBuilder ![
+allQuads
+    ^ renderingElements asArray
+].
+
+
+FormRenderingElementBuilder ![
 drawInForm: aForm
     | elements |
     elements := renderingElements asArray.

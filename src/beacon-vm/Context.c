@@ -310,7 +310,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "origin", "corner", NULL);
 
     context->classes.formClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Form", sizeof(beacon_Form_t), BeaconObjectKindPointers,
-        "bits", "width", "height", "depth", "pitch", NULL);
+        "bits", "width", "height", "depth", "pitch", "textureHandle", NULL);
     context->classes.fontClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Font", sizeof(beacon_Font_t), BeaconObjectKindPointers,
         "rawData", "__Meta__",
         "DejaVuSans", "DejaVuSansSmallFace", "DejaVuSansSmallHiDpiFace",
@@ -362,8 +362,9 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.complexClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Complex", sizeof(beacon_Complex_t), BeaconObjectKindBytes,  NULL);
     context->classes.quaternionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Quaternion", sizeof(beacon_Quaternion_t), BeaconObjectKindBytes,  NULL);
     
-    context->classes.agpuClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPU", sizeof(beacon_AGPU_t), BeaconObjectKindPointers, NULL);
+    context->classes.agpuClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPU", sizeof(beacon_AGPU_t), BeaconObjectKindBytes, NULL);
     context->classes.agpuSwapChainClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPUSwapchain", sizeof(beacon_AGPUSwapChain_t), BeaconObjectKindBytes, NULL);
+    context->classes.agpuWindowRendererClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPUWindowRenderer", sizeof(beacon_AGPUWindowRenderer_t), BeaconObjectKindBytes, NULL);
 }
 
 void beacon_context_createImportantRoots(beacon_context_t *context)
@@ -422,8 +423,8 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
     }
 
     context->roots.windowHandleMap = beacon_MethodDictionary_new(context);
-    context->roots.agpuPlatformIndex = beacon_encodeSmallInteger(0);
-    context->roots.agpuDeviceIndex = beacon_encodeSmallInteger(0);
+    context->roots.agpuCommon = beacon_allocateObjectWithBehavior(context->heap, context->classes.agpuClass, sizeof(beacon_AGPU_t), BeaconObjectKindBytes);
+    context->roots.agpuCommon->debugLayerEnabled = true;
 }
 
 void beacon_context_createSystemDictionary(beacon_context_t *context)

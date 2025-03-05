@@ -149,8 +149,7 @@ struct beacon_context_s
 
         beacon_Behavior_t *agpuClass;
         beacon_Behavior_t *agpuSwapChainClass;
-
-        
+        beacon_Behavior_t *agpuWindowRendererClass;
     } classes;
 
     struct ContextGCRoots
@@ -192,11 +191,7 @@ struct beacon_context_s
         beacon_oop_t lessOrEqualsSelector;
 
         beacon_MethodDictionary_t *windowHandleMap;
-        beacon_oop_t agpuPlatformIndex;
-        beacon_oop_t agpuDeviceIndex;
-        beacon_oop_t agpuPlatform;
-        beacon_oop_t agpuDevice;
-        beacon_oop_t agpuDebugLayerEnabled;
+        struct beacon_AGPU_s *agpuCommon;
     } roots;
 
     beacon_MemoryHeap_t *heap;
