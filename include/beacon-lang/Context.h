@@ -149,6 +149,7 @@ struct beacon_context_s
 
         beacon_Behavior_t *agpuClass;
         beacon_Behavior_t *agpuSwapChainClass;
+        beacon_Behavior_t *agpuTextureHandleClass;
         beacon_Behavior_t *agpuWindowRendererClass;
     } classes;
 

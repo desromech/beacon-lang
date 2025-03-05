@@ -1,10 +1,9 @@
 
 #include "AgpuRendering.h"
+#include "Exceptions.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-#define stringify_(value) #value
-#define stringify(...) stringify_(__VA_ARGS__)
+#include "stb_truetype.h"
 
 agpu_platform *beacon_agpu_getPlatform(beacon_context_t *context, beacon_AGPU_t *agpu)
 {
@@ -248,9 +247,53 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         agpu_texture_view *errorTextureView = agpuGetOrCreateFullTextureView(agpu->errorTexture);
 
         for(size_t i = 0; i < BEACON_AGPU_TEXTURE_ARRAY_SIZE; ++i)
+        {
+            agpu->boundTextures[i] = agpu->errorTexture;
+            agpu->boundTextureViews[i] = errorTextureView;
             agpuBindArrayOfSampledTextureView(agpu->texturesArrayBinding, 0, i, 1, &errorTextureView);
+        }
         agpu->textureArrayBindingCount = 1;
     }
+}
+
+beacon_AGPUTextureHandle_t *beacon_getValidTextureHandleForFontFaceForm(beacon_context_t *context, beacon_Form_t *form)
+{
+    if(!form->textureHandle)
+    {
+        BeaconAssert(context, beacon_decodeSmallInteger(form->depth) == 8);
+        agpu_texture_description desc = {
+            .type = AGPU_TEXTURE_2D,
+            .width = beacon_decodeSmallInteger(form->width),
+            .height = beacon_decodeSmallInteger(form->height),
+            .depth = 1,
+            .layers = 1,
+            .miplevels = 1,
+            .format = AGPU_TEXTURE_FORMAT_R8_UNORM,
+            .usage_modes = AGPU_TEXTURE_USAGE_COPY_DESTINATION | AGPU_TEXTURE_USAGE_SAMPLED,
+            .main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED,
+            .heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL,
+            .sample_count = 1,
+            .sample_quality = 0,
+        };
+
+        agpu_texture *texture = agpuCreateTexture(context->roots.agpuCommon->device, &desc);
+        if(!texture)
+            return NULL;
+
+        agpuUploadTextureData(texture, 0, 0, beacon_decodeSmallInteger(form->pitch), beacon_decodeSmallInteger(form->pitch)*beacon_decodeSmallInteger(form->height), form->bits->elements);
+        beacon_AGPUTextureHandle_t *handle = beacon_allocateObjectWithBehavior(context->heap, context->classes.agpuTextureHandleClass, sizeof(beacon_AGPUTextureHandle_t), BeaconObjectKindBytes);
+
+        handle->texture = texture;
+        handle->textureView = agpuGetOrCreateFullTextureView(texture);
+        handle->textureArrayBindingIndex = context->roots.agpuCommon->textureArrayBindingCount;
+
+        agpuBindArrayOfSampledTextureView(context->roots.agpuCommon->texturesArrayBinding, 0, handle->textureArrayBindingIndex, 1, &handle->textureView);
+
+        ++context->roots.agpuCommon->textureArrayBindingCount;
+        form->textureHandle = (beacon_oop_t)handle;
+    }
+
+    return (beacon_AGPUTextureHandle_t *)form->textureHandle;
 }
 
 beacon_AGPUWindowRenderer_t *beacon_agpu_createWindowRenderer(beacon_context_t *context)
@@ -336,7 +379,6 @@ static beacon_oop_t beacon_agpuWindowRenderer_beginFrame(beacon_context_t *conte
 
     thisFrameState->renderingDataUploadSize = 0;
 
-    printf("Begin frame %d.\n", renderer->currentFrameBufferingIndex);
     return receiver;
 }
 
@@ -391,10 +433,73 @@ static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context
     agpuSwapBuffers(renderer->swapChain->swapChain);
 
     agpuReleaseFramebuffer(backbuffer);
-    printf("End frame.\n");
     
     renderer->currentFrameBufferingIndex = (renderer->currentFrameBufferingIndex + 1) % BEACON_AGPU_FRAMEBUFFERING_COUNT;
     return receiver;
+}
+
+static void beacon_agpuWindowRenderer_renderText(beacon_context_t *context, beacon_AGPUWindowRenderer_t *renderer, beacon_FormTextRenderingElement_t *renderingElement)
+{
+    beacon_AGPUWindowRendererPerFrameState_t *thisFrameState = renderer->frameState + renderer->currentFrameBufferingIndex;
+    if(!renderingElement->fontFace || !renderingElement->fontFace->atlasForm)
+        return;
+    
+    beacon_FontFace_t *fontFace = renderingElement->fontFace;
+    beacon_AGPUTextureHandle_t *handle = beacon_getValidTextureHandleForFontFaceForm(context, renderingElement->fontFace->atlasForm);
+
+    int formWidth = beacon_decodeSmallInteger(renderingElement->fontFace->atlasForm->width);
+    int formHeight = beacon_decodeSmallInteger(renderingElement->fontFace->atlasForm->height);
+
+    float rectMinX = beacon_decodeSmallNumber(renderingElement->super.rectangle->origin->x);
+    float rectMinY = beacon_decodeSmallNumber(renderingElement->super.rectangle->origin->y);
+    float rectMaxX = beacon_decodeSmallNumber(renderingElement->super.rectangle->corner->x);
+    float rectMaxY = beacon_decodeSmallNumber(renderingElement->super.rectangle->corner->y);
+
+    float ascent = beacon_decodeSmallNumber(fontFace->ascent);
+
+    float baselineX = rectMinX;
+    float baselineY = rectMinY + ascent;
+    size_t stringSize = renderingElement->text->super.super.super.super.super.header.slotCount;
+    for(size_t i = 0; i < stringSize; ++i)
+    {
+        char c = renderingElement->text->data[i];
+        if(c < ' ')
+            continue;
+
+        stbtt_aligned_quad quadToDraw = {};
+        stbtt_GetBakedQuad((stbtt_bakedchar*)fontFace->charData->elements, formWidth, formHeight, c - 31, &baselineX, &baselineY, &quadToDraw, true);
+
+        beacon_GuiRenderingElement_t quad = {
+            .type = BeaconGuiTextCharacter,
+            .texture = handle->textureArrayBindingIndex,
+            .borderSize = beacon_decodeSmallNumber(renderingElement->super.borderSize),
+            .borderRoundRadius = beacon_decodeSmallNumber(renderingElement->super.borderRoundRadius),
+
+            .rectangleMinX = quadToDraw.x0,
+            .rectangleMinY = quadToDraw.y0,
+            .rectangleMaxX = quadToDraw.x1,
+            .rectangleMaxY = quadToDraw.y1,
+
+            .imageRectangleMinX = quadToDraw.s0,
+            .imageRectangleMinY = quadToDraw.t0,
+            .imageRectangleMaxX = quadToDraw.s1,
+            .imageRectangleMaxY = quadToDraw.t1,
+
+            .firstColor = {
+                beacon_decodeSmallNumber(renderingElement->color->r),
+                beacon_decodeSmallNumber(renderingElement->color->g),
+                beacon_decodeSmallNumber(renderingElement->color->b),
+                beacon_decodeSmallNumber(renderingElement->color->a),
+            },
+        };
+
+        thisFrameState->renderingDataUploadBuffer[thisFrameState->renderingDataUploadSize++] = quad;
+        /*beacon_TextRenderingElement_drawCharacterInForm(context,
+                fontFace->atlasForm, quadToDraw.s0, quadToDraw.t0, quadToDraw.s1, quadToDraw.t1,
+                form, quadToDraw.x0, quadToDraw.y0, quadToDraw.x1, quadToDraw.y1,
+                renderingElement->color);
+        */
+    }
 }
 
 static beacon_oop_t beacon_agpuWindowRenderer_renderQuadList(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -442,6 +547,8 @@ static beacon_oop_t beacon_agpuWindowRenderer_renderQuadList(beacon_context_t *c
         }
         else if(quadClass == context->classes.formTextRenderingElementClass)
         {
+            beacon_FormTextRenderingElement_t *textElement = (beacon_FormTextRenderingElement_t*)quadOop;
+            beacon_agpuWindowRenderer_renderText(context, renderer, textElement);
         }
     }
 
@@ -472,7 +579,6 @@ static beacon_oop_t beacon_AGPU_uniqueInstance(beacon_context_t *context, beacon
 void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
 {
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.agpuClass), "uniqueInstance", 1, beacon_AGPU_uniqueInstance);
-    //beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.agpuClass), "device", 1, beacon_AGPU_device);
 
     beacon_addPrimitiveToClass(context, context->classes.agpuClass, "platform", 1, beacon_AGPU_platform);
     beacon_addPrimitiveToClass(context, context->classes.agpuClass, "device", 1, beacon_AGPU_device);

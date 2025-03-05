@@ -54,11 +54,21 @@ typedef struct beacon_AGPU_s
     agpu_pipeline_state *guiPipelineState;
 
     agpu_texture *errorTexture;
+    agpu_texture *boundTextures[1024];
+    agpu_texture_view *boundTextureViews[1024];
 
     int textureArrayBindingCount;
     agpu_shader_resource_binding *texturesArrayBinding;
 
 } beacon_AGPU_t;
+
+typedef struct beacon_AGPUTextureHandle_s
+{
+    beacon_Object_t super;
+    agpu_texture *texture;
+    agpu_texture_view *textureView;
+    int textureArrayBindingIndex;
+} beacon_AGPUTextureHandle_t;
 
 typedef struct beacon_AGPUSwapChain_s
 {

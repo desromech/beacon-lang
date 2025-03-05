@@ -364,6 +364,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     
     context->classes.agpuClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPU", sizeof(beacon_AGPU_t), BeaconObjectKindBytes, NULL);
     context->classes.agpuSwapChainClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPUSwapchain", sizeof(beacon_AGPUSwapChain_t), BeaconObjectKindBytes, NULL);
+    context->classes.agpuTextureHandleClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPUTextureHandle", sizeof(beacon_AGPUTextureHandle_t), BeaconObjectKindBytes, NULL);
     context->classes.agpuWindowRendererClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPUWindowRenderer", sizeof(beacon_AGPUWindowRenderer_t), BeaconObjectKindBytes, NULL);
 }
 
