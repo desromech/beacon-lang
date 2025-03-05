@@ -146,7 +146,9 @@ struct beacon_context_s
 
         beacon_Behavior_t *complexClass;
         beacon_Behavior_t *quaternionClass;
+
         beacon_Behavior_t *agpuClass;
+        beacon_Behavior_t *agpuSwapChainClass;
 
         
     } classes;

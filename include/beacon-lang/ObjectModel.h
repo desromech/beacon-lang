@@ -764,12 +764,6 @@ typedef struct beacon_FormTextRenderingElement_s
     beacon_FontFace_t *fontFace;
 } beacon_FormTextRenderingElement_t;
 
-typedef struct beacon_AGPU_s
-{
-    beacon_Object_t super;
-} beacon_AGPU_t;
-
-
 typedef struct beacon_Window_s
 {
     beacon_Object_t super;
@@ -786,7 +780,7 @@ typedef struct beacon_Window_s
     beacon_oop_t drawingForm;
 
     beacon_oop_t useAcceleratedRendering;
-    beacon_oop_t swapChainHandle;
+    struct beacon_AGPUSwapChain_s *swapChainHandle;
 } beacon_Window_t;
 
 typedef struct beacon_WindowEvent_s

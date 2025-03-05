@@ -3,7 +3,7 @@ initialize
     width := 640.
     height := 480.
     drawingForm := nil.
-    useCustomRenderer := false.
+    useAcceleratedRendering := false.
 ].
 
 Window ![
@@ -57,13 +57,13 @@ renderWithBuilder: renderingBuilder
 ].
 
 Window ![
-useCustomRenderer
-    ^ useCustomRenderer
+useAcceleratedRendering
+    ^ useAcceleratedRendering
 ].
 
 Window ![
-useCustomRenderer: aBoolean
-    useCustomRenderer := aBoolean
+useAcceleratedRendering: aBoolean
+    useAcceleratedRendering := aBoolean
 ].
 
 Window ![
@@ -81,10 +81,24 @@ renderViaForm
     self displayForm: drawingForm.
 ].
 
+
+Window ![
+renderViaQuadCommands
+    | formRenderingBuilder |
+    formRenderingBuilder := FormRenderingElementBuilder new
+        scaleFactorX: textureWidth // width;
+        scaleFactorY: textureHeight // height;
+        yourself.
+    self renderWithBuilder: formRenderingBuilder.
+    
+].
+
 Window ![
 render
-    useCustomRenderer ifFalse: [
+    useAcceleratedRendering ifFalse: [
         self renderViaForm
+    ] ifTrue: [
+        self renderViaQuadCommands
     ]
 ].
 

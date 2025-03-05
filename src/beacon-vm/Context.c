@@ -5,6 +5,7 @@
 #include "beacon-lang/Bytecode.h"
 #include "beacon-lang/ArrayList.h"
 #include "beacon-lang/SourceCode.h"
+#include "beacon-lang/AgpuRendering.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -362,6 +363,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.quaternionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Quaternion", sizeof(beacon_Quaternion_t), BeaconObjectKindBytes,  NULL);
     
     context->classes.agpuClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPU", sizeof(beacon_AGPU_t), BeaconObjectKindPointers, NULL);
+    context->classes.agpuSwapChainClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPUSwapchain", sizeof(beacon_AGPUSwapChain_t), BeaconObjectKindBytes, NULL);
 }
 
 void beacon_context_createImportantRoots(beacon_context_t *context)

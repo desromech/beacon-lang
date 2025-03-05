@@ -1,9 +1,12 @@
+
+#include "SDL.h"
+#include "SDL_hints.h"
+#include "SDL_syswm.h"
 #include "Context.h"
 #include "Exceptions.h"
 #include "Window.h"
 #include "Dictionary.h"
-#include "SDL.h"
-#include "SDL_hints.h"
+#include "AgpuRendering.h"
 #include <stdlib.h>
 
 static bool hasInitializedSDL2;
@@ -39,6 +42,81 @@ static void beacon_sdl2_updateDisplayTextureExtent(beacon_context_t *context, be
     }
 }
 
+void beacon_sdl2_createOrUpdateSwapChain(beacon_context_t *context, beacon_Window_t *beaconWindow, SDL_Window *sdlWindow)
+{
+    agpu_device *device = beacon_agpu_getDevice(context);
+    agpuFinishDeviceExecution(device);
+
+    agpu_swap_chain *oldSwapChain = 0;
+    if(beaconWindow->swapChainHandle)
+        oldSwapChain = beaconWindow->swapChainHandle->swapChain;
+
+    int windowWidth, windowHeight;
+    SDL_GetWindowSize(sdlWindow, &windowWidth, &windowHeight);
+
+    agpu_swap_chain_create_info swapChainCreateInfo = {
+        .colorbuffer_format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB,
+        .depth_stencil_format = AGPU_TEXTURE_FORMAT_UNKNOWN,
+        .width = windowWidth,
+        .height = windowHeight,
+        .buffer_count = 3,
+        .old_swap_chain = oldSwapChain,
+        .flags = AGPU_SWAP_CHAIN_FLAG_APPLY_SCALE_FACTOR_FOR_HI_DPI,
+        .presentation_mode = AGPU_SWAP_CHAIN_PRESENTATION_MODE_MAILBOX,
+        .fallback_presentation_mode = AGPU_SWAP_CHAIN_PRESENTATION_MODE_IMMEDIATE
+    };
+    
+    // Get the window info.
+    SDL_SysWMinfo windowInfo;
+    SDL_VERSION(&windowInfo.version);
+    SDL_GetWindowWMInfo(sdlWindow, &windowInfo);
+
+    switch (windowInfo.subsystem)
+    {
+#if defined(SDL_VIDEO_DRIVER_WINDOWS)
+    case SDL_SYSWM_WINDOWS:
+    swapChainCreateInfo.window = (agpu_pointer)windowInfo.info.win.window;
+        break;
+#endif
+#if defined(SDL_VIDEO_DRIVER_X11)
+    case SDL_SYSWM_X11:
+        swapChainCreateInfo.window = (agpu_pointer)(uintptr_t)windowInfo.info.x11.window;
+        break;
+#endif
+#if defined(SDL_VIDEO_DRIVER_COCOA)
+    case SDL_SYSWM_COCOA:
+        swapChainCreateInfo.window = (agpu_pointer)windowInfo.info.cocoa.window;
+        break;
+#endif
+    default:
+        fprintf(stderr, "Unsupported window system\n");
+        return;
+    }
+
+    if(!beaconWindow->swapChainHandle)
+        beaconWindow->swapChainHandle = beacon_allocateObjectWithBehavior(context->heap, context->classes.agpuSwapChainClass, sizeof(beacon_AGPUSwapChain_t), BeaconObjectKindBytes);
+
+    beacon_AGPUSwapChain_t *swapChainHandle = beaconWindow->swapChainHandle;
+    if(!swapChainHandle->commandQueue)
+        swapChainHandle->commandQueue = agpuGetDefaultCommandQueue(device);
+
+    swapChainHandle->swapChain = agpuCreateSwapChain(device, swapChainHandle->commandQueue, &swapChainCreateInfo);
+    if(!swapChainHandle->swapChain)
+    {
+        fprintf(stderr, "Failed to create swapchain.");
+        return;
+    }
+
+    int swapChainWidth = agpuGetSwapChainWidth(swapChainHandle->swapChain);
+    int swapChainHeight = agpuGetSwapChainHeight(swapChainHandle->swapChain);
+
+    beaconWindow->width = beacon_encodeSmallInteger(windowWidth);
+    beaconWindow->height = beacon_encodeSmallInteger(windowHeight);
+
+    beaconWindow->textureWidth = beacon_encodeSmallInteger(swapChainWidth);
+    beaconWindow->textureHeight = beacon_encodeSmallInteger(swapChainHeight);
+}
+
 static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)argumentCount;
@@ -67,8 +145,9 @@ static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t r
     }
     else
     {
+        beacon_sdl2_createOrUpdateSwapChain(context, beaconWindow, sdlWindow);
     }
-    
+
     return receiver;
 }
 
@@ -284,7 +363,11 @@ static void beacon_sdl2_fetchAndDispatchEvents(beacon_context_t *context)
                     beaconWindow->width = beacon_encodeSmallInteger(newWidth);
                     beaconWindow->height = beacon_encodeSmallInteger(newHeight);
 
-                    beacon_sdl2_updateDisplayTextureExtent(context, beaconWindow);
+                    if (beaconWindow->useAcceleratedRendering == context->roots.trueValue)
+                        beacon_sdl2_createOrUpdateSwapChain(context, beaconWindow, sdlWindow);
+                    else
+                        beacon_sdl2_updateDisplayTextureExtent(context, beaconWindow);
+                    
                     beacon_perform(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onSizeChanged"));
                 }
             }
