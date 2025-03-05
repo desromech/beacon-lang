@@ -7,6 +7,7 @@
 
 #define BEACON_AGPU_FRAMEBUFFERING_COUNT 3
 #define BEACON_AGPU_MAX_NUMBER_OF_QUADS 1024
+#define BEACON_AGPU_TEXTURE_ARRAY_SIZE 1024
 
 typedef enum beacon_GuiElementType_e
 {
@@ -51,6 +52,8 @@ typedef struct beacon_AGPU_s
     agpu_sampler *linearSampler;
     agpu_shader_resource_binding *linearSamplerBinding;
     agpu_pipeline_state *guiPipelineState;
+
+    agpu_texture *errorTexture;
 
     int textureArrayBindingCount;
     agpu_shader_resource_binding *texturesArrayBinding;

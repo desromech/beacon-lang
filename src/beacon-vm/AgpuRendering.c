@@ -147,7 +147,7 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1);
 
         agpuBeginShaderSignatureBindingBank(builder, 1);
-        agpuAddShaderSignatureBindingBankArray(builder, AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1024);
+        agpuAddShaderSignatureBindingBankArray(builder, AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, BEACON_AGPU_TEXTURE_ARRAY_SIZE);
 
         agpuAddShaderSignatureBindingConstant(builder); // hasTopLeftNDCOrigin
         agpuAddShaderSignatureBindingConstant(builder); // reservedConstant
@@ -169,6 +169,7 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
 
         agpu->linearSampler = agpuCreateSampler(agpu->device, &samplerDesc);
         agpu->linearSamplerBinding = agpuCreateShaderResourceBinding(agpu->shaderSignature, 0);
+        agpuBindSampler(agpu->linearSamplerBinding, 0, agpu->linearSampler);
     }
 
     // Uber GUI pipeline state
@@ -199,6 +200,39 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         agpuReleaseShader(fragmentShader);
     }
 
+    // Error texture
+    {
+        uint32_t m = 0xFF00FFFF;
+        uint32_t colors[] = {
+            0, 0, m, m, 0, 0, m, m,
+            0, 0, m, m, 0, 0, m, m,
+            m, m, 0, 0, m, m, 0, 0,
+            m, m, 0, 0, m, m, 0, 0,
+            0, 0, m, m, 0, 0, m, m,
+            0, 0, m, m, 0, 0, m, m,
+            m, m, 0, 0, m, m, 0, 0,
+            m, m, 0, 0, m, m, 0, 0,
+        };
+
+        agpu_texture_description desc = {
+            .type = AGPU_TEXTURE_2D,
+            .width = 8,
+            .height = 8,
+            .depth = 1,
+            .layers = 1,
+            .miplevels = 1,
+            .format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM,
+            .usage_modes = AGPU_TEXTURE_USAGE_COPY_DESTINATION | AGPU_TEXTURE_USAGE_SAMPLED,
+            .main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED,
+            .heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL,
+            .sample_count = 1,
+            .sample_quality = 0,
+        };
+
+        agpu->errorTexture = agpuCreateTexture(agpu->device, &desc);
+        agpuUploadTextureData(agpu->errorTexture, 0, 0, 8*4, 8*8*4, colors);
+
+    }
     // Textures bindings
     {
         agpu_sampler_description samplerDesc = {
@@ -211,6 +245,11 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
 
         agpu->textureArrayBindingCount = 0;
         agpu->texturesArrayBinding = agpuCreateShaderResourceBinding(agpu->shaderSignature, 2);
+        agpu_texture_view *errorTextureView = agpuGetOrCreateFullTextureView(agpu->errorTexture);
+
+        for(size_t i = 0; i < BEACON_AGPU_TEXTURE_ARRAY_SIZE; ++i)
+            agpuBindArrayOfSampledTextureView(agpu->texturesArrayBinding, 0, i, 1, &errorTextureView);
+        agpu->textureArrayBindingCount = 1;
     }
 }
 
@@ -245,7 +284,7 @@ beacon_AGPUWindowRenderer_t *beacon_agpu_createWindowRenderer(beacon_context_t *
             .main_usage_mode = AGPU_COPY_SOURCE_BUFFER,
             .size = windowRenderer->frameRenderingDataSize,
             .stride = sizeof(beacon_GuiRenderingElement_t),
-            .mapping_flags = AGPU_MAP_WRITE_BIT
+            .mapping_flags = AGPU_MAP_WRITE_BIT | AGPU_MAP_PERSISTENT_BIT
         };
         windowRenderer->renderingDataSubmissionBuffer = agpuCreateBuffer(device, &desc, NULL);
     }
@@ -257,11 +296,12 @@ beacon_AGPUWindowRenderer_t *beacon_agpu_createWindowRenderer(beacon_context_t *
         beacon_AGPUWindowRendererPerFrameState_t *frameState = windowRenderer->frameState + i;
         frameState->fence = agpuCreateFence(device);
         frameState->commandAllocator = agpuCreateCommandAllocator(device, AGPU_COMMAND_LIST_TYPE_DIRECT, windowRenderer->commandQueue);
-        agpuCloseCommandList(frameState->commandList);
 
         frameState->commandList = agpuCreateCommandList(device, AGPU_COMMAND_LIST_TYPE_DIRECT, windowRenderer->frameState[i].commandAllocator, NULL);
+        agpuCloseCommandList(frameState->commandList);
+
+        size_t bufferSize = BEACON_AGPU_MAX_NUMBER_OF_QUADS*sizeof(beacon_GuiRenderingElement_t);
         frameState->renderingDataBinding = agpuCreateShaderResourceBinding(context->roots.agpuCommon->shaderSignature, 1);
-        size_t bufferSize = BEACON_AGPU_FRAMEBUFFERING_COUNT*sizeof(beacon_GuiElementType_t);
         agpuBindStorageBufferRange(frameState->renderingDataBinding, 0, windowRenderer->renderingDataGpuBuffer, bufferSize*i, bufferSize);
         frameState->renderingDataUploadBuffer = windowRenderer->renderingDataUploadBuffer + (BEACON_AGPU_MAX_NUMBER_OF_QUADS*i);
     }
@@ -364,7 +404,6 @@ static beacon_oop_t beacon_agpuWindowRenderer_renderQuadList(beacon_context_t *c
 
     beacon_Array_t *quadList = (beacon_Array_t*)arguments[0];
     size_t quadCount = quadList->super.super.super.super.super.header.slotCount;
-    printf("TODO: render quad-list: %d\n", (int)quadCount);
     for(size_t i = 0; i < quadCount; ++i)
     {
         beacon_oop_t quadOop = quadList->elements[i];
