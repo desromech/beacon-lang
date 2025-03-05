@@ -1,0 +1,2973 @@
+
+namespace AGPU definition:
+{
+
+template SmartRefPtr(PT: Type)
+    := struct definition: {
+    compileTime constant PointedType := PT.
+    compileTime constant PointerType := PointedType pointer.
+    compileTime constant SmartPointerType := SelfType.
+
+    private field pointer_ type: PointerType.
+
+    meta extend: {
+        inline method for: (pointer: PointerType) ::=> SmartPointerType
+            := SmartPointerType basicNewValue initializeWith: pointer; yourself.
+        macro method nil := ``(`,self basicNewValue).
+    }.
+
+    inline method finalize => Void := {
+        if: pointer_ ~~ nil then: {
+            pointer_ _ release.
+        }.
+    }.
+
+    inline method initializeWith: (pointer: PointerType) ::=> Void := {
+        pointer_ := pointer
+    }.
+
+    inline method initializeCopyingFrom: (o: SelfType const ref) ::=> Void := {
+        pointer_ := o __private pointer_.
+        if: pointer_ ~~ nil then: {
+            pointer_ _ addReference
+        }.
+    }.
+
+    inline method initializeMovingFrom: (o: SelfType tempRef) ::=> Void := {
+        pointer_ := o __private pointer_.
+        o __private pointer_ := nil
+    }.
+
+    inline const method _ => PointedType ref
+        := pointer_ _.
+
+    inline const method getPointer => PointerType
+        := pointer_.
+
+    inline method reset: (newPointer: PointerType) ::=> Void := {
+        if: pointer_ ~~ nil then: {
+            pointer_ _ release
+        }.
+
+        pointer_ := newPointer
+    }.
+
+    inline method reset => Void
+        :=  self reset: nil.
+
+    inline method assignValue: (o: SelfType const ref) ::=> SelfType const ref := {
+        let newPointer := o __private pointer_.
+        if: newPointer ~~ nil then: {
+            newPointer _ addReference
+        }.
+        if: pointer_ ~~ nil then: {
+            pointer_ _ release
+        }.
+
+        pointer_ := newPointer.
+        self
+    }.
+
+    inline method assignValue: (o: SelfType tempRef) ::=> SelfType const ref := {
+        let newPointer := o __private pointer_.
+        o __private pointer_ := nil.
+        if: pointer_ ~~ nil then: {
+            pointer_ _ release
+        }.
+
+        pointer_ := newPointer.
+        self
+    }.
+
+    ## Some convenience macros.
+    macro method isNil := ``(`,self getPointer isNil).
+    macro method isNotNil := ``(`,self getPointer isNotNil).
+
+    macro method ifNil: nilAction := ``(`,self getPointer ifNil: `,nilAction).
+    macro method ifNil: nilAction ifNotNil: notNilAction := ``(`,self getPointer ifNil: `,nilAction ifNotNil: `, notNilAction).
+    macro method ifNotNil: notNilAction := ``(`,self getPointer ifNotNil: `,notNilAction).
+    macro method ifNotNil: notNilAction ifNil: nilAction  := ``(`,self getPointer ifNotNil: `,notNilAction ifNil: `,nilAction).
+}.
+
+################################################################################
+## Interface declarations.
+################################################################################
+class Platform definition: {}.
+class Device definition: {}.
+class VrSystem definition: {}.
+class WindowScraper definition: {}.
+class WindowScraperHandle definition: {}.
+class SwapChain definition: {}.
+class ComputePipelineBuilder definition: {}.
+class PipelineBuilder definition: {}.
+class PipelineState definition: {}.
+class CommandQueue definition: {}.
+class CommandAllocator definition: {}.
+class CommandList definition: {}.
+class Texture definition: {}.
+class TextureView definition: {}.
+class Sampler definition: {}.
+class Buffer definition: {}.
+class VertexBinding definition: {}.
+class VertexLayout definition: {}.
+class Shader definition: {}.
+class Framebuffer definition: {}.
+class Renderpass definition: {}.
+class ShaderSignatureBuilder definition: {}.
+class ShaderSignature definition: {}.
+class ShaderResourceBinding definition: {}.
+class Fence definition: {}.
+class OfflineShaderCompiler definition: {}.
+class StateTrackerCache definition: {}.
+class StateTracker definition: {}.
+class ImmediateRenderer definition: {}.
+
+################################################################################
+## Enums.
+################################################################################
+enum Error valueType: Int32; values: #{
+	Ok: 0.
+	Error: -1.
+	NullPointer: -2.
+	InvalidOperation: -3.
+	InvalidParameter: -4.
+	OutOfBounds: -5.
+	Unsupported: -6.
+	Unimplemented: -7.
+	NotCurrentContext: -8.
+	CompilationError: -9.
+	LinkingError: -10.
+	CommandListClosed: -11.
+	OutOfMemory: -12.
+	OutOfDate: -13.
+	Suboptimal: -14.
+}.
+
+enum DeviceOpenFlags valueType: Int32; values: #{
+	None: 0.
+	AllowVR: 1.
+}.
+
+enum SwapChainFlags valueType: Int32; values: #{
+	None: 0.
+	OverlayWindow: 1.
+	ApplyScaleFactorForHiDPI: 2.
+}.
+
+enum SwapChainPresentationMode valueType: Int32; values: #{
+	Default: 0.
+	Immediate: 1.
+	Mailbox: 2.
+	Fifo: 3.
+	FifoRelaxed: 4.
+}.
+
+enum CommandQueueType valueType: Int32; values: #{
+	Graphics: 0.
+	Compute: 1.
+	Transfer: 2.
+}.
+
+enum AccessFlags valueType: Int32; values: #{
+	IndirectCommandRead: 1.
+	IndexRead: 2.
+	VertexAttributeRead: 4.
+	UniformRead: 8.
+	InputAttachmentRead: 16.
+	ShaderRead: 32.
+	ShaderWrite: 64.
+	ColorAttachmentRead: 128.
+	ColorAttachmentWrite: 256.
+	DepthStencilAttachmentRead: 512.
+	DepthStencilAttachmentWrite: 1024.
+	TransferRead: 2048.
+	TransferWrite: 4096.
+	HostRead: 8192.
+	HostWrite: 16384.
+	MemoryRead: 32768.
+	MemoryWrite: 65536.
+	TransformFeedbackWrite: 33554432.
+	TransformFeedbackCounterRead: 67108864.
+	TransformFeedbackCounterWrite: 134217728.
+}.
+
+enum PipelineStageFlags valueType: Int32; values: #{
+	TopOfPipe: 1.
+	DrawIndirect: 2.
+	VertexInput: 4.
+	VertexShader: 8.
+	TessellationControl: 16.
+	TessellationEvaluation: 32.
+	GeometryShader: 64.
+	FragmentShader: 128.
+	EarlyFragmentTests: 256.
+	LateFragmentTests: 512.
+	ColorAttachmentOutput: 1024.
+	ComputeShader: 2048.
+	Transfer: 4096.
+	BottomOfPipe: 8192.
+	Host: 16384.
+	AllGraphics: 32768.
+	AllCommands: 65536.
+	TransformFeedback: 16777216.
+	ConditionalRendering: 262144.
+}.
+
+enum PrimitiveTopology valueType: Int32; values: #{
+	Points: 0.
+	Lines: 1.
+	LinesAdjacency: 2.
+	LineStrip: 3.
+	LineStripAdjacency: 4.
+	Triangles: 5.
+	TrianglesAdjacency: 6.
+	TriangleStrip: 7.
+	TriangleStripAdjacency: 8.
+	Patches: 9.
+	ImmediateTriangleFan: 100.
+	ImmediateQuads: 101.
+	ImmediatePolygon: 102.
+}.
+
+enum PolygonMode valueType: Int32; values: #{
+	Fill: 0.
+	Line: 1.
+	Point: 2.
+}.
+
+enum DeviceType valueType: Int32; values: #{
+	Other: 0.
+	IntegratedGPU: 1.
+	DiscreteGPU: 2.
+	VirtualGPU: 3.
+	CPU: 4.
+}.
+
+enum Feature valueType: Int32; values: #{
+	PersistentMemoryMapping: 1.
+	CoherentMemoryMapping: 2.
+	PersistentCoherentMemoryMapping: 3.
+	CommandListReuse: 4.
+	NonEmulatedCommandListReuse: 5.
+	VRDisplay: 6.
+	VRInputDevices: 7.
+	DualSourceBlending: 8.
+	GeometryShader: 9.
+	TessellationShader: 10.
+	ComputeShader: 11.
+	MultiDrawIndirect: 12.
+	DrawIndirect: 13.
+	TextureCompressionBC: 14.
+	TextureCompressionETC2: 15.
+	TextureCompressionASTC_LDR: 16.
+	ShaderClipDistance: 17.
+	ShaderCullDistance: 18.
+	ShaderFloat64: 19.
+	ShaderInt64: 20.
+	ShaderInt16: 21.
+	SampleShading: 22.
+	FillModeNonSolid: 23.
+}.
+
+enum Limit valueType: Int32; values: #{
+	NonCoherentAtomSize: 1.
+	MinMemoryMapAlignment: 2.
+	MinTexelBufferOffsetAlignment: 3.
+	MinUniformBufferOffsetAlignment: 4.
+	MinStorageBufferOffsetAlignment: 5.
+	MaxImageDimension1D: 6.
+	MaxImageDimension2D: 7.
+	MaxImageDimension3D: 8.
+	MaxImageDimensionCube: 9.
+	MaxImageArrayLayers: 10.
+	MaxFramebufferWidth: 11.
+	MaxFramebufferHeight: 12.
+	MaxFramebufferLayers: 13.
+	MaxClipDistances: 14.
+	MaxCullDistances: 15.
+	MaxCombinedClipAndCullDistances: 16.
+	MaxTexelBufferElements: 17.
+	MaxUniformBufferRange: 18.
+	MaxStorageBufferRange: 19.
+	MaxPushConstantsSize: 20.
+	MaxBoundShaderResourceBindings: 21.
+	MaxComputeSharedMemorySize: 22.
+	MaxComputeWorkGroupInvocations: 23.
+	MaxComputeWorkGroupXCount: 24.
+	MaxComputeWorkGroupXSize: 25.
+	MaxComputeWorkGroupYCount: 26.
+	MaxComputeWorkGroupYSize: 27.
+	MaxComputeWorkGroupZCount: 28.
+	MaxComputeWorkGroupZSize: 29.
+	MaxSamplerLodBias: 30.
+	MaxSamplerAnisotropy: 31.
+	SampledImageColorSupportedSampleCountMask: 32.
+	SampledImageIntegerSupportedSampleCountMask: 33.
+	SampledImageDepthSupportedSampleCountMask: 34.
+	SampledImageStencilSupportedSampleCountMask: 35.
+	StorageImageSupportedSampleCountMask: 36.
+	DedicatedVideoMemoryInMB: 37.
+	AvailableVideoMemoryInMB: 38.
+	MinTextureDataOffsetAlignment: 39.
+	MinTextureDataPitchAlignment: 40.
+}.
+
+enum RenderpassAttachmentAction valueType: Int32; values: #{
+	Keep: 0.
+	Clear: 1.
+	Discard: 2.
+}.
+
+enum StencilOperation valueType: Int32; values: #{
+	Keep: 0.
+	Zero: 1.
+	Replace: 2.
+	Invert: 3.
+	Increase: 4.
+	IncreaseWrap: 5.
+	Decrease: 6.
+	DecreaseWrap: 7.
+}.
+
+enum CompareFunction valueType: Int32; values: #{
+	Always: 0.
+	Never: 1.
+	Less: 2.
+	LessEqual: 3.
+	Equal: 4.
+	NotEqual: 5.
+	Greater: 6.
+	GreaterEqual: 7.
+}.
+
+enum TextureType valueType: Int32; values: #{
+	TextureUnknown: 0.
+	TextureBuffer: 1.
+	Texture1D: 2.
+	Texture2D: 3.
+	TextureCube: 4.
+	Texture3D: 5.
+}.
+
+enum TextureUsageModeMask valueType: Int32; values: #{
+	None: 0.
+	Sampled: 1.
+	ColorAttachment: 2.
+	DepthAttachment: 4.
+	StencilAttachment: 8.
+	Storage: 16.
+	CopySource: 32.
+	CopyDestination: 64.
+	ReadedBack: 32.
+	Uploaded: 64.
+	Present: 128.
+	General: 256.
+}.
+
+enum ShaderType valueType: Int32; values: #{
+	Vertex: 0.
+	Fragment: 1.
+	Geometry: 2.
+	Compute: 3.
+	TessellationControl: 4.
+	TessellationEvaluation: 5.
+	Library: 6.
+}.
+
+enum MemoryHeapType valueType: Int32; values: #{
+	DeviceLocal: 0.
+	HostToDevice: 1.
+	DeviceToHost: 2.
+	Host: 3.
+	Custom: 4.
+	StagingUpload: 3.
+	Static: 0.
+	Dynamic: 1.
+	Stream: 1.
+}.
+
+enum BufferUsageMask valueType: Int32; values: #{
+	CopyDestinationBuffer: 1.
+	CopySourceBuffer: 2.
+	GenericDataBuffer: 3.
+	ArrayBuffer: 4.
+	ElementArrayBuffer: 8.
+	UniformBuffer: 16.
+	DrawIndirectBuffer: 32.
+	StorageBuffer: 64.
+	UniformTexelBuffer: 128.
+	StorageTexelBuffer: 256.
+	ComputeDispatchIndirectBuffer: 512.
+}.
+
+enum BufferMappingFlags valueType: Int32; values: #{
+	ReadBit: 1.
+	WriteBit: 2.
+	PersistentBit: 4.
+	CoherentBit: 8.
+	DynamicStorageBit: 16.
+}.
+
+enum MappingAccess valueType: Int32; values: #{
+	ReadOnly: 1.
+	WriteOnly: 2.
+	ReadWrite: 3.
+}.
+
+enum RenderBufferBit valueType: Int32; values: #{
+	DepthBufferBit: 1.
+	StencilBufferBit: 2.
+	ColorBufferBit: 4.
+}.
+
+enum ShaderBindingType valueType: Int32; values: #{
+	SampledImage: 0.
+	StorageImage: 1.
+	UniformTexelBuffer: 2.
+	StorageTexelBuffer: 3.
+	UniformBuffer: 4.
+	StorageBuffer: 5.
+	Sampler: 6.
+	Count: 7.
+}.
+
+enum ShaderLanguage valueType: Int32; values: #{
+	None: 0.
+	Glsl: 1.
+	Eglsl: 2.
+	Vglsl: 3.
+	SpirV: 4.
+	Hlsl: 5.
+	Metal: 6.
+	MetalAir: 7.
+	Binary: 8.
+	SpirVAssembly: 9.
+	DeviceShader: 10.
+}.
+
+enum FieldType valueType: Int32; values: #{
+	Float: 0.
+	HalfFloat: 1.
+	Double: 2.
+	Fixed: 3.
+	Byte: 4.
+	UnsignedByte: 5.
+	Short: 6.
+	UnsignedShort: 7.
+	Int: 8.
+	UnsignedInt: 9.
+}.
+
+enum TextureFormat valueType: Int32; values: #{
+	Unknown: 0.
+	R32G32B32A32_Typeless: 1.
+	R32G32B32A32_Float: 2.
+	R32G32B32A32_UInt: 3.
+	R32G32B32A32_SInt: 4.
+	R32G32B32_Typeless: 5.
+	R32G32B32_Float: 6.
+	R32G32B32_UInt: 7.
+	R32G32B32_SInt: 8.
+	R16G16B16A16_Typeless: 9.
+	R16G16B16A16_Float: 10.
+	R16G16B16A16_UNorm: 11.
+	R16G16B16A16_UInt: 12.
+	R16G16B16A16_SNorm: 13.
+	R16G16B16A16_SInt: 14.
+	R32G32_Typeless: 15.
+	R32G32_Float: 16.
+	R32G32_UInt: 17.
+	R32G32_SInt: 18.
+	R32G8X24_Typeless: 19.
+	D32_Float_S8X24_UInt: 20.
+	R32_Float_S8X24_Typeless: 21.
+	X32_Typeless_G8X24_UInt: 22.
+	R10G10B10A2_Typeless: 23.
+	R10G10B10A2_UNorm: 24.
+	R10G10B10A2_UInt: 25.
+	R11G11B10_Float: 26.
+	R8G8B8A8_Typeless: 27.
+	R8G8B8A8_UNorm: 28.
+	R8G8B8A8_UNormSRGB: 29.
+	R8G8B8A8_UInt: 30.
+	R8G8B8A8_SNorm: 31.
+	R8G8B8A8_SInt: 32.
+	R16G16_Typeless: 33.
+	R16G16_Float: 34.
+	R16G16_UNorm: 35.
+	R16G16_UInt: 36.
+	R16G16_SNorm: 37.
+	R16G16_SInt: 38.
+	R32_Typeless: 39.
+	D32_Float: 40.
+	R32_Float: 41.
+	R32_UInt: 42.
+	R32_SInt: 43.
+	R24G8_Typeless: 44.
+	D24_UnormS8_UInt: 45.
+	R24_UnormX8_Typeless: 46.
+	X24TG8_UInt: 47.
+	R8G8_Typeless: 48.
+	R8G8_UNorm: 49.
+	R8G8_UInt: 50.
+	R8G8_SNorm: 51.
+	R8G8_SInt: 52.
+	R16_Typeless: 53.
+	R16_Float: 54.
+	D16_UNorm: 55.
+	R16_UNorm: 56.
+	R16_UInt: 57.
+	R16_SNorm: 58.
+	R16_SInt: 59.
+	R8_Typeless: 60.
+	R8_UNorm: 61.
+	R8_UInt: 62.
+	R8_SNorm: 63.
+	R8_SInt: 64.
+	A8_UNorm: 65.
+	R1_UNorm: 66.
+	BC1_Typeless: 70.
+	BC1_UNorm: 71.
+	BC1_UNormSRGB: 72.
+	BC2_Typeless: 73.
+	BC2_UNorm: 74.
+	BC2_UNormSRGB: 75.
+	BC3_Typeless: 76.
+	BC3_UNorm: 77.
+	BC3_UNormSRGB: 78.
+	BC4_Typeless: 79.
+	BC4_UNorm: 80.
+	BC4_SNorm: 81.
+	BC5_Typeless: 82.
+	BC5_UNorm: 83.
+	BC5_SNorm: 84.
+	B5G6R5_UNorm: 85.
+	B5G5R5A1_UNorm: 86.
+	B8G8R8A8_UNorm: 87.
+	B8G8R8X8_UNorm: 88.
+	B8G8R8A8_Typeless: 90.
+	B8G8R8A8_UNormSRGB: 91.
+	B8G8R8X8_Typeless: 92.
+	B8G8R8X8_UNormSRGB: 93.
+	ETC2_R8G8B8_UNorm: 200.
+	ETC2_R8G8B8_UNormSRGB: 201.
+	ETC2_R8G8B8A1_UNorm: 202.
+	ETC2_R8G8B8A1_UNormSRGB: 203.
+	ETC2_R8G8B8A8_UNorm: 204.
+	ETC2_R8G8B8A8_UNormSRGB: 205.
+	EAC_R11_UNorm: 206.
+	EAC_R11_SNorm: 207.
+	EAC_R11G11_UNorm: 208.
+	EAC_R11G11_SNorm: 209.
+	ASTC4X4_UNorm: 230.
+	ASTC4X4_UNormSRGB: 231.
+	ASTC5X4_UNorm: 232.
+	ASTC5X4_UNormSRGB: 233.
+	ASTC5X5_UNorm: 234.
+	ASTC5X5_UNormSRGB: 235.
+	ASTC6X5_UNorm: 236.
+	ASTC6X5_UNormSRGB: 237.
+	ASTC6X6_UNorm: 238.
+	ASTC6X6_UNormSRGB: 239.
+	ASTC8X5_UNorm: 240.
+	ASTC8X5_UNormSRGB: 241.
+	ASTC8X6_UNorm: 242.
+	ASTC8X6_UNormSRGB: 243.
+	ASTC8X8_UNorm: 244.
+	ASTC8X8_UNormSRGB: 245.
+	ASTC10X5_UNorm: 246.
+	ASTC10X5_UNormSRGB: 247.
+	ASTC10X6_UNorm: 248.
+	ASTC10X6_UNormSRGB: 249.
+	ASTC10X8_UNorm: 250.
+	ASTC10X8_UNormSRGB: 251.
+	ASTC10X10_UNorm: 252.
+	ASTC10X10_UNormSRGB: 253.
+	ASTC12X10_UNorm: 254.
+	ASTC12X10_UNormSRGB: 255.
+	ASTC12X12_UNorm: 256.
+	ASTC12X12_UNormSRGB: 257.
+}.
+
+enum Filter valueType: Int32; values: #{
+	MinNearestMagNearestMipmapNearest: 16r0.
+	MinNearestMagNearestMipmapLinear: 16r1.
+	MinNearestMagLinearMipmapNearest: 16r4.
+	MinNearestMagLinearMipmapLinear: 16r5.
+	MinLinearMagNearestMipmapNearest: 16r10.
+	MinLinearMagNearestMipmapLinear: 16r11.
+	MinLinearMagLinearMipmapNearest: 16r14.
+	MinLinearMagLinearMipmapLinear: 16r15.
+	Anisotropic: 16r55.
+}.
+
+enum TextureAddressMode valueType: Int32; values: #{
+	Wrap: 1.
+	Mirror: 2.
+	Clamp: 3.
+	Border: 4.
+	MirrorOnce: 5.
+}.
+
+enum TextureAspect valueType: Int32; values: #{
+	Color: 1.
+	Depth: 2.
+	Stencil: 4.
+	All: -1.
+}.
+
+enum CommandListType valueType: Int32; values: #{
+	Direct: 1.
+	Bundle: 2.
+	Compute: 3.
+	Copy: 4.
+}.
+
+enum BlendingFactor valueType: Int32; values: #{
+	Zero: 1.
+	One: 2.
+	SrcColor: 3.
+	InvertedSrcColor: 4.
+	SrcAlpha: 5.
+	InvertedSrcAlpha: 6.
+	DestAlpha: 7.
+	InvertedDestAlpha: 8.
+	DestColor: 9.
+	InvertedDestColor: 10.
+	SrcAlphaSat: 11.
+	ConstantFactor: 14.
+	InvertedConstantFactor: 15.
+	Src1Color: 16.
+	InvertedSrc1Color: 17.
+	Src1Alpha: 18.
+	InvertedSrc1Alpha: 19.
+}.
+
+enum BlendingOperation valueType: Int32; values: #{
+	Add: 1.
+	Subtract: 2.
+	ReverseSubtract: 3.
+	Min: 4.
+	Max: 5.
+}.
+
+enum ComponentSwizzle valueType: Int32; values: #{
+	Identity: 0.
+	One: 1.
+	Zero: 2.
+	R: 3.
+	G: 4.
+	B: 5.
+	A: 6.
+}.
+
+enum FaceWinding valueType: Int32; values: #{
+	CounterClockwise: 0.
+	Clockwise: 1.
+}.
+
+enum CullMode valueType: Int32; values: #{
+	None: 0.
+	Front: 1.
+	Back: 2.
+	FrontAndBack: 3.
+}.
+
+enum VrEye valueType: Int32; values: #{
+	Left: 0.
+	Right: 1.
+}.
+
+enum VrTrackedDeviceClass valueType: Int32; values: #{
+	Invalid: 0.
+	Hmd: 1.
+	Controller: 2.
+	GenericTracker: 3.
+	TrackingReference: 4.
+	DisplayRedirect: 5.
+}.
+
+enum VrTrackedDeviceRole valueType: Int32; values: #{
+	Invalid: 0.
+	LeftHand: 1.
+	RightHand: 2.
+	OptOut: 3.
+	Threadmill: 4.
+}.
+
+enum VrButton valueType: Int32; values: #{
+	System: 0.
+	ApplicationMenu: 1.
+	Grip: 2.
+	DpadLeft: 3.
+	DpadUp: 4.
+	DpadRight: 5.
+	DpadDown: 6.
+	A: 7.
+	ProximitySensor: 31.
+	Axis0: 32.
+	Axis1: 33.
+	Axis2: 34.
+	Axis3: 35.
+	Axis4: 36.
+	SteamVrTouchpad: 32.
+	SteamVrTrigger: 33.
+	DashboardBack: 2.
+	KnucklesA: 2.
+	KnucklesB: 1.
+	KnucklesJoyStick: 35.
+}.
+
+enum VrDualAnalogWhich valueType: Int32; values: #{
+	Left: 0.
+	Right: 1.
+}.
+
+enum VrEventType valueType: Int32; values: #{
+	Invalid: 0.
+	TrackedDeviceActivated: 100.
+	TrackedDeviceDeactivated: 101.
+	TrackedDeviceUpdated: 102.
+	TrackedDeviceUserInteractionStarted: 103.
+	TrackedDeviceUserInteractionEnded: 104.
+	IpdChanged: 105.
+	EnterStandbyMode: 106.
+	LeaveStandbyMode: 107.
+	TrackedDeviceRoleChanged: 108.
+	WirelessDisconnect: 112.
+	WirelessReconnect: 113.
+	ButtonPressed: 200.
+	ButtonReleased: 201.
+	ButtonTouch: 202.
+	ButtonUntouch: 203.
+	DualAnalogPressed: 250.
+	DualAnalogReleased: 251.
+	DualAnalogTouch: 252.
+	DualAnalogUntouch: 253.
+	DualAnalogMove: 254.
+	DualAnalogModeSwitch1: 255.
+	DualAnalogModeSwitch2: 256.
+	DualAnalogCancel: 257.
+}.
+
+enum VrControllerAxisType valueType: Int32; values: #{
+	None: 0.
+	VrControllerAxisTrackPad: 1.
+	VrControllerAxisJoystick: 2.
+	VrControllerAxisTrigger: 3.
+}.
+
+enum ImmediateRendererVertexAttribute valueType: Int32; values: #{
+	Position: 0.
+	Color: 1.
+	Normal: 2.
+	Texcoord: 3.
+	Texcoord2: 4.
+	BoneIndices: 5.
+	BoneWeights: 6.
+	Tangent4: 7.
+}.
+
+enum ImmediateRendererLightingModel valueType: Int32; values: #{
+	PerVertex: 0.
+	PerFragment: 1.
+	MetallicRoughness: 2.
+	FlatColor: 3.
+	Count: 4.
+}.
+
+enum ImmediateRendererFogMode valueType: Int32; values: #{
+	None: 0.
+	Linear: 1.
+	Exponential: 2.
+	ExponentialSquared: 3.
+}.
+
+enum ImmediateRendererTextureBinding valueType: Int32; values: #{
+	Albedo: 0.
+	Emission: 1.
+	Normal: 2.
+	RoughnessMetallicAmbient: 3.
+	AmbientOcclusion: 4.
+	RoughnessMetallic: 5.
+	BrdfLut: 6.
+	DiffuseLightProbe: 7.
+	SpecularLightProbe: 8.
+}.
+
+struct DeviceOpenInfo definition: {
+	public field display type: Void pointer.
+	public field window_system_name type: Char8 const pointer.
+	public field debug_layer type: Int32.
+	public field application_name type: Char8 const pointer.
+	public field application_version type: UInt32.
+	public field engine_name type: Char8 const pointer.
+	public field engine_version type: UInt32.
+	public field gpu_index type: Int32.
+	public field open_flags type: DeviceOpenFlags.
+}.
+
+struct SwapChainCreateInfo definition: {
+	public field display type: Void pointer.
+	public field window type: Void pointer.
+	public field window_system_name type: Char8 const pointer.
+	public field surface type: Void pointer.
+	public field colorbuffer_format type: TextureFormat.
+	public field depth_stencil_format type: TextureFormat.
+	public field width type: UInt32.
+	public field height type: UInt32.
+	public field layers type: UInt32.
+	public field buffer_count type: UInt32.
+	public field sample_buffers type: Int32.
+	public field samples type: Int32.
+	public field flags type: SwapChainFlags.
+	public field old_swap_chain type: SwapChain pointer.
+	public field presentation_mode type: SwapChainPresentationMode.
+	public field fallback_presentation_mode type: SwapChainPresentationMode.
+	public field x type: Int32.
+	public field y type: Int32.
+}.
+
+struct BufferDescription definition: {
+	public field size type: UInt32.
+	public field heap_type type: MemoryHeapType.
+	public field usage_modes type: BufferUsageMask.
+	public field main_usage_mode type: BufferUsageMask.
+	public field mapping_flags type: UInt32.
+	public field stride type: UInt32.
+}.
+
+struct Color4f definition: {
+	public field r type: Float32.
+	public field g type: Float32.
+	public field b type: Float32.
+	public field a type: Float32.
+}.
+
+struct DepthStencilValue definition: {
+	public field depth type: Float32.
+	public field stencil type: UInt8.
+}.
+
+union TextureClearValue definition: {
+	public field color type: Color4f.
+	public field depth_stencil type: DepthStencilValue.
+}.
+
+struct TextureDescription definition: {
+	public field type type: TextureType.
+	public field width type: UInt32.
+	public field height type: UInt32.
+	public field depth type: UInt32.
+	public field layers type: UInt32.
+	public field miplevels type: UInt16.
+	public field format type: TextureFormat.
+	public field usage_modes type: TextureUsageModeMask.
+	public field main_usage_mode type: TextureUsageModeMask.
+	public field heap_type type: MemoryHeapType.
+	public field sample_count type: UInt32.
+	public field sample_quality type: UInt32.
+	public field clear_value type: TextureClearValue.
+}.
+
+struct ComponentsSwizzle definition: {
+	public field r type: ComponentSwizzle.
+	public field g type: ComponentSwizzle.
+	public field b type: ComponentSwizzle.
+	public field a type: ComponentSwizzle.
+}.
+
+struct TextureSubresourceRange definition: {
+	public field aspect type: TextureAspect.
+	public field base_miplevel type: UInt32.
+	public field level_count type: UInt32.
+	public field base_arraylayer type: UInt32.
+	public field layer_count type: UInt32.
+}.
+
+struct TextureSubresourceLevel definition: {
+	public field aspect type: TextureAspect.
+	public field miplevel type: UInt32.
+	public field base_arraylayer type: UInt32.
+	public field layer_count type: UInt32.
+}.
+
+struct TextureViewDescription definition: {
+	public field type type: TextureType.
+	public field format type: TextureFormat.
+	public field sample_count type: UInt32.
+	public field usage_mode type: TextureUsageModeMask.
+	public field components type: ComponentsSwizzle.
+	public field subresource_range type: TextureSubresourceRange.
+}.
+
+struct DrawElementsCommand definition: {
+	public field index_count type: UInt32.
+	public field instance_count type: UInt32.
+	public field first_index type: UInt32.
+	public field base_vertex type: Int32.
+	public field base_instance type: UInt32.
+}.
+
+struct VertexAttribDescription definition: {
+	public field buffer type: UInt32.
+	public field binding type: UInt32.
+	public field format type: TextureFormat.
+	public field offset type: UInt32.
+	public field divisor type: UInt32.
+}.
+
+struct SamplerDescription definition: {
+	public field filter type: Filter.
+	public field address_u type: TextureAddressMode.
+	public field address_v type: TextureAddressMode.
+	public field address_w type: TextureAddressMode.
+	public field mip_lod_bias type: Float32.
+	public field maxanisotropy type: Float32.
+	public field comparison_enabled type: Int32.
+	public field comparison_function type: CompareFunction.
+	public field border_color type: Color4f.
+	public field min_lod type: Float32.
+	public field max_lod type: Float32.
+}.
+
+struct RenderpassColorAttachmentDescription definition: {
+	public field format type: TextureFormat.
+	public field sample_count type: UInt32.
+	public field sample_quality type: UInt32.
+	public field begin_action type: RenderpassAttachmentAction.
+	public field end_action type: RenderpassAttachmentAction.
+	public field clear_value type: Color4f.
+}.
+
+struct RenderpassDepthStencilDescription definition: {
+	public field format type: TextureFormat.
+	public field sample_count type: UInt32.
+	public field sample_quality type: UInt32.
+	public field begin_action type: RenderpassAttachmentAction.
+	public field end_action type: RenderpassAttachmentAction.
+	public field stencil_begin_action type: RenderpassAttachmentAction.
+	public field stencil_end_action type: RenderpassAttachmentAction.
+	public field clear_value type: DepthStencilValue.
+}.
+
+struct RenderpassDescription definition: {
+	public field color_attachment_count type: UInt32.
+	public field color_attachments type: RenderpassColorAttachmentDescription pointer.
+	public field depth_stencil_attachment type: RenderpassDepthStencilDescription pointer.
+}.
+
+struct InheritanceInfo definition: {
+	public field flat type: Int32.
+	public field renderpass type: Renderpass pointer.
+}.
+
+struct Vector2f definition: {
+	public field x type: Float32.
+	public field y type: Float32.
+}.
+
+struct Vector3f definition: {
+	public field x type: Float32.
+	public field y type: Float32.
+	public field z type: Float32.
+}.
+
+struct Vector4f definition: {
+	public field x type: Float32.
+	public field y type: Float32.
+	public field z type: Float32.
+	public field w type: Float32.
+}.
+
+struct Quaternionf definition: {
+	public field w type: Float32.
+	public field x type: Float32.
+	public field y type: Float32.
+	public field z type: Float32.
+}.
+
+struct Matrix3x3f definition: {
+	public field c1 type: Vector3f.
+	public field c2 type: Vector3f.
+	public field c3 type: Vector3f.
+}.
+
+struct Matrix4x4f definition: {
+	public field c1 type: Vector4f.
+	public field c2 type: Vector4f.
+	public field c3 type: Vector4f.
+	public field c4 type: Vector4f.
+}.
+
+struct Size2d definition: {
+	public field width type: UInt32.
+	public field height type: UInt32.
+}.
+
+struct Size3d definition: {
+	public field width type: UInt32.
+	public field height type: UInt32.
+	public field depth type: UInt32.
+}.
+
+struct FrustumTangents definition: {
+	public field left type: Float32.
+	public field right type: Float32.
+	public field top type: Float32.
+	public field bottom type: Float32.
+}.
+
+struct Offset3d definition: {
+	public field x type: UInt32.
+	public field y type: UInt32.
+	public field z type: UInt32.
+}.
+
+struct Region3d definition: {
+	public field x type: UInt32.
+	public field y type: UInt32.
+	public field z type: UInt32.
+	public field width type: UInt32.
+	public field height type: UInt32.
+	public field depth type: UInt32.
+}.
+
+struct BufferImageCopyRegion definition: {
+	public field buffer_offset type: UInt32.
+	public field buffer_pitch type: UInt32.
+	public field buffer_slice_pitch type: UInt32.
+	public field texture_usage_mode type: TextureUsageModeMask.
+	public field texture_subresource_level type: TextureSubresourceLevel.
+	public field texture_region type: Region3d.
+}.
+
+struct ImageCopyRegion definition: {
+	public field source_usage_mode type: TextureUsageModeMask.
+	public field source_subresource_level type: TextureSubresourceLevel.
+	public field source_offset type: Offset3d.
+	public field destination_usage_mode type: TextureUsageModeMask.
+	public field destination_subresource_level type: TextureSubresourceLevel.
+	public field destination_offset type: Offset3d.
+	public field extent type: Size3d.
+}.
+
+struct VrTrackedDevicePose definition: {
+	public field device_id type: UInt32.
+	public field device_class type: VrTrackedDeviceClass.
+	public field device_role type: VrTrackedDeviceRole.
+	public field device_to_absolute_tracking type: Matrix4x4f.
+	public field velocity type: Vector3f.
+	public field angular_velocity type: Vector3f.
+	public field is_valid type: Int32.
+}.
+
+struct VrGenericEvent definition: {
+	public field word1 type: UInt32.
+	public field word2 type: UInt32.
+	public field word3 type: UInt32.
+	public field word4 type: UInt32.
+	public field word5 type: UInt32.
+	public field word6 type: UInt32.
+	public field word7 type: UInt32.
+	public field word8 type: UInt32.
+}.
+
+struct VrControllerEvent definition: {
+	public field button type: UInt32.
+}.
+
+struct VrControllerAxisState definition: {
+	public field type type: VrControllerAxisType.
+	public field x type: Float32.
+	public field y type: Float32.
+}.
+
+struct VrControllerState definition: {
+	public field buttons_pressed type: UInt64.
+	public field buttons_touched type: UInt64.
+	public field axis0 type: VrControllerAxisState.
+	public field axis1 type: VrControllerAxisState.
+	public field axis2 type: VrControllerAxisState.
+	public field axis3 type: VrControllerAxisState.
+	public field axis4 type: VrControllerAxisState.
+}.
+
+struct VrDualAnalogEvent definition: {
+	public field x type: Float32.
+	public field y type: Float32.
+	public field transformed_x type: Float32.
+	public field transformed_y type: Float32.
+	public field which type: UInt32.
+}.
+
+union VrEventData definition: {
+	public field type type: UInt32.
+	public field generic type: VrGenericEvent.
+	public field controller type: VrControllerEvent.
+	public field dual_analog type: VrDualAnalogEvent.
+}.
+
+struct VrEvent definition: {
+	public field type type: UInt32.
+	public field tracked_device_index type: UInt32.
+	public field event_age_seconds type: Float32.
+	public field data type: VrEventData.
+}.
+
+struct VrRenderModelTexture definition: {
+	public field width type: UInt16.
+	public field height type: UInt16.
+	public field pitch type: UInt32.
+	public field data type: UInt8 pointer.
+}.
+
+struct VrRenderModelVertex definition: {
+	public field position type: Vector3f.
+	public field normal type: Vector3f.
+	public field texcoord type: Vector2f.
+}.
+
+struct VrRenderModel definition: {
+	public field vertex_count type: UInt32.
+	public field vertices type: VrRenderModelVertex pointer.
+	public field triangle_count type: UInt32.
+	public field indices type: UInt16 pointer.
+	public field texture type: VrRenderModelTexture pointer.
+}.
+
+struct ImmediateRendererLightClassic definition: {
+	public field ambient type: Vector4f.
+	public field diffuse type: Vector4f.
+	public field specular type: Vector4f.
+	public field position type: Vector4f.
+	public field spot_direction type: Vector3f.
+	public field spot_exponent type: Float32.
+	public field spot_cutoff type: Float32.
+	public field constant_attenuation type: Float32.
+	public field linear_attenuation type: Float32.
+	public field quadratic_attenuation type: Float32.
+}.
+
+struct ImmediateRendererLightPbr definition: {
+	public field ambient type: Vector3f.
+	public field ambient_reserved type: Float32.
+	public field intensity type: Vector3f.
+	public field intensity_reserved type: Float32.
+	public field reserved_specular type: Vector4f.
+	public field position type: Vector4f.
+	public field spot_direction type: Vector3f.
+	public field spot_exponent type: Float32.
+	public field spot_cutoff type: Float32.
+	public field spot_inner_cutoff type: Float32.
+	public field radius type: Float32.
+	public field reserved_attenuation type: Float32.
+}.
+
+union ImmediateRendererLight definition: {
+	public field classic type: ImmediateRendererLightClassic.
+	public field pbr type: ImmediateRendererLightPbr.
+}.
+
+struct ImmediateRendererMaterialClassic definition: {
+	public field emission type: Vector4f.
+	public field ambient type: Vector4f.
+	public field diffuse type: Vector4f.
+	public field specular type: Vector4f.
+	public field shininess type: Float32.
+	public field alpha_cutoff type: Float32.
+}.
+
+struct ImmediateRendererMaterialMetallicRoughness definition: {
+	public field emission type: Vector4f.
+	public field base_color type: Vector4f.
+	public field metallic_factor type: Float32.
+	public field roughness_factor type: Float32.
+	public field occlusion_factor type: Float32.
+	public field alpha_cutoff type: Float32.
+}.
+
+struct ImmediateRendererMaterialFlatColor definition: {
+	public field color type: Vector4f.
+	public field alpha_cutoff type: Float32.
+}.
+
+union ImmediateRendererMaterial definition: {
+	public field classic type: ImmediateRendererMaterialClassic.
+	public field metallic_roughness type: ImmediateRendererMaterialMetallicRoughness.
+	public field flat_color type: ImmediateRendererMaterialFlatColor.
+}.
+
+################################################################################
+## The exported C API functions.
+################################################################################
+function agpuGetPlatforms externC (numplatforms: UInt32, platforms: Platform pointer pointer, ret_numplatforms: UInt32 pointer) => Error.
+function agpuOpenDevice externC (platform: Platform pointer, openInfo: DeviceOpenInfo pointer) => Device pointer.
+function agpuGetPlatformName externC (platform: Platform pointer) => Char8 const pointer.
+function agpuGetPlatformGpuCount externC (platform: Platform pointer) => UInt32.
+function agpuGetPlatformGpuName externC (platform: Platform pointer, gpu_index: UInt32) => Char8 const pointer.
+function agpuGetPlatformGpuDeviceType externC (platform: Platform pointer, gpu_index: UInt32) => DeviceType.
+function agpuIsFeatureSupportedOnGPU externC (platform: Platform pointer, gpu_index: UInt32, feature: Feature) => Int32.
+function agpuGetLimitValueOnGPU externC (platform: Platform pointer, gpu_index: UInt32, limit: Limit) => UInt32.
+function agpuGetPlatformVersion externC (platform: Platform pointer) => Int32.
+function agpuGetPlatformImplementationVersion externC (platform: Platform pointer) => Int32.
+function agpuPlatformHasRealMultithreading externC (platform: Platform pointer) => Int32.
+function agpuIsNativePlatform externC (platform: Platform pointer) => Int32.
+function agpuIsCrossPlatform externC (platform: Platform pointer) => Int32.
+function agpuCreateOfflineShaderCompiler externC (platform: Platform pointer) => OfflineShaderCompiler pointer.
+function agpuAddDeviceReference externC (device: Device pointer) => Error.
+function agpuReleaseDevice externC (device: Device pointer) => Error.
+function agpuGetDefaultCommandQueue externC (device: Device pointer) => CommandQueue pointer.
+function agpuCreateSwapChain externC (device: Device pointer, commandQueue: CommandQueue pointer, swapChainInfo: SwapChainCreateInfo pointer) => SwapChain pointer.
+function agpuCreateBuffer externC (device: Device pointer, description: BufferDescription pointer, initial_data: Void pointer) => Buffer pointer.
+function agpuCreateVertexLayout externC (device: Device pointer) => VertexLayout pointer.
+function agpuCreateVertexBinding externC (device: Device pointer, layout: VertexLayout pointer) => VertexBinding pointer.
+function agpuCreateShader externC (device: Device pointer, type: ShaderType) => Shader pointer.
+function agpuCreateShaderSignatureBuilder externC (device: Device pointer) => ShaderSignatureBuilder pointer.
+function agpuCreatePipelineBuilder externC (device: Device pointer) => PipelineBuilder pointer.
+function agpuCreateComputePipelineBuilder externC (device: Device pointer) => ComputePipelineBuilder pointer.
+function agpuCreateCommandAllocator externC (device: Device pointer, type: CommandListType, queue: CommandQueue pointer) => CommandAllocator pointer.
+function agpuCreateCommandList externC (device: Device pointer, type: CommandListType, allocator: CommandAllocator pointer, initial_pipeline_state: PipelineState pointer) => CommandList pointer.
+function agpuGetPreferredShaderLanguage externC (device: Device pointer) => ShaderLanguage.
+function agpuGetPreferredIntermediateShaderLanguage externC (device: Device pointer) => ShaderLanguage.
+function agpuGetPreferredHighLevelShaderLanguage externC (device: Device pointer) => ShaderLanguage.
+function agpuCreateFrameBuffer externC (device: Device pointer, width: UInt32, height: UInt32, colorCount: UInt32, colorViews: TextureView pointer pointer, depthStencilView: TextureView pointer) => Framebuffer pointer.
+function agpuCreateRenderPass externC (device: Device pointer, description: RenderpassDescription pointer) => Renderpass pointer.
+function agpuCreateTexture externC (device: Device pointer, description: TextureDescription pointer) => Texture pointer.
+function agpuCreateSampler externC (device: Device pointer, description: SamplerDescription pointer) => Sampler pointer.
+function agpuCreateFence externC (device: Device pointer) => Fence pointer.
+function agpuGetMultiSampleQualityLevels externC (device: Device pointer, format: TextureFormat, sample_count: UInt32) => Int32.
+function agpuHasTopLeftNdcOrigin externC (device: Device pointer) => Int32.
+function agpuHasBottomLeftTextureCoordinates externC (device: Device pointer) => Int32.
+function agpuGetDeviceName externC (device: Device pointer) => Char8 const pointer.
+function agpuGetDeviceType externC (device: Device pointer) => DeviceType.
+function agpuIsFeatureSupportedOnDevice externC (device: Device pointer, feature: Feature) => Int32.
+function agpuGetLimitValue externC (device: Device pointer, limit: Limit) => UInt32.
+function agpuGetVRSystem externC (device: Device pointer) => VrSystem pointer.
+function agpuCreateWindowScraper externC (device: Device pointer) => WindowScraper pointer.
+function agpuCreateOfflineShaderCompilerForDevice externC (device: Device pointer) => OfflineShaderCompiler pointer.
+function agpuCreateStateTrackerCache externC (device: Device pointer, command_queue_family: CommandQueue pointer) => StateTrackerCache pointer.
+function agpuFinishDeviceExecution externC (device: Device pointer) => Error.
+function agpuAddVRSystemReference externC (vr_system: VrSystem pointer) => Error.
+function agpuReleaseVRSystem externC (vr_system: VrSystem pointer) => Error.
+function agpuGetVRSystemName externC (vr_system: VrSystem pointer) => Char8 const pointer.
+function agpuGetVRSystemNativeHandle externC (vr_system: VrSystem pointer) => Void pointer.
+function agpuGetVRRecommendedRenderTargetSize externC (vr_system: VrSystem pointer, size: Size2d pointer) => Error.
+function agpuGetVREyeToHeadTransformInto externC (vr_system: VrSystem pointer, eye: VrEye, transform: Matrix4x4f pointer) => Error.
+function agpuGetVRProjectionMatrix externC (vr_system: VrSystem pointer, eye: VrEye, near_distance: Float32, far_distance: Float32, projection_matrix: Matrix4x4f pointer) => Error.
+function agpuGetVRProjectionFrustumTangents externC (vr_system: VrSystem pointer, eye: VrEye, frustum: FrustumTangents pointer) => Error.
+function agpuSubmitVREyeRenderTargets externC (vr_system: VrSystem pointer, left_eye: Texture pointer, right_eye: Texture pointer) => Error.
+function agpuWaitAndFetchVRPoses externC (vr_system: VrSystem pointer) => Error.
+function agpuGetMaxVRTrackedDevicePoseCount externC (vr_system: VrSystem pointer) => UInt32.
+function agpuGetCurrentVRTrackedDevicePoseCount externC (vr_system: VrSystem pointer) => UInt32.
+function agpuGetCurrentVRTrackedDevicePoseInto externC (vr_system: VrSystem pointer, index: UInt32, dest: VrTrackedDevicePose pointer) => Error.
+function agpuGetMaxVRRenderTrackedDevicePoseCount externC (vr_system: VrSystem pointer) => UInt32.
+function agpuGetCurrentVRRenderTrackedDevicePoseCount externC (vr_system: VrSystem pointer) => UInt32.
+function agpuGetCurrentVRRenderTrackedDevicePoseInto externC (vr_system: VrSystem pointer, index: UInt32, dest: VrTrackedDevicePose pointer) => Error.
+function agpuGetVRTrackedDeviceRenderModel externC (vr_system: VrSystem pointer, index: UInt32) => VrRenderModel pointer.
+function agpuGetVRControllerState externC (vr_system: VrSystem pointer, index: UInt32, dest: VrControllerState pointer) => Int32.
+function agpuPollVREvent externC (vr_system: VrSystem pointer, event: VrEvent pointer) => Int32.
+function agpuAddWindowScraperReference externC (window_scraper: WindowScraper pointer) => Error.
+function agpuReleaseWindowScraper externC (window_scraper: WindowScraper pointer) => Error.
+function agpuWindowScraperEnumerateWindows externC (window_scraper: WindowScraper pointer) => UInt32.
+function agpuWindowScraperGetWindowTitle externC (window_scraper: WindowScraper pointer, index: UInt32) => Char8 const pointer.
+function agpuWindowScraperCreateWindowHandle externC (window_scraper: WindowScraper pointer, index: UInt32) => WindowScraperHandle pointer.
+function agpuAddWindowScraperHandleReference externC (window_scraper_handle: WindowScraperHandle pointer) => Error.
+function agpuReleaseWindowHandleScraper externC (window_scraper_handle: WindowScraperHandle pointer) => Error.
+function agpuWindowScraperHandleIsValid externC (window_scraper_handle: WindowScraperHandle pointer) => Int32.
+function agpuWindowScraperHandleIsVisible externC (window_scraper_handle: WindowScraperHandle pointer) => Int32.
+function agpuWindowScraperHandleGetWidth externC (window_scraper_handle: WindowScraperHandle pointer) => UInt32.
+function agpuWindowScraperHandleGetHeight externC (window_scraper_handle: WindowScraperHandle pointer) => UInt32.
+function agpuWindowScraperHandleCaptureInTexture externC (window_scraper_handle: WindowScraperHandle pointer) => Texture pointer.
+function agpuAddSwapChainReference externC (swap_chain: SwapChain pointer) => Error.
+function agpuReleaseSwapChain externC (swap_chain: SwapChain pointer) => Error.
+function agpuSwapBuffers externC (swap_chain: SwapChain pointer) => Error.
+function agpuGetCurrentBackBuffer externC (swap_chain: SwapChain pointer) => Framebuffer pointer.
+function agpuGetCurrentBackBufferForLayer externC (swap_chain: SwapChain pointer, layer: UInt32) => Framebuffer pointer.
+function agpuGetCurrentBackBufferIndex externC (swap_chain: SwapChain pointer) => UInt32.
+function agpuGetFramebufferCount externC (swap_chain: SwapChain pointer) => UInt32.
+function agpuGetSwapChainWidth externC (swap_chain: SwapChain pointer) => UInt32.
+function agpuGetSwapChainHeight externC (swap_chain: SwapChain pointer) => UInt32.
+function agpuGetSwapChainLayerCount externC (swap_chain: SwapChain pointer) => UInt32.
+function agpuSetSwapChainOverlayPosition externC (swap_chain: SwapChain pointer, x: Int32, y: Int32) => Error.
+function agpuAddComputePipelineBuilderReference externC (compute_pipeline_builder: ComputePipelineBuilder pointer) => Error.
+function agpuReleaseComputePipelineBuilder externC (compute_pipeline_builder: ComputePipelineBuilder pointer) => Error.
+function agpuBuildComputePipelineState externC (compute_pipeline_builder: ComputePipelineBuilder pointer) => PipelineState pointer.
+function agpuAttachComputeShader externC (compute_pipeline_builder: ComputePipelineBuilder pointer, shader: Shader pointer) => Error.
+function agpuAttachComputeShaderWithEntryPoint externC (compute_pipeline_builder: ComputePipelineBuilder pointer, shader: Shader pointer, type: ShaderType, entry_point: Char8 const pointer) => Error.
+function agpuGetComputePipelineBuildingLogLength externC (compute_pipeline_builder: ComputePipelineBuilder pointer) => UInt32.
+function agpuGetComputePipelineBuildingLog externC (compute_pipeline_builder: ComputePipelineBuilder pointer, buffer_size: UInt32, buffer: Char8 pointer) => Error.
+function agpuSetComputePipelineShaderSignature externC (compute_pipeline_builder: ComputePipelineBuilder pointer, signature: ShaderSignature pointer) => Error.
+function agpuAddPipelineBuilderReference externC (pipeline_builder: PipelineBuilder pointer) => Error.
+function agpuReleasePipelineBuilder externC (pipeline_builder: PipelineBuilder pointer) => Error.
+function agpuBuildPipelineState externC (pipeline_builder: PipelineBuilder pointer) => PipelineState pointer.
+function agpuAttachShader externC (pipeline_builder: PipelineBuilder pointer, shader: Shader pointer) => Error.
+function agpuAttachShaderWithEntryPoint externC (pipeline_builder: PipelineBuilder pointer, shader: Shader pointer, type: ShaderType, entry_point: Char8 const pointer) => Error.
+function agpuGetPipelineBuildingLogLength externC (pipeline_builder: PipelineBuilder pointer) => UInt32.
+function agpuGetPipelineBuildingLog externC (pipeline_builder: PipelineBuilder pointer, buffer_size: UInt32, buffer: Char8 pointer) => Error.
+function agpuSetBlendState externC (pipeline_builder: PipelineBuilder pointer, renderTargetMask: Int32, enabled: Int32) => Error.
+function agpuSetBlendFunction externC (pipeline_builder: PipelineBuilder pointer, renderTargetMask: Int32, sourceFactor: BlendingFactor, destFactor: BlendingFactor, colorOperation: BlendingOperation, sourceAlphaFactor: BlendingFactor, destAlphaFactor: BlendingFactor, alphaOperation: BlendingOperation) => Error.
+function agpuSetColorMask externC (pipeline_builder: PipelineBuilder pointer, renderTargetMask: Int32, redEnabled: Int32, greenEnabled: Int32, blueEnabled: Int32, alphaEnabled: Int32) => Error.
+function agpuSetFrontFace externC (pipeline_builder: PipelineBuilder pointer, winding: FaceWinding) => Error.
+function agpuSetCullMode externC (pipeline_builder: PipelineBuilder pointer, mode: CullMode) => Error.
+function agpuSetDepthBias externC (pipeline_builder: PipelineBuilder pointer, constant_factor: Float32, clamp: Float32, slope_factor: Float32) => Error.
+function agpuSetDepthState externC (pipeline_builder: PipelineBuilder pointer, enabled: Int32, writeMask: Int32, function: CompareFunction) => Error.
+function agpuSetPolygonMode externC (pipeline_builder: PipelineBuilder pointer, mode: PolygonMode) => Error.
+function agpuSetStencilState externC (pipeline_builder: PipelineBuilder pointer, enabled: Int32, writeMask: Int32, readMask: Int32) => Error.
+function agpuSetStencilFrontFace externC (pipeline_builder: PipelineBuilder pointer, stencilFailOperation: StencilOperation, depthFailOperation: StencilOperation, stencilDepthPassOperation: StencilOperation, stencilFunction: CompareFunction) => Error.
+function agpuSetStencilBackFace externC (pipeline_builder: PipelineBuilder pointer, stencilFailOperation: StencilOperation, depthFailOperation: StencilOperation, stencilDepthPassOperation: StencilOperation, stencilFunction: CompareFunction) => Error.
+function agpuSetRenderTargetCount externC (pipeline_builder: PipelineBuilder pointer, count: Int32) => Error.
+function agpuSetRenderTargetFormat externC (pipeline_builder: PipelineBuilder pointer, index: UInt32, format: TextureFormat) => Error.
+function agpuSetDepthStencilFormat externC (pipeline_builder: PipelineBuilder pointer, format: TextureFormat) => Error.
+function agpuSetPrimitiveType externC (pipeline_builder: PipelineBuilder pointer, type: PrimitiveTopology) => Error.
+function agpuSetVertexLayout externC (pipeline_builder: PipelineBuilder pointer, layout: VertexLayout pointer) => Error.
+function agpuSetPipelineShaderSignature externC (pipeline_builder: PipelineBuilder pointer, signature: ShaderSignature pointer) => Error.
+function agpuSetSampleDescription externC (pipeline_builder: PipelineBuilder pointer, sample_count: UInt32, sample_quality: UInt32) => Error.
+function agpuAddPipelineStateReference externC (pipeline_state: PipelineState pointer) => Error.
+function agpuReleasePipelineState externC (pipeline_state: PipelineState pointer) => Error.
+function agpuAddCommandQueueReference externC (command_queue: CommandQueue pointer) => Error.
+function agpuReleaseCommandQueue externC (command_queue: CommandQueue pointer) => Error.
+function agpuAddCommandList externC (command_queue: CommandQueue pointer, command_list: CommandList pointer) => Error.
+function agpuAddCommandListsAndSignalFence externC (command_queue: CommandQueue pointer, count: UInt32, command_lists: CommandList pointer pointer, fence: Fence pointer) => Error.
+function agpuFinishQueueExecution externC (command_queue: CommandQueue pointer) => Error.
+function agpuSignalFence externC (command_queue: CommandQueue pointer, fence: Fence pointer) => Error.
+function agpuWaitFence externC (command_queue: CommandQueue pointer, fence: Fence pointer) => Error.
+function agpuAddCommandAllocatorReference externC (command_allocator: CommandAllocator pointer) => Error.
+function agpuReleaseCommandAllocator externC (command_allocator: CommandAllocator pointer) => Error.
+function agpuResetCommandAllocator externC (command_allocator: CommandAllocator pointer) => Error.
+function agpuAddCommandListReference externC (command_list: CommandList pointer) => Error.
+function agpuReleaseCommandList externC (command_list: CommandList pointer) => Error.
+function agpuSetShaderSignature externC (command_list: CommandList pointer, signature: ShaderSignature pointer) => Error.
+function agpuSetViewport externC (command_list: CommandList pointer, x: Int32, y: Int32, w: Int32, h: Int32) => Error.
+function agpuSetScissor externC (command_list: CommandList pointer, x: Int32, y: Int32, w: Int32, h: Int32) => Error.
+function agpuUsePipelineState externC (command_list: CommandList pointer, pipeline: PipelineState pointer) => Error.
+function agpuUseVertexBinding externC (command_list: CommandList pointer, vertex_binding: VertexBinding pointer) => Error.
+function agpuUseIndexBuffer externC (command_list: CommandList pointer, index_buffer: Buffer pointer) => Error.
+function agpuUseIndexBufferAt externC (command_list: CommandList pointer, index_buffer: Buffer pointer, offset: UInt32, index_size: UInt32) => Error.
+function agpuUseDrawIndirectBuffer externC (command_list: CommandList pointer, draw_buffer: Buffer pointer) => Error.
+function agpuUseComputeDispatchIndirectBuffer externC (command_list: CommandList pointer, buffer: Buffer pointer) => Error.
+function agpuUseShaderResources externC (command_list: CommandList pointer, binding: ShaderResourceBinding pointer) => Error.
+function agpuUseShaderResourcesInSlot externC (command_list: CommandList pointer, binding: ShaderResourceBinding pointer, slot: UInt32) => Error.
+function agpuUseComputeShaderResources externC (command_list: CommandList pointer, binding: ShaderResourceBinding pointer) => Error.
+function agpuUseComputeShaderResourcesInSlot externC (command_list: CommandList pointer, binding: ShaderResourceBinding pointer, slot: UInt32) => Error.
+function agpuDrawArrays externC (command_list: CommandList pointer, vertex_count: UInt32, instance_count: UInt32, first_vertex: UInt32, base_instance: UInt32) => Error.
+function agpuDrawArraysIndirect externC (command_list: CommandList pointer, offset: UInt32, drawcount: UInt32) => Error.
+function agpuDrawElements externC (command_list: CommandList pointer, index_count: UInt32, instance_count: UInt32, first_index: UInt32, base_vertex: Int32, base_instance: UInt32) => Error.
+function agpuDrawElementsIndirect externC (command_list: CommandList pointer, offset: UInt32, drawcount: UInt32) => Error.
+function agpuDispatchCompute externC (command_list: CommandList pointer, group_count_x: UInt32, group_count_y: UInt32, group_count_z: UInt32) => Error.
+function agpuDispatchComputeIndirect externC (command_list: CommandList pointer, offset: UInt32) => Error.
+function agpuSetStencilReference externC (command_list: CommandList pointer, reference: UInt32) => Error.
+function agpuExecuteBundle externC (command_list: CommandList pointer, bundle: CommandList pointer) => Error.
+function agpuCloseCommandList externC (command_list: CommandList pointer) => Error.
+function agpuResetCommandList externC (command_list: CommandList pointer, allocator: CommandAllocator pointer, initial_pipeline_state: PipelineState pointer) => Error.
+function agpuResetBundleCommandList externC (command_list: CommandList pointer, allocator: CommandAllocator pointer, initial_pipeline_state: PipelineState pointer, inheritance_info: InheritanceInfo pointer) => Error.
+function agpuBeginRenderPass externC (command_list: CommandList pointer, renderpass: Renderpass pointer, framebuffer: Framebuffer pointer, bundle_content: Int32) => Error.
+function agpuEndRenderPass externC (command_list: CommandList pointer) => Error.
+function agpuResolveFramebuffer externC (command_list: CommandList pointer, destFramebuffer: Framebuffer pointer, sourceFramebuffer: Framebuffer pointer) => Error.
+function agpuResolveTexture externC (command_list: CommandList pointer, sourceTexture: Texture pointer, sourceLevel: UInt32, sourceLayer: UInt32, destTexture: Texture pointer, destLevel: UInt32, destLayer: UInt32, levelCount: UInt32, layerCount: UInt32, aspect: TextureAspect) => Error.
+function agpuPushConstants externC (command_list: CommandList pointer, offset: UInt32, size: UInt32, values: Void pointer) => Error.
+function agpuMemoryBarrier externC (command_list: CommandList pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags) => Error.
+function agpuBufferMemoryBarrier externC (command_list: CommandList pointer, buffer: Buffer pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags, offset: UInt32, size: UInt32) => Error.
+function agpuTextureMemoryBarrier externC (command_list: CommandList pointer, texture: Texture pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags, old_usage: TextureUsageModeMask, new_usage: TextureUsageModeMask, subresource_range: TextureSubresourceRange pointer) => Error.
+function agpuPushBufferTransitionBarrier externC (command_list: CommandList pointer, buffer: Buffer pointer, old_usage: BufferUsageMask, new_usage: BufferUsageMask) => Error.
+function agpuPushTextureTransitionBarrier externC (command_list: CommandList pointer, texture: Texture pointer, old_usage: TextureUsageModeMask, new_usage: TextureUsageModeMask, subresource_range: TextureSubresourceRange pointer) => Error.
+function agpuPopBufferTransitionBarrier externC (command_list: CommandList pointer) => Error.
+function agpuPopTextureTransitionBarrier externC (command_list: CommandList pointer) => Error.
+function agpuCopyBuffer externC (command_list: CommandList pointer, source_buffer: Buffer pointer, source_offset: UInt32, dest_buffer: Buffer pointer, dest_offset: UInt32, copy_size: UInt32) => Error.
+function agpuCopyBufferToTexture externC (command_list: CommandList pointer, buffer: Buffer pointer, texture: Texture pointer, copy_region: BufferImageCopyRegion pointer) => Error.
+function agpuCopyTextureToBuffer externC (command_list: CommandList pointer, texture: Texture pointer, buffer: Buffer pointer, copy_region: BufferImageCopyRegion pointer) => Error.
+function agpuCopyTexture externC (command_list: CommandList pointer, source_texture: Texture pointer, dest_texture: Texture pointer, copy_region: ImageCopyRegion pointer) => Error.
+function agpuAddTextureReference externC (texture: Texture pointer) => Error.
+function agpuReleaseTexture externC (texture: Texture pointer) => Error.
+function agpuGetTextureDescription externC (texture: Texture pointer, description: TextureDescription pointer) => Error.
+function agpuMapTextureLevel externC (texture: Texture pointer, level: Int32, arrayIndex: Int32, flags: MappingAccess, region: Region3d pointer) => Void pointer.
+function agpuUnmapTextureLevel externC (texture: Texture pointer) => Error.
+function agpuReadTextureData externC (texture: Texture pointer, level: Int32, arrayIndex: Int32, pitch: Int32, slicePitch: Int32, buffer: Void pointer) => Error.
+function agpuReadTextureSubData externC (texture: Texture pointer, level: Int32, arrayIndex: Int32, pitch: Int32, slicePitch: Int32, sourceRegion: Region3d pointer, destSize: Size3d pointer, buffer: Void pointer) => Error.
+function agpuUploadTextureData externC (texture: Texture pointer, level: Int32, arrayIndex: Int32, pitch: Int32, slicePitch: Int32, data: Void pointer) => Error.
+function agpuUploadTextureSubData externC (texture: Texture pointer, level: Int32, arrayIndex: Int32, pitch: Int32, slicePitch: Int32, sourceSize: Size3d pointer, destRegion: Region3d pointer, data: Void pointer) => Error.
+function agpuGetTextureFullViewDescription externC (texture: Texture pointer, result: TextureViewDescription pointer) => Error.
+function agpuCreateTextureView externC (texture: Texture pointer, description: TextureViewDescription pointer) => TextureView pointer.
+function agpuGetOrCreateFullTextureView externC (texture: Texture pointer) => TextureView pointer.
+function agpuAddTextureViewReference externC (texture_view: TextureView pointer) => Error.
+function agpuReleaseTextureView externC (texture_view: TextureView pointer) => Error.
+function agpuGetTextureFromView externC (texture_view: TextureView pointer) => Texture pointer.
+function agpuAddSamplerReference externC (sampler: Sampler pointer) => Error.
+function agpuReleaseSampler externC (sampler: Sampler pointer) => Error.
+function agpuAddBufferReference externC (buffer: Buffer pointer) => Error.
+function agpuReleaseBuffer externC (buffer: Buffer pointer) => Error.
+function agpuMapBuffer externC (buffer: Buffer pointer, flags: MappingAccess) => Void pointer.
+function agpuUnmapBuffer externC (buffer: Buffer pointer) => Error.
+function agpuGetBufferDescription externC (buffer: Buffer pointer, description: BufferDescription pointer) => Error.
+function agpuUploadBufferData externC (buffer: Buffer pointer, offset: UInt32, size: UInt32, data: Void pointer) => Error.
+function agpuReadBufferData externC (buffer: Buffer pointer, offset: UInt32, size: UInt32, data: Void pointer) => Error.
+function agpuFlushWholeBuffer externC (buffer: Buffer pointer) => Error.
+function agpuInvalidateWholeBuffer externC (buffer: Buffer pointer) => Error.
+function agpuAddVertexBindingReference externC (vertex_binding: VertexBinding pointer) => Error.
+function agpuReleaseVertexBinding externC (vertex_binding: VertexBinding pointer) => Error.
+function agpuBindVertexBuffers externC (vertex_binding: VertexBinding pointer, count: UInt32, vertex_buffers: Buffer pointer pointer) => Error.
+function agpuBindVertexBuffersWithOffsets externC (vertex_binding: VertexBinding pointer, count: UInt32, vertex_buffers: Buffer pointer pointer, offsets: UInt32 pointer) => Error.
+function agpuAddVertexLayoutReference externC (vertex_layout: VertexLayout pointer) => Error.
+function agpuReleaseVertexLayout externC (vertex_layout: VertexLayout pointer) => Error.
+function agpuAddVertexAttributeBindings externC (vertex_layout: VertexLayout pointer, vertex_buffer_count: UInt32, vertex_strides: UInt32 pointer, attribute_count: UInt32, attributes: VertexAttribDescription pointer) => Error.
+function agpuAddShaderReference externC (shader: Shader pointer) => Error.
+function agpuReleaseShader externC (shader: Shader pointer) => Error.
+function agpuSetShaderSource externC (shader: Shader pointer, language: ShaderLanguage, sourceText: Char8 const pointer, sourceTextLength: UInt32) => Error.
+function agpuCompileShader externC (shader: Shader pointer, options: Char8 const pointer) => Error.
+function agpuGetShaderCompilationLogLength externC (shader: Shader pointer) => UInt32.
+function agpuGetShaderCompilationLog externC (shader: Shader pointer, buffer_size: UInt32, buffer: Char8 pointer) => Error.
+function agpuAddFramebufferReference externC (framebuffer: Framebuffer pointer) => Error.
+function agpuReleaseFramebuffer externC (framebuffer: Framebuffer pointer) => Error.
+function agpuGetFramebufferWidth externC (framebuffer: Framebuffer pointer) => UInt32.
+function agpuGetFramebufferHeight externC (framebuffer: Framebuffer pointer) => UInt32.
+function agpuAddRenderPassReference externC (renderpass: Renderpass pointer) => Error.
+function agpuReleaseRenderPass externC (renderpass: Renderpass pointer) => Error.
+function agpuSetDepthStencilClearValue externC (renderpass: Renderpass pointer, value: DepthStencilValue) => Error.
+function agpuSetColorClearValue externC (renderpass: Renderpass pointer, attachment_index: UInt32, value: Color4f) => Error.
+function agpuSetColorClearValueFrom externC (renderpass: Renderpass pointer, attachment_index: UInt32, value: Color4f pointer) => Error.
+function agpuGetRenderPassColorAttachmentFormats externC (renderpass: Renderpass pointer, color_attachment_count: UInt32 pointer, formats: TextureFormat pointer) => Error.
+function agpuGetRenderPassDepthStencilAttachmentFormat externC (renderpass: Renderpass pointer) => TextureFormat.
+function agpuGetRenderPassSampleCount externC (renderpass: Renderpass pointer) => UInt32.
+function agpuGetRenderPassSampleQuality externC (renderpass: Renderpass pointer) => UInt32.
+function agpuAddShaderSignatureBuilderReference externC (shader_signature_builder: ShaderSignatureBuilder pointer) => Error.
+function agpuReleaseShaderSignatureBuilder externC (shader_signature_builder: ShaderSignatureBuilder pointer) => Error.
+function agpuBuildShaderSignature externC (shader_signature_builder: ShaderSignatureBuilder pointer) => ShaderSignature pointer.
+function agpuAddShaderSignatureBindingConstant externC (shader_signature_builder: ShaderSignatureBuilder pointer) => Error.
+function agpuAddShaderSignatureBindingElement externC (shader_signature_builder: ShaderSignatureBuilder pointer, type: ShaderBindingType, maxBindings: UInt32) => Error.
+function agpuBeginShaderSignatureBindingBank externC (shader_signature_builder: ShaderSignatureBuilder pointer, maxBindings: UInt32) => Error.
+function agpuAddShaderSignatureBindingBankElement externC (shader_signature_builder: ShaderSignatureBuilder pointer, type: ShaderBindingType, bindingPointCount: UInt32) => Error.
+function agpuAddShaderSignatureBindingBankArray externC (shader_signature_builder: ShaderSignatureBuilder pointer, type: ShaderBindingType, size: UInt32) => Error.
+function agpuAddShaderSignature externC (shader_signature: ShaderSignature pointer) => Error.
+function agpuReleaseShaderSignature externC (shader_signature: ShaderSignature pointer) => Error.
+function agpuCreateShaderResourceBinding externC (shader_signature: ShaderSignature pointer, element: UInt32) => ShaderResourceBinding pointer.
+function agpuAddShaderResourceBindingReference externC (shader_resource_binding: ShaderResourceBinding pointer) => Error.
+function agpuReleaseShaderResourceBinding externC (shader_resource_binding: ShaderResourceBinding pointer) => Error.
+function agpuBindUniformBuffer externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, uniform_buffer: Buffer pointer) => Error.
+function agpuBindUniformBufferRange externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, uniform_buffer: Buffer pointer, offset: UInt32, size: UInt32) => Error.
+function agpuBindStorageBuffer externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, storage_buffer: Buffer pointer) => Error.
+function agpuBindStorageBufferRange externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, storage_buffer: Buffer pointer, offset: UInt32, size: UInt32) => Error.
+function agpuBindSampledTextureView externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, view: TextureView pointer) => Error.
+function agpuBindArrayOfSampledTextureView externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, first_index: Int32, count: UInt32, views: TextureView pointer pointer) => Error.
+function agpuBindStorageImageView externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, view: TextureView pointer) => Error.
+function agpuBindSampler externC (shader_resource_binding: ShaderResourceBinding pointer, location: Int32, sampler: Sampler pointer) => Error.
+function agpuAddFenceReference externC (fence: Fence pointer) => Error.
+function agpuReleaseFenceReference externC (fence: Fence pointer) => Error.
+function agpuWaitOnClient externC (fence: Fence pointer) => Error.
+function agpuAddOfflineShaderCompilerReference externC (offline_shader_compiler: OfflineShaderCompiler pointer) => Error.
+function agpuReleaseOfflineShaderCompiler externC (offline_shader_compiler: OfflineShaderCompiler pointer) => Error.
+function agpuIsShaderLanguageSupportedByOfflineCompiler externC (offline_shader_compiler: OfflineShaderCompiler pointer, language: ShaderLanguage) => Int32.
+function agpuIsTargetShaderLanguageSupportedByOfflineCompiler externC (offline_shader_compiler: OfflineShaderCompiler pointer, language: ShaderLanguage) => Int32.
+function agpuSetOfflineShaderCompilerSource externC (offline_shader_compiler: OfflineShaderCompiler pointer, language: ShaderLanguage, stage: ShaderType, sourceText: Char8 const pointer, sourceTextLength: UInt32) => Error.
+function agpuCompileOfflineShader externC (offline_shader_compiler: OfflineShaderCompiler pointer, target_language: ShaderLanguage, options: Char8 const pointer) => Error.
+function agpuGetOfflineShaderCompilationLogLength externC (offline_shader_compiler: OfflineShaderCompiler pointer) => UInt32.
+function agpuGetOfflineShaderCompilationLog externC (offline_shader_compiler: OfflineShaderCompiler pointer, buffer_size: UInt32, buffer: Char8 pointer) => Error.
+function agpuGetOfflineShaderCompilationResultLength externC (offline_shader_compiler: OfflineShaderCompiler pointer) => UInt32.
+function agpuGetOfflineShaderCompilationResult externC (offline_shader_compiler: OfflineShaderCompiler pointer, buffer_size: UInt32, buffer: Char8 pointer) => Error.
+function agpuGetOfflineShaderCompilerResultAsShader externC (offline_shader_compiler: OfflineShaderCompiler pointer) => Shader pointer.
+function agpuAddStateTrackerCacheReference externC (state_tracker_cache: StateTrackerCache pointer) => Error.
+function agpuReleaseStateTrackerCacheReference externC (state_tracker_cache: StateTrackerCache pointer) => Error.
+function agpuCreateStateTracker externC (state_tracker_cache: StateTrackerCache pointer, type: CommandListType, command_queue: CommandQueue pointer) => StateTracker pointer.
+function agpuCreateStateTrackerWithCommandAllocator externC (state_tracker_cache: StateTrackerCache pointer, type: CommandListType, command_queue: CommandQueue pointer, command_allocator: CommandAllocator pointer) => StateTracker pointer.
+function agpuCreateStateTrackerWithFrameBuffering externC (state_tracker_cache: StateTrackerCache pointer, type: CommandListType, command_queue: CommandQueue pointer, framebuffering_count: UInt32) => StateTracker pointer.
+function agpuCreateImmediateRenderer externC (state_tracker_cache: StateTrackerCache pointer) => ImmediateRenderer pointer.
+function agpuAddStateTrackerReference externC (state_tracker: StateTracker pointer) => Error.
+function agpuReleaseStateTrackerReference externC (state_tracker: StateTracker pointer) => Error.
+function agpuStateTrackerBeginRecordingCommands externC (state_tracker: StateTracker pointer) => Error.
+function agpuStateTrackerEndRecordingCommands externC (state_tracker: StateTracker pointer) => CommandList pointer.
+function agpuStateTrackerEndRecordingAndFlushCommands externC (state_tracker: StateTracker pointer) => Error.
+function agpuStateTrackerReset externC (state_tracker: StateTracker pointer) => Error.
+function agpuStateTrackerResetGraphicsPipeline externC (state_tracker: StateTracker pointer) => Error.
+function agpuStateTrackerResetComputePipeline externC (state_tracker: StateTracker pointer) => Error.
+function agpuStateTrackerSetComputeStage externC (state_tracker: StateTracker pointer, shader: Shader pointer, entryPoint: Char8 const pointer) => Error.
+function agpuStateTrackerSetComputeStageWithMain externC (state_tracker: StateTracker pointer, shader: Shader pointer) => Error.
+function agpuStateTrackerSetVertexStage externC (state_tracker: StateTracker pointer, shader: Shader pointer, entryPoint: Char8 const pointer) => Error.
+function agpuStateTrackerSetVertexStageWithMain externC (state_tracker: StateTracker pointer, shader: Shader pointer) => Error.
+function agpuStateTrackerSetFragmentStage externC (state_tracker: StateTracker pointer, shader: Shader pointer, entryPoint: Char8 const pointer) => Error.
+function agpuStateTrackerSetFragmentStageWithMain externC (state_tracker: StateTracker pointer, shader: Shader pointer) => Error.
+function agpuStateTrackerSetGeometryStage externC (state_tracker: StateTracker pointer, shader: Shader pointer, entryPoint: Char8 const pointer) => Error.
+function agpuStateTrackerSetGeometryStageWithMain externC (state_tracker: StateTracker pointer, shader: Shader pointer) => Error.
+function agpuStateTrackerSetTessellationControlStage externC (state_tracker: StateTracker pointer, shader: Shader pointer, entryPoint: Char8 const pointer) => Error.
+function agpuStateTrackerSetTessellationControlStageWithMain externC (state_tracker: StateTracker pointer, shader: Shader pointer) => Error.
+function agpuStateTrackerSetTessellationEvaluationStage externC (state_tracker: StateTracker pointer, shader: Shader pointer, entryPoint: Char8 const pointer) => Error.
+function agpuStateTrackerSetTessellationEvaluationStageWithMain externC (state_tracker: StateTracker pointer, shader: Shader pointer) => Error.
+function agpuStateTrackerSetBlendState externC (state_tracker: StateTracker pointer, renderTargetMask: Int32, enabled: Int32) => Error.
+function agpuStateTrackerSetBlendFunction externC (state_tracker: StateTracker pointer, renderTargetMask: Int32, sourceFactor: BlendingFactor, destFactor: BlendingFactor, colorOperation: BlendingOperation, sourceAlphaFactor: BlendingFactor, destAlphaFactor: BlendingFactor, alphaOperation: BlendingOperation) => Error.
+function agpuStateTrackerSetColorMask externC (state_tracker: StateTracker pointer, renderTargetMask: Int32, redEnabled: Int32, greenEnabled: Int32, blueEnabled: Int32, alphaEnabled: Int32) => Error.
+function agpuStateTrackerSetFrontFace externC (state_tracker: StateTracker pointer, winding: FaceWinding) => Error.
+function agpuStateTrackerSetCullMode externC (state_tracker: StateTracker pointer, mode: CullMode) => Error.
+function agpuStateTrackerSetDepthBias externC (state_tracker: StateTracker pointer, constant_factor: Float32, clamp: Float32, slope_factor: Float32) => Error.
+function agpuStateTrackerSetDepthState externC (state_tracker: StateTracker pointer, enabled: Int32, writeMask: Int32, function: CompareFunction) => Error.
+function agpuStateTrackerSetPolygonMode externC (state_tracker: StateTracker pointer, mode: PolygonMode) => Error.
+function agpuStateTrackerSetStencilState externC (state_tracker: StateTracker pointer, enabled: Int32, writeMask: Int32, readMask: Int32) => Error.
+function agpuStateTrackerSetStencilFrontFace externC (state_tracker: StateTracker pointer, stencilFailOperation: StencilOperation, depthFailOperation: StencilOperation, stencilDepthPassOperation: StencilOperation, stencilFunction: CompareFunction) => Error.
+function agpuStateTrackerSetStencilBackFace externC (state_tracker: StateTracker pointer, stencilFailOperation: StencilOperation, depthFailOperation: StencilOperation, stencilDepthPassOperation: StencilOperation, stencilFunction: CompareFunction) => Error.
+function agpuStateTrackerSetPrimitiveType externC (state_tracker: StateTracker pointer, type: PrimitiveTopology) => Error.
+function agpuStateTrackerSetVertexLayout externC (state_tracker: StateTracker pointer, layout: VertexLayout pointer) => Error.
+function agpuStateTrackerSetShaderSignature externC (state_tracker: StateTracker pointer, signature: ShaderSignature pointer) => Error.
+function agpuStateTrackerSetSampleDescription externC (state_tracker: StateTracker pointer, sample_count: UInt32, sample_quality: UInt32) => Error.
+function agpuStateTrackerSetViewport externC (state_tracker: StateTracker pointer, x: Int32, y: Int32, w: Int32, h: Int32) => Error.
+function agpuStateTrackerSetScissor externC (state_tracker: StateTracker pointer, x: Int32, y: Int32, w: Int32, h: Int32) => Error.
+function agpuStateTrackerUseVertexBinding externC (state_tracker: StateTracker pointer, vertex_binding: VertexBinding pointer) => Error.
+function agpuStateTrackerUseIndexBuffer externC (state_tracker: StateTracker pointer, index_buffer: Buffer pointer) => Error.
+function agpuStateTrackerUseIndexBufferAt externC (state_tracker: StateTracker pointer, index_buffer: Buffer pointer, offset: UInt32, index_size: UInt32) => Error.
+function agpuStateTrackerUseDrawIndirectBuffer externC (state_tracker: StateTracker pointer, draw_buffer: Buffer pointer) => Error.
+function agpuStateTrackerUseComputeDispatchIndirectBuffer externC (state_tracker: StateTracker pointer, buffer: Buffer pointer) => Error.
+function agpuStateTrackerUseShaderResources externC (state_tracker: StateTracker pointer, binding: ShaderResourceBinding pointer) => Error.
+function agpuStateTrackerUseShaderResourcesInSlot externC (state_tracker: StateTracker pointer, binding: ShaderResourceBinding pointer, slot: UInt32) => Error.
+function agpuStateTrackerUseComputeShaderResources externC (state_tracker: StateTracker pointer, binding: ShaderResourceBinding pointer) => Error.
+function agpuStateTrackerUseComputeShaderResourcesInSlot externC (state_tracker: StateTracker pointer, binding: ShaderResourceBinding pointer, slot: UInt32) => Error.
+function agpuStateTrackerDrawArrays externC (state_tracker: StateTracker pointer, vertex_count: UInt32, instance_count: UInt32, first_vertex: UInt32, base_instance: UInt32) => Error.
+function agpuStateTrackerDrawArraysIndirect externC (state_tracker: StateTracker pointer, offset: UInt32, drawcount: UInt32) => Error.
+function agpuStateTrackerDrawElements externC (state_tracker: StateTracker pointer, index_count: UInt32, instance_count: UInt32, first_index: UInt32, base_vertex: Int32, base_instance: UInt32) => Error.
+function agpuStateTrackerDrawElementsIndirect externC (state_tracker: StateTracker pointer, offset: UInt32, drawcount: UInt32) => Error.
+function agpuStateTrackerDispatchCompute externC (state_tracker: StateTracker pointer, group_count_x: UInt32, group_count_y: UInt32, group_count_z: UInt32) => Error.
+function agpuStateTrackerDispatchComputeIndirect externC (state_tracker: StateTracker pointer, offset: UInt32) => Error.
+function agpuStateTrackerSetStencilReference externC (state_tracker: StateTracker pointer, reference: UInt32) => Error.
+function agpuStateTrackerExecuteBundle externC (state_tracker: StateTracker pointer, bundle: CommandList pointer) => Error.
+function agpuStateTrackerBeginRenderPass externC (state_tracker: StateTracker pointer, renderpass: Renderpass pointer, framebuffer: Framebuffer pointer, bundle_content: Int32) => Error.
+function agpuStateTrackerEndRenderPass externC (state_tracker: StateTracker pointer) => Error.
+function agpuStateTrackerResolveFramebuffer externC (state_tracker: StateTracker pointer, destFramebuffer: Framebuffer pointer, sourceFramebuffer: Framebuffer pointer) => Error.
+function agpuStateTrackerResolveTexture externC (state_tracker: StateTracker pointer, sourceTexture: Texture pointer, sourceLevel: UInt32, sourceLayer: UInt32, destTexture: Texture pointer, destLevel: UInt32, destLayer: UInt32, levelCount: UInt32, layerCount: UInt32, aspect: TextureAspect) => Error.
+function agpuStateTrackerPushConstants externC (state_tracker: StateTracker pointer, offset: UInt32, size: UInt32, values: Void pointer) => Error.
+function agpuStateTrackerMemoryBarrier externC (state_tracker: StateTracker pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags) => Error.
+function agpuStateTrackerBufferMemoryBarrier externC (state_tracker: StateTracker pointer, buffer: Buffer pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags, offset: UInt32, size: UInt32) => Error.
+function agpuStateTrackerTextureMemoryBarrier externC (state_tracker: StateTracker pointer, texture: Texture pointer, source_stage: PipelineStageFlags, dest_stage: PipelineStageFlags, source_accesses: AccessFlags, dest_accesses: AccessFlags, old_usage: TextureUsageModeMask, new_usage: TextureUsageModeMask, subresource_range: TextureSubresourceRange pointer) => Error.
+function agpuStateTrackerPushBufferTransitionBarrier externC (state_tracker: StateTracker pointer, buffer: Buffer pointer, old_usage: BufferUsageMask, new_usage: BufferUsageMask) => Error.
+function agpuStateTrackerPushTextureTransitionBarrier externC (state_tracker: StateTracker pointer, texture: Texture pointer, old_usage: TextureUsageModeMask, new_usage: TextureUsageModeMask, subresource_range: TextureSubresourceRange pointer) => Error.
+function agpuStateTrackerPopBufferTransitionBarrier externC (state_tracker: StateTracker pointer) => Error.
+function agpuStateTrackerPopTextureTransitionBarrier externC (state_tracker: StateTracker pointer) => Error.
+function agpuStateTrackerCopyBuffer externC (state_tracker: StateTracker pointer, source_buffer: Buffer pointer, source_offset: UInt32, dest_buffer: Buffer pointer, dest_offset: UInt32, copy_size: UInt32) => Error.
+function agpuStateTrackerCopyBufferToTexture externC (state_tracker: StateTracker pointer, buffer: Buffer pointer, texture: Texture pointer, copy_region: BufferImageCopyRegion pointer) => Error.
+function agpuStateTrackerCopyTextureToBuffer externC (state_tracker: StateTracker pointer, texture: Texture pointer, buffer: Buffer pointer, copy_region: BufferImageCopyRegion pointer) => Error.
+function agpuStateTrackerCopyTexture externC (state_tracker: StateTracker pointer, source_texture: Texture pointer, dest_texture: Texture pointer, copy_region: ImageCopyRegion pointer) => Error.
+function agpuAddImmediateRendererReference externC (immediate_renderer: ImmediateRenderer pointer) => Error.
+function agpuReleaseImmediateRendererReference externC (immediate_renderer: ImmediateRenderer pointer) => Error.
+function agpuBeginImmediateRendering externC (immediate_renderer: ImmediateRenderer pointer, state_tracker: StateTracker pointer) => Error.
+function agpuEndImmediateRendering externC (immediate_renderer: ImmediateRenderer pointer) => Error.
+function agpuImmediateRendererSetBlendState externC (immediate_renderer: ImmediateRenderer pointer, renderTargetMask: Int32, enabled: Int32) => Error.
+function agpuImmediateRendererSetBlendFunction externC (immediate_renderer: ImmediateRenderer pointer, renderTargetMask: Int32, sourceFactor: BlendingFactor, destFactor: BlendingFactor, colorOperation: BlendingOperation, sourceAlphaFactor: BlendingFactor, destAlphaFactor: BlendingFactor, alphaOperation: BlendingOperation) => Error.
+function agpuImmediateRendererSetColorMask externC (immediate_renderer: ImmediateRenderer pointer, renderTargetMask: Int32, redEnabled: Int32, greenEnabled: Int32, blueEnabled: Int32, alphaEnabled: Int32) => Error.
+function agpuImmediateRendererSetFrontFace externC (immediate_renderer: ImmediateRenderer pointer, winding: FaceWinding) => Error.
+function agpuImmediateRendererSetCullMode externC (immediate_renderer: ImmediateRenderer pointer, mode: CullMode) => Error.
+function agpuImmediateRendererSetDepthBias externC (immediate_renderer: ImmediateRenderer pointer, constant_factor: Float32, clamp: Float32, slope_factor: Float32) => Error.
+function agpuImmediateRendererSetDepthState externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32, writeMask: Int32, function: CompareFunction) => Error.
+function agpuImmediateRendererSetPolygonMode externC (immediate_renderer: ImmediateRenderer pointer, mode: PolygonMode) => Error.
+function agpuImmediateRendererSetStencilState externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32, writeMask: Int32, readMask: Int32) => Error.
+function agpuImmediateRendererSetStencilFrontFace externC (immediate_renderer: ImmediateRenderer pointer, stencilFailOperation: StencilOperation, depthFailOperation: StencilOperation, stencilDepthPassOperation: StencilOperation, stencilFunction: CompareFunction) => Error.
+function agpuImmediateRendererSetStencilBackFace externC (immediate_renderer: ImmediateRenderer pointer, stencilFailOperation: StencilOperation, depthFailOperation: StencilOperation, stencilDepthPassOperation: StencilOperation, stencilFunction: CompareFunction) => Error.
+function agpuImmediateSetSamplingMode externC (immediate_renderer: ImmediateRenderer pointer, filter: Filter, maxAnisotropy: Float32, addressU: TextureAddressMode, addressV: TextureAddressMode, addressW: TextureAddressMode) => Error.
+function agpuImmediateRendererSetViewport externC (immediate_renderer: ImmediateRenderer pointer, x: Int32, y: Int32, w: Int32, h: Int32) => Error.
+function agpuImmediateRendererSetScissor externC (immediate_renderer: ImmediateRenderer pointer, x: Int32, y: Int32, w: Int32, h: Int32) => Error.
+function agpuImmediateRendererSetStencilReference externC (immediate_renderer: ImmediateRenderer pointer, reference: UInt32) => Error.
+function agpuImmediateRendererProjectionMatrixMode externC (immediate_renderer: ImmediateRenderer pointer) => Error.
+function agpuImmediateRendererModelViewMatrixMode externC (immediate_renderer: ImmediateRenderer pointer) => Error.
+function agpuImmediateRendererTextureMatrixMode externC (immediate_renderer: ImmediateRenderer pointer) => Error.
+function agpuImmediateRendererIdentity externC (immediate_renderer: ImmediateRenderer pointer) => Error.
+function agpuImmediateRendererPushMatrix externC (immediate_renderer: ImmediateRenderer pointer) => Error.
+function agpuImmediateRendererPopMatrix externC (immediate_renderer: ImmediateRenderer pointer) => Error.
+function agpuImmediateRendererLoadMatrix externC (immediate_renderer: ImmediateRenderer pointer, elements: Float32 pointer) => Error.
+function agpuImmediateRendererLoadTransposeMatrix externC (immediate_renderer: ImmediateRenderer pointer, elements: Float32 pointer) => Error.
+function agpuImmediateRendererMultiplyMatrix externC (immediate_renderer: ImmediateRenderer pointer, elements: Float32 pointer) => Error.
+function agpuImmediateRendererMultiplyTransposeMatrix externC (immediate_renderer: ImmediateRenderer pointer, elements: Float32 pointer) => Error.
+function agpuImmediateRendererOrtho externC (immediate_renderer: ImmediateRenderer pointer, left: Float32, right: Float32, bottom: Float32, top: Float32, near: Float32, far: Float32) => Error.
+function agpuImmediateRendererFrustum externC (immediate_renderer: ImmediateRenderer pointer, left: Float32, right: Float32, bottom: Float32, top: Float32, near: Float32, far: Float32) => Error.
+function agpuImmediateRendererPerspective externC (immediate_renderer: ImmediateRenderer pointer, fovy: Float32, aspect: Float32, near: Float32, far: Float32) => Error.
+function agpuImmediateRendererRotate externC (immediate_renderer: ImmediateRenderer pointer, angle: Float32, x: Float32, y: Float32, z: Float32) => Error.
+function agpuImmediateRendererTranslate externC (immediate_renderer: ImmediateRenderer pointer, x: Float32, y: Float32, z: Float32) => Error.
+function agpuImmediateRendererScale externC (immediate_renderer: ImmediateRenderer pointer, x: Float32, y: Float32, z: Float32) => Error.
+function agpuImmediateRendererSetFlatShading externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32) => Error.
+function agpuImmediateRendererSetLightingEnabled externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32) => Error.
+function agpuImmediateRendererSetLightingModel externC (immediate_renderer: ImmediateRenderer pointer, model: ImmediateRendererLightingModel) => Error.
+function agpuImmediateRendererClearLights externC (immediate_renderer: ImmediateRenderer pointer) => Error.
+function agpuImmediateRendererSetAmbientLighting externC (immediate_renderer: ImmediateRenderer pointer, r: Float32, g: Float32, b: Float32, a: Float32) => Error.
+function agpuImmediateRendererSetLight externC (immediate_renderer: ImmediateRenderer pointer, index: UInt32, enabled: Int32, state: ImmediateRendererLight pointer) => Error.
+function agpuImmediateRendererSetMaterial externC (immediate_renderer: ImmediateRenderer pointer, state: ImmediateRendererMaterial pointer) => Error.
+function agpuImmediateRendererSetSkinningEnabled externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32) => Error.
+function agpuImmediateRendererSetSkinBones externC (immediate_renderer: ImmediateRenderer pointer, count: UInt32, matrices: Float32 pointer, transpose: Int32) => Error.
+function agpuImmediateRendererSetTextureEnabled externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32) => Error.
+function agpuImmediateRendererSetTangentSpaceEnabled externC (immediate_renderer: ImmediateRenderer pointer, enabled: Int32) => Error.
+function agpuImmediateRendererBindTexture externC (immediate_renderer: ImmediateRenderer pointer, texture: Texture pointer) => Error.
+function agpuImmediateRendererBindTextureIn externC (immediate_renderer: ImmediateRenderer pointer, texture: Texture pointer, binding: ImmediateRendererTextureBinding) => Error.
+function agpuImmediateRendererSetClipPlane externC (immediate_renderer: ImmediateRenderer pointer, index: UInt32, enabled: Int32, p1: Float32, p2: Float32, p3: Float32, p4: Float32) => Error.
+function agpuImmediateRendererSetFogMode externC (immediate_renderer: ImmediateRenderer pointer, mode: ImmediateRendererFogMode) => Error.
+function agpuImmediateRendererSetFogColor externC (immediate_renderer: ImmediateRenderer pointer, r: Float32, g: Float32, b: Float32, a: Float32) => Error.
+function agpuImmediateRendererSetFogDistances externC (immediate_renderer: ImmediateRenderer pointer, start: Float32, end: Float32) => Error.
+function agpuImmediateRendererSetFogDensity externC (immediate_renderer: ImmediateRenderer pointer, density: Float32) => Error.
+function agpuBeginImmediateRendererPrimitives externC (immediate_renderer: ImmediateRenderer pointer, type: PrimitiveTopology) => Error.
+function agpuEndImmediateRendererPrimitives externC (immediate_renderer: ImmediateRenderer pointer) => Error.
+function agpuSetImmediateRendererColor externC (immediate_renderer: ImmediateRenderer pointer, r: Float32, g: Float32, b: Float32, a: Float32) => Error.
+function agpuSetImmediateRendererTexcoord externC (immediate_renderer: ImmediateRenderer pointer, x: Float32, y: Float32) => Error.
+function agpuSetImmediateRendererNormal externC (immediate_renderer: ImmediateRenderer pointer, x: Float32, y: Float32, z: Float32) => Error.
+function agpuAddImmediateRendererVertex externC (immediate_renderer: ImmediateRenderer pointer, x: Float32, y: Float32, z: Float32) => Error.
+function agpuBeginImmediateRendererMeshWithVertices externC (immediate_renderer: ImmediateRenderer pointer, vertexCount: UInt32, stride: UInt32, elementCount: UInt32, vertices: Void pointer) => Error.
+function agpuBeginImmediateRendererMeshWithVertexBinding externC (immediate_renderer: ImmediateRenderer pointer, layout: VertexLayout pointer, vertices: VertexBinding pointer) => Error.
+function agpuImmediateRendererUseIndexBuffer externC (immediate_renderer: ImmediateRenderer pointer, index_buffer: Buffer pointer) => Error.
+function agpuImmediateRendererUseIndexBufferAt externC (immediate_renderer: ImmediateRenderer pointer, index_buffer: Buffer pointer, offset: UInt32, index_size: UInt32) => Error.
+function agpuSetImmediateRendererCurrentMeshColors externC (immediate_renderer: ImmediateRenderer pointer, stride: UInt32, elementCount: UInt32, colors: Void pointer) => Error.
+function agpuSetImmediateRendererCurrentMeshNormals externC (immediate_renderer: ImmediateRenderer pointer, stride: UInt32, elementCount: UInt32, normals: Void pointer) => Error.
+function agpuSetImmediateRendererCurrentMeshTexCoords externC (immediate_renderer: ImmediateRenderer pointer, stride: UInt32, elementCount: UInt32, texcoords: Void pointer) => Error.
+function agpuImmediateRendererSetPrimitiveType externC (immediate_renderer: ImmediateRenderer pointer, type: PrimitiveTopology) => Error.
+function agpuImmediateRendererDrawArrays externC (immediate_renderer: ImmediateRenderer pointer, vertex_count: UInt32, instance_count: UInt32, first_vertex: UInt32, base_instance: UInt32) => Error.
+function agpuImmediateRendererDrawElements externC (immediate_renderer: ImmediateRenderer pointer, index_count: UInt32, instance_count: UInt32, first_index: UInt32, base_vertex: Int32, base_instance: UInt32) => Error.
+function agpuImmediateRendererDrawElementsWithIndices externC (immediate_renderer: ImmediateRenderer pointer, mode: PrimitiveTopology, indices: Void pointer, index_count: UInt32, instance_count: UInt32, first_index: UInt32, base_vertex: Int32, base_instance: UInt32) => Error.
+function agpuEndImmediateRendererMesh externC (immediate_renderer: ImmediateRenderer pointer) => Error.
+
+################################################################################
+## Smart pointers.
+################################################################################
+compileTime constant DeviceRef := SmartRefPtr(Device).
+compileTime constant VrSystemRef := SmartRefPtr(VrSystem).
+compileTime constant WindowScraperRef := SmartRefPtr(WindowScraper).
+compileTime constant WindowScraperHandleRef := SmartRefPtr(WindowScraperHandle).
+compileTime constant SwapChainRef := SmartRefPtr(SwapChain).
+compileTime constant ComputePipelineBuilderRef := SmartRefPtr(ComputePipelineBuilder).
+compileTime constant PipelineBuilderRef := SmartRefPtr(PipelineBuilder).
+compileTime constant PipelineStateRef := SmartRefPtr(PipelineState).
+compileTime constant CommandQueueRef := SmartRefPtr(CommandQueue).
+compileTime constant CommandAllocatorRef := SmartRefPtr(CommandAllocator).
+compileTime constant CommandListRef := SmartRefPtr(CommandList).
+compileTime constant TextureRef := SmartRefPtr(Texture).
+compileTime constant TextureViewRef := SmartRefPtr(TextureView).
+compileTime constant SamplerRef := SmartRefPtr(Sampler).
+compileTime constant BufferRef := SmartRefPtr(Buffer).
+compileTime constant VertexBindingRef := SmartRefPtr(VertexBinding).
+compileTime constant VertexLayoutRef := SmartRefPtr(VertexLayout).
+compileTime constant ShaderRef := SmartRefPtr(Shader).
+compileTime constant FramebufferRef := SmartRefPtr(Framebuffer).
+compileTime constant RenderpassRef := SmartRefPtr(Renderpass).
+compileTime constant ShaderSignatureBuilderRef := SmartRefPtr(ShaderSignatureBuilder).
+compileTime constant ShaderSignatureRef := SmartRefPtr(ShaderSignature).
+compileTime constant ShaderResourceBindingRef := SmartRefPtr(ShaderResourceBinding).
+compileTime constant FenceRef := SmartRefPtr(Fence).
+compileTime constant OfflineShaderCompilerRef := SmartRefPtr(OfflineShaderCompiler).
+compileTime constant StateTrackerCacheRef := SmartRefPtr(StateTrackerCache).
+compileTime constant StateTrackerRef := SmartRefPtr(StateTracker).
+compileTime constant ImmediateRendererRef := SmartRefPtr(ImmediateRenderer).
+
+################################################################################
+## Object bindings.
+################################################################################
+Platform extend: {
+	inline method openDevice: (openInfo: DeviceOpenInfo pointer) ::=> DeviceRef
+		:= DeviceRef for: (agpuOpenDevice(self address, openInfo)).
+
+	inline method getName ::=> Char8 const pointer
+		:= agpuGetPlatformName(self address).
+
+	inline method getGpuCount ::=> UInt32
+		:= agpuGetPlatformGpuCount(self address).
+
+	inline method getGpuName: (gpu_index: UInt32) ::=> Char8 const pointer
+		:= agpuGetPlatformGpuName(self address, gpu_index).
+
+	inline method getGpuDeviceType: (gpu_index: UInt32) ::=> DeviceType
+		:= agpuGetPlatformGpuDeviceType(self address, gpu_index).
+
+	inline method isFeatureSupportedOnGPU: (gpu_index: UInt32) feature: (feature: Feature) ::=> Int32
+		:= agpuIsFeatureSupportedOnGPU(self address, gpu_index, feature).
+
+	inline method getLimitValueOnGPU: (gpu_index: UInt32) limit: (limit: Limit) ::=> UInt32
+		:= agpuGetLimitValueOnGPU(self address, gpu_index, limit).
+
+	inline method getVersion ::=> Int32
+		:= agpuGetPlatformVersion(self address).
+
+	inline method getImplementationVersion ::=> Int32
+		:= agpuGetPlatformImplementationVersion(self address).
+
+	inline method hasRealMultithreading ::=> Int32
+		:= agpuPlatformHasRealMultithreading(self address).
+
+	inline method isNative ::=> Int32
+		:= agpuIsNativePlatform(self address).
+
+	inline method isCrossPlatform ::=> Int32
+		:= agpuIsCrossPlatform(self address).
+
+	inline method createOfflineShaderCompiler ::=> OfflineShaderCompilerRef
+		:= OfflineShaderCompilerRef for: (agpuCreateOfflineShaderCompiler(self address)).
+
+}.
+
+Device extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddDeviceReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseDevice(self address)).
+
+	inline method getDefaultCommandQueue ::=> CommandQueueRef
+		:= CommandQueueRef for: (agpuGetDefaultCommandQueue(self address)).
+
+	inline method createSwapChain: (commandQueue: CommandQueueRef const ref) swapChainInfo: (swapChainInfo: SwapChainCreateInfo pointer) ::=> SwapChainRef
+		:= SwapChainRef for: (agpuCreateSwapChain(self address, commandQueue getPointer, swapChainInfo)).
+
+	inline method createBuffer: (description: BufferDescription pointer) initialData: (initial_data: Void pointer) ::=> BufferRef
+		:= BufferRef for: (agpuCreateBuffer(self address, description, initial_data)).
+
+	inline method createVertexLayout ::=> VertexLayoutRef
+		:= VertexLayoutRef for: (agpuCreateVertexLayout(self address)).
+
+	inline method createVertexBinding: (layout: VertexLayoutRef const ref) ::=> VertexBindingRef
+		:= VertexBindingRef for: (agpuCreateVertexBinding(self address, layout getPointer)).
+
+	inline method createShader: (type: ShaderType) ::=> ShaderRef
+		:= ShaderRef for: (agpuCreateShader(self address, type)).
+
+	inline method createShaderSignatureBuilder ::=> ShaderSignatureBuilderRef
+		:= ShaderSignatureBuilderRef for: (agpuCreateShaderSignatureBuilder(self address)).
+
+	inline method createPipelineBuilder ::=> PipelineBuilderRef
+		:= PipelineBuilderRef for: (agpuCreatePipelineBuilder(self address)).
+
+	inline method createComputePipelineBuilder ::=> ComputePipelineBuilderRef
+		:= ComputePipelineBuilderRef for: (agpuCreateComputePipelineBuilder(self address)).
+
+	inline method createCommandAllocator: (type: CommandListType) queue: (queue: CommandQueueRef const ref) ::=> CommandAllocatorRef
+		:= CommandAllocatorRef for: (agpuCreateCommandAllocator(self address, type, queue getPointer)).
+
+	inline method createCommandList: (type: CommandListType) allocator: (allocator: CommandAllocatorRef const ref) initialPipelineState: (initial_pipeline_state: PipelineStateRef const ref) ::=> CommandListRef
+		:= CommandListRef for: (agpuCreateCommandList(self address, type, allocator getPointer, initial_pipeline_state getPointer)).
+
+	inline method getPreferredShaderLanguage ::=> ShaderLanguage
+		:= agpuGetPreferredShaderLanguage(self address).
+
+	inline method getPreferredIntermediateShaderLanguage ::=> ShaderLanguage
+		:= agpuGetPreferredIntermediateShaderLanguage(self address).
+
+	inline method getPreferredHighLevelShaderLanguage ::=> ShaderLanguage
+		:= agpuGetPreferredHighLevelShaderLanguage(self address).
+
+	inline method createFrameBuffer: (width: UInt32) height: (height: UInt32) colorCount: (colorCount: UInt32) colorViews: (colorViews: TextureViewRef pointer) depthStencilView: (depthStencilView: TextureViewRef const ref) ::=> FramebufferRef
+		:= FramebufferRef for: (agpuCreateFrameBuffer(self address, width, height, colorCount, colorViews reinterpretCastTo: TextureView pointer pointer, depthStencilView getPointer)).
+
+	inline method createRenderPass: (description: RenderpassDescription pointer) ::=> RenderpassRef
+		:= RenderpassRef for: (agpuCreateRenderPass(self address, description)).
+
+	inline method createTexture: (description: TextureDescription pointer) ::=> TextureRef
+		:= TextureRef for: (agpuCreateTexture(self address, description)).
+
+	inline method createSampler: (description: SamplerDescription pointer) ::=> SamplerRef
+		:= SamplerRef for: (agpuCreateSampler(self address, description)).
+
+	inline method createFence ::=> FenceRef
+		:= FenceRef for: (agpuCreateFence(self address)).
+
+	inline method getMultiSampleQualityLevels: (format: TextureFormat) sampleCount: (sample_count: UInt32) ::=> Int32
+		:= agpuGetMultiSampleQualityLevels(self address, format, sample_count).
+
+	inline method hasTopLeftNdcOrigin ::=> Int32
+		:= agpuHasTopLeftNdcOrigin(self address).
+
+	inline method hasBottomLeftTextureCoordinates ::=> Int32
+		:= agpuHasBottomLeftTextureCoordinates(self address).
+
+	inline method getName ::=> Char8 const pointer
+		:= agpuGetDeviceName(self address).
+
+	inline method getType ::=> DeviceType
+		:= agpuGetDeviceType(self address).
+
+	inline method isFeatureSupported: (feature: Feature) ::=> Int32
+		:= agpuIsFeatureSupportedOnDevice(self address, feature).
+
+	inline method getLimitValue: (limit: Limit) ::=> UInt32
+		:= agpuGetLimitValue(self address, limit).
+
+	inline method getVRSystem ::=> VrSystemRef
+		:= VrSystemRef for: (agpuGetVRSystem(self address)).
+
+	inline method createWindowScraper ::=> WindowScraperRef
+		:= WindowScraperRef for: (agpuCreateWindowScraper(self address)).
+
+	inline method createOfflineShaderCompiler ::=> OfflineShaderCompilerRef
+		:= OfflineShaderCompilerRef for: (agpuCreateOfflineShaderCompilerForDevice(self address)).
+
+	inline method createStateTrackerCache: (command_queue_family: CommandQueueRef const ref) ::=> StateTrackerCacheRef
+		:= StateTrackerCacheRef for: (agpuCreateStateTrackerCache(self address, command_queue_family getPointer)).
+
+	inline method finishExecution ::=> Void
+		:= throwIfError: (agpuFinishDeviceExecution(self address)).
+
+}.
+
+VrSystem extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddVRSystemReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseVRSystem(self address)).
+
+	inline method getVRSystemName ::=> Char8 const pointer
+		:= agpuGetVRSystemName(self address).
+
+	inline method getNativeHandle ::=> Void pointer
+		:= agpuGetVRSystemNativeHandle(self address).
+
+	inline method getRecommendedRenderTargetSize: (size: Size2d pointer) ::=> Void
+		:= throwIfError: (agpuGetVRRecommendedRenderTargetSize(self address, size)).
+
+	inline method getEyeToHeadTransform: (eye: VrEye) transform: (transform: Matrix4x4f pointer) ::=> Void
+		:= throwIfError: (agpuGetVREyeToHeadTransformInto(self address, eye, transform)).
+
+	inline method getProjectionMatrix: (eye: VrEye) nearDistance: (near_distance: Float32) farDistance: (far_distance: Float32) projectionMatrix: (projection_matrix: Matrix4x4f pointer) ::=> Void
+		:= throwIfError: (agpuGetVRProjectionMatrix(self address, eye, near_distance, far_distance, projection_matrix)).
+
+	inline method getProjectionFrustumTangents: (eye: VrEye) frustum: (frustum: FrustumTangents pointer) ::=> Void
+		:= throwIfError: (agpuGetVRProjectionFrustumTangents(self address, eye, frustum)).
+
+	inline method submitEyeRenderTargets: (left_eye: TextureRef const ref) rightEye: (right_eye: TextureRef const ref) ::=> Void
+		:= throwIfError: (agpuSubmitVREyeRenderTargets(self address, left_eye getPointer, right_eye getPointer)).
+
+	inline method waitAndFetchPoses ::=> Void
+		:= throwIfError: (agpuWaitAndFetchVRPoses(self address)).
+
+	inline method getMaxTrackedDevicePoseCount ::=> UInt32
+		:= agpuGetMaxVRTrackedDevicePoseCount(self address).
+
+	inline method getCurrentTrackedDevicePoseCount ::=> UInt32
+		:= agpuGetCurrentVRTrackedDevicePoseCount(self address).
+
+	inline method getCurrentTrackedDevicePoseInto: (index: UInt32) dest: (dest: VrTrackedDevicePose pointer) ::=> Void
+		:= throwIfError: (agpuGetCurrentVRTrackedDevicePoseInto(self address, index, dest)).
+
+	inline method getMaxRenderTrackedDevicePoseCount ::=> UInt32
+		:= agpuGetMaxVRRenderTrackedDevicePoseCount(self address).
+
+	inline method getCurrentRenderTrackedDevicePoseCount ::=> UInt32
+		:= agpuGetCurrentVRRenderTrackedDevicePoseCount(self address).
+
+	inline method getCurrentRenderTrackedDevicePoseInto: (index: UInt32) dest: (dest: VrTrackedDevicePose pointer) ::=> Void
+		:= throwIfError: (agpuGetCurrentVRRenderTrackedDevicePoseInto(self address, index, dest)).
+
+	inline method getTrackedDeviceRenderModel: (index: UInt32) ::=> VrRenderModel pointer
+		:= agpuGetVRTrackedDeviceRenderModel(self address, index).
+
+	inline method getControllerState: (index: UInt32) dest: (dest: VrControllerState pointer) ::=> Int32
+		:= agpuGetVRControllerState(self address, index, dest).
+
+	inline method pollEvent: (event: VrEvent pointer) ::=> Int32
+		:= agpuPollVREvent(self address, event).
+
+}.
+
+WindowScraper extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddWindowScraperReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseWindowScraper(self address)).
+
+	inline method enumerateWindows ::=> UInt32
+		:= agpuWindowScraperEnumerateWindows(self address).
+
+	inline method getWindowTitle: (index: UInt32) ::=> Char8 const pointer
+		:= agpuWindowScraperGetWindowTitle(self address, index).
+
+	inline method createWindowHandle: (index: UInt32) ::=> WindowScraperHandleRef
+		:= WindowScraperHandleRef for: (agpuWindowScraperCreateWindowHandle(self address, index)).
+
+}.
+
+WindowScraperHandle extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddWindowScraperHandleReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseWindowHandleScraper(self address)).
+
+	inline method isValid ::=> Int32
+		:= agpuWindowScraperHandleIsValid(self address).
+
+	inline method isVisible ::=> Int32
+		:= agpuWindowScraperHandleIsVisible(self address).
+
+	inline method getWidth ::=> UInt32
+		:= agpuWindowScraperHandleGetWidth(self address).
+
+	inline method getHeight ::=> UInt32
+		:= agpuWindowScraperHandleGetHeight(self address).
+
+	inline method captureInTexture ::=> TextureRef
+		:= TextureRef for: (agpuWindowScraperHandleCaptureInTexture(self address)).
+
+}.
+
+SwapChain extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddSwapChainReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseSwapChain(self address)).
+
+	inline method swapBuffers ::=> Error
+		:= agpuSwapBuffers(self address).
+
+	inline method getCurrentBackBuffer ::=> FramebufferRef
+		:= FramebufferRef for: (agpuGetCurrentBackBuffer(self address)).
+
+	inline method getCurrentBackBufferForLayer: (layer: UInt32) ::=> FramebufferRef
+		:= FramebufferRef for: (agpuGetCurrentBackBufferForLayer(self address, layer)).
+
+	inline method getCurrentBackBufferIndex ::=> UInt32
+		:= agpuGetCurrentBackBufferIndex(self address).
+
+	inline method getFramebufferCount ::=> UInt32
+		:= agpuGetFramebufferCount(self address).
+
+	inline method getWidth ::=> UInt32
+		:= agpuGetSwapChainWidth(self address).
+
+	inline method getHeight ::=> UInt32
+		:= agpuGetSwapChainHeight(self address).
+
+	inline method getLayerCount ::=> UInt32
+		:= agpuGetSwapChainLayerCount(self address).
+
+	inline method setOverlayPosition: (x: Int32) y: (y: Int32) ::=> Void
+		:= throwIfError: (agpuSetSwapChainOverlayPosition(self address, x, y)).
+
+}.
+
+ComputePipelineBuilder extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddComputePipelineBuilderReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseComputePipelineBuilder(self address)).
+
+	inline method build ::=> PipelineStateRef
+		:= PipelineStateRef for: (agpuBuildComputePipelineState(self address)).
+
+	inline method attachShader: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuAttachComputeShader(self address, shader getPointer)).
+
+	inline method attachShaderWithEntryPoint: (shader: ShaderRef const ref) type: (type: ShaderType) entryPoint: (entry_point: Char8 const pointer) ::=> Void
+		:= throwIfError: (agpuAttachComputeShaderWithEntryPoint(self address, shader getPointer, type, entry_point)).
+
+	inline method getBuildingLogLength ::=> UInt32
+		:= agpuGetComputePipelineBuildingLogLength(self address).
+
+	inline method getBuildingLog: (buffer_size: UInt32) buffer: (buffer: Char8 pointer) ::=> Void
+		:= throwIfError: (agpuGetComputePipelineBuildingLog(self address, buffer_size, buffer)).
+
+	inline method setShaderSignature: (signature: ShaderSignatureRef const ref) ::=> Void
+		:= throwIfError: (agpuSetComputePipelineShaderSignature(self address, signature getPointer)).
+
+}.
+
+PipelineBuilder extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddPipelineBuilderReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleasePipelineBuilder(self address)).
+
+	inline method build ::=> PipelineStateRef
+		:= PipelineStateRef for: (agpuBuildPipelineState(self address)).
+
+	inline method attachShader: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuAttachShader(self address, shader getPointer)).
+
+	inline method attachShaderWithEntryPoint: (shader: ShaderRef const ref) type: (type: ShaderType) entryPoint: (entry_point: Char8 const pointer) ::=> Void
+		:= throwIfError: (agpuAttachShaderWithEntryPoint(self address, shader getPointer, type, entry_point)).
+
+	inline method getBuildingLogLength ::=> UInt32
+		:= agpuGetPipelineBuildingLogLength(self address).
+
+	inline method getBuildingLog: (buffer_size: UInt32) buffer: (buffer: Char8 pointer) ::=> Void
+		:= throwIfError: (agpuGetPipelineBuildingLog(self address, buffer_size, buffer)).
+
+	inline method setBlendState: (renderTargetMask: Int32) enabled: (enabled: Int32) ::=> Void
+		:= throwIfError: (agpuSetBlendState(self address, renderTargetMask, enabled)).
+
+	inline method setBlendFunction: (renderTargetMask: Int32) sourceFactor: (sourceFactor: BlendingFactor) destFactor: (destFactor: BlendingFactor) colorOperation: (colorOperation: BlendingOperation) sourceAlphaFactor: (sourceAlphaFactor: BlendingFactor) destAlphaFactor: (destAlphaFactor: BlendingFactor) alphaOperation: (alphaOperation: BlendingOperation) ::=> Void
+		:= throwIfError: (agpuSetBlendFunction(self address, renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation)).
+
+	inline method setColorMask: (renderTargetMask: Int32) redEnabled: (redEnabled: Int32) greenEnabled: (greenEnabled: Int32) blueEnabled: (blueEnabled: Int32) alphaEnabled: (alphaEnabled: Int32) ::=> Void
+		:= throwIfError: (agpuSetColorMask(self address, renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled)).
+
+	inline method setFrontFace: (winding: FaceWinding) ::=> Void
+		:= throwIfError: (agpuSetFrontFace(self address, winding)).
+
+	inline method setCullMode: (mode: CullMode) ::=> Void
+		:= throwIfError: (agpuSetCullMode(self address, mode)).
+
+	inline method setDepthBias: (constant_factor: Float32) clamp: (clamp: Float32) slopeFactor: (slope_factor: Float32) ::=> Void
+		:= throwIfError: (agpuSetDepthBias(self address, constant_factor, clamp, slope_factor)).
+
+	inline method setDepthState: (enabled: Int32) writeMask: (writeMask: Int32) function: (function: CompareFunction) ::=> Void
+		:= throwIfError: (agpuSetDepthState(self address, enabled, writeMask, function)).
+
+	inline method setPolygonMode: (mode: PolygonMode) ::=> Void
+		:= throwIfError: (agpuSetPolygonMode(self address, mode)).
+
+	inline method setStencilState: (enabled: Int32) writeMask: (writeMask: Int32) readMask: (readMask: Int32) ::=> Void
+		:= throwIfError: (agpuSetStencilState(self address, enabled, writeMask, readMask)).
+
+	inline method setStencilFrontFace: (stencilFailOperation: StencilOperation) depthFailOperation: (depthFailOperation: StencilOperation) stencilDepthPassOperation: (stencilDepthPassOperation: StencilOperation) stencilFunction: (stencilFunction: CompareFunction) ::=> Void
+		:= throwIfError: (agpuSetStencilFrontFace(self address, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction)).
+
+	inline method setStencilBackFace: (stencilFailOperation: StencilOperation) depthFailOperation: (depthFailOperation: StencilOperation) stencilDepthPassOperation: (stencilDepthPassOperation: StencilOperation) stencilFunction: (stencilFunction: CompareFunction) ::=> Void
+		:= throwIfError: (agpuSetStencilBackFace(self address, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction)).
+
+	inline method setRenderTargetCount: (count: Int32) ::=> Void
+		:= throwIfError: (agpuSetRenderTargetCount(self address, count)).
+
+	inline method setRenderTargetFormat: (index: UInt32) format: (format: TextureFormat) ::=> Void
+		:= throwIfError: (agpuSetRenderTargetFormat(self address, index, format)).
+
+	inline method setDepthStencilFormat: (format: TextureFormat) ::=> Void
+		:= throwIfError: (agpuSetDepthStencilFormat(self address, format)).
+
+	inline method setPrimitiveType: (type: PrimitiveTopology) ::=> Void
+		:= throwIfError: (agpuSetPrimitiveType(self address, type)).
+
+	inline method setVertexLayout: (layout: VertexLayoutRef const ref) ::=> Void
+		:= throwIfError: (agpuSetVertexLayout(self address, layout getPointer)).
+
+	inline method setShaderSignature: (signature: ShaderSignatureRef const ref) ::=> Void
+		:= throwIfError: (agpuSetPipelineShaderSignature(self address, signature getPointer)).
+
+	inline method setSampleDescription: (sample_count: UInt32) sampleQuality: (sample_quality: UInt32) ::=> Void
+		:= throwIfError: (agpuSetSampleDescription(self address, sample_count, sample_quality)).
+
+}.
+
+PipelineState extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddPipelineStateReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleasePipelineState(self address)).
+
+}.
+
+CommandQueue extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddCommandQueueReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseCommandQueue(self address)).
+
+	inline method addCommandList: (command_list: CommandListRef const ref) ::=> Void
+		:= throwIfError: (agpuAddCommandList(self address, command_list getPointer)).
+
+	inline method addCommandListsAndSignalFence: (count: UInt32) commandLists: (command_lists: CommandListRef pointer) fence: (fence: FenceRef const ref) ::=> Void
+		:= throwIfError: (agpuAddCommandListsAndSignalFence(self address, count, command_lists reinterpretCastTo: CommandList pointer pointer, fence getPointer)).
+
+	inline method finishExecution ::=> Void
+		:= throwIfError: (agpuFinishQueueExecution(self address)).
+
+	inline method signalFence: (fence: FenceRef const ref) ::=> Void
+		:= throwIfError: (agpuSignalFence(self address, fence getPointer)).
+
+	inline method waitFence: (fence: FenceRef const ref) ::=> Void
+		:= throwIfError: (agpuWaitFence(self address, fence getPointer)).
+
+}.
+
+CommandAllocator extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddCommandAllocatorReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseCommandAllocator(self address)).
+
+	inline method reset ::=> Void
+		:= throwIfError: (agpuResetCommandAllocator(self address)).
+
+}.
+
+CommandList extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddCommandListReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseCommandList(self address)).
+
+	inline method setShaderSignature: (signature: ShaderSignatureRef const ref) ::=> Void
+		:= throwIfError: (agpuSetShaderSignature(self address, signature getPointer)).
+
+	inline method setViewport: (x: Int32) y: (y: Int32) w: (w: Int32) h: (h: Int32) ::=> Void
+		:= throwIfError: (agpuSetViewport(self address, x, y, w, h)).
+
+	inline method setScissor: (x: Int32) y: (y: Int32) w: (w: Int32) h: (h: Int32) ::=> Void
+		:= throwIfError: (agpuSetScissor(self address, x, y, w, h)).
+
+	inline method usePipelineState: (pipeline: PipelineStateRef const ref) ::=> Void
+		:= throwIfError: (agpuUsePipelineState(self address, pipeline getPointer)).
+
+	inline method useVertexBinding: (vertex_binding: VertexBindingRef const ref) ::=> Void
+		:= throwIfError: (agpuUseVertexBinding(self address, vertex_binding getPointer)).
+
+	inline method useIndexBuffer: (index_buffer: BufferRef const ref) ::=> Void
+		:= throwIfError: (agpuUseIndexBuffer(self address, index_buffer getPointer)).
+
+	inline method useIndexBufferAt: (index_buffer: BufferRef const ref) offset: (offset: UInt32) indexSize: (index_size: UInt32) ::=> Void
+		:= throwIfError: (agpuUseIndexBufferAt(self address, index_buffer getPointer, offset, index_size)).
+
+	inline method useDrawIndirectBuffer: (draw_buffer: BufferRef const ref) ::=> Void
+		:= throwIfError: (agpuUseDrawIndirectBuffer(self address, draw_buffer getPointer)).
+
+	inline method useComputeDispatchIndirectBuffer: (buffer: BufferRef const ref) ::=> Void
+		:= throwIfError: (agpuUseComputeDispatchIndirectBuffer(self address, buffer getPointer)).
+
+	inline method useShaderResources: (binding: ShaderResourceBindingRef const ref) ::=> Void
+		:= throwIfError: (agpuUseShaderResources(self address, binding getPointer)).
+
+	inline method useShaderResourcesInSlot: (binding: ShaderResourceBindingRef const ref) slot: (slot: UInt32) ::=> Void
+		:= throwIfError: (agpuUseShaderResourcesInSlot(self address, binding getPointer, slot)).
+
+	inline method useComputeShaderResources: (binding: ShaderResourceBindingRef const ref) ::=> Void
+		:= throwIfError: (agpuUseComputeShaderResources(self address, binding getPointer)).
+
+	inline method useComputeShaderResourcesInSlot: (binding: ShaderResourceBindingRef const ref) slot: (slot: UInt32) ::=> Void
+		:= throwIfError: (agpuUseComputeShaderResourcesInSlot(self address, binding getPointer, slot)).
+
+	inline method drawArrays: (vertex_count: UInt32) instanceCount: (instance_count: UInt32) firstVertex: (first_vertex: UInt32) baseInstance: (base_instance: UInt32) ::=> Void
+		:= throwIfError: (agpuDrawArrays(self address, vertex_count, instance_count, first_vertex, base_instance)).
+
+	inline method drawArraysIndirect: (offset: UInt32) drawcount: (drawcount: UInt32) ::=> Void
+		:= throwIfError: (agpuDrawArraysIndirect(self address, offset, drawcount)).
+
+	inline method drawElements: (index_count: UInt32) instanceCount: (instance_count: UInt32) firstIndex: (first_index: UInt32) baseVertex: (base_vertex: Int32) baseInstance: (base_instance: UInt32) ::=> Void
+		:= throwIfError: (agpuDrawElements(self address, index_count, instance_count, first_index, base_vertex, base_instance)).
+
+	inline method drawElementsIndirect: (offset: UInt32) drawcount: (drawcount: UInt32) ::=> Void
+		:= throwIfError: (agpuDrawElementsIndirect(self address, offset, drawcount)).
+
+	inline method dispatchCompute: (group_count_x: UInt32) groupCountY: (group_count_y: UInt32) groupCountZ: (group_count_z: UInt32) ::=> Void
+		:= throwIfError: (agpuDispatchCompute(self address, group_count_x, group_count_y, group_count_z)).
+
+	inline method dispatchComputeIndirect: (offset: UInt32) ::=> Void
+		:= throwIfError: (agpuDispatchComputeIndirect(self address, offset)).
+
+	inline method setStencilReference: (reference: UInt32) ::=> Void
+		:= throwIfError: (agpuSetStencilReference(self address, reference)).
+
+	inline method executeBundle: (bundle: CommandListRef const ref) ::=> Void
+		:= throwIfError: (agpuExecuteBundle(self address, bundle getPointer)).
+
+	inline method close ::=> Void
+		:= throwIfError: (agpuCloseCommandList(self address)).
+
+	inline method reset: (allocator: CommandAllocatorRef const ref) initialPipelineState: (initial_pipeline_state: PipelineStateRef const ref) ::=> Void
+		:= throwIfError: (agpuResetCommandList(self address, allocator getPointer, initial_pipeline_state getPointer)).
+
+	inline method resetBundle: (allocator: CommandAllocatorRef const ref) initialPipelineState: (initial_pipeline_state: PipelineStateRef const ref) inheritanceInfo: (inheritance_info: InheritanceInfo pointer) ::=> Void
+		:= throwIfError: (agpuResetBundleCommandList(self address, allocator getPointer, initial_pipeline_state getPointer, inheritance_info)).
+
+	inline method beginRenderPass: (renderpass: RenderpassRef const ref) framebuffer: (framebuffer: FramebufferRef const ref) bundleContent: (bundle_content: Int32) ::=> Void
+		:= throwIfError: (agpuBeginRenderPass(self address, renderpass getPointer, framebuffer getPointer, bundle_content)).
+
+	inline method endRenderPass ::=> Void
+		:= throwIfError: (agpuEndRenderPass(self address)).
+
+	inline method resolveFramebuffer: (destFramebuffer: FramebufferRef const ref) sourceFramebuffer: (sourceFramebuffer: FramebufferRef const ref) ::=> Void
+		:= throwIfError: (agpuResolveFramebuffer(self address, destFramebuffer getPointer, sourceFramebuffer getPointer)).
+
+	inline method resolveTexture: (sourceTexture: TextureRef const ref) sourceLevel: (sourceLevel: UInt32) sourceLayer: (sourceLayer: UInt32) destTexture: (destTexture: TextureRef const ref) destLevel: (destLevel: UInt32) destLayer: (destLayer: UInt32) levelCount: (levelCount: UInt32) layerCount: (layerCount: UInt32) aspect: (aspect: TextureAspect) ::=> Void
+		:= throwIfError: (agpuResolveTexture(self address, sourceTexture getPointer, sourceLevel, sourceLayer, destTexture getPointer, destLevel, destLayer, levelCount, layerCount, aspect)).
+
+	inline method pushConstants: (offset: UInt32) size: (size: UInt32) values: (values: Void pointer) ::=> Void
+		:= throwIfError: (agpuPushConstants(self address, offset, size, values)).
+
+	inline method memoryBarrier: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) ::=> Void
+		:= throwIfError: (agpuMemoryBarrier(self address, source_stage, dest_stage, source_accesses, dest_accesses)).
+
+	inline method bufferMemoryBarrier: (buffer: BufferRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
+		:= throwIfError: (agpuBufferMemoryBarrier(self address, buffer getPointer, source_stage, dest_stage, source_accesses, dest_accesses, offset, size)).
+
+	inline method textureMemoryBarrier: (texture: TextureRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) oldUsage: (old_usage: TextureUsageModeMask) newUsage: (new_usage: TextureUsageModeMask) subresourceRange: (subresource_range: TextureSubresourceRange pointer) ::=> Void
+		:= throwIfError: (agpuTextureMemoryBarrier(self address, texture getPointer, source_stage, dest_stage, source_accesses, dest_accesses, old_usage, new_usage, subresource_range)).
+
+	inline method pushBufferTransitionBarrier: (buffer: BufferRef const ref) oldUsage: (old_usage: BufferUsageMask) newUsage: (new_usage: BufferUsageMask) ::=> Void
+		:= throwIfError: (agpuPushBufferTransitionBarrier(self address, buffer getPointer, old_usage, new_usage)).
+
+	inline method pushTextureTransitionBarrier: (texture: TextureRef const ref) oldUsage: (old_usage: TextureUsageModeMask) newUsage: (new_usage: TextureUsageModeMask) subresourceRange: (subresource_range: TextureSubresourceRange pointer) ::=> Void
+		:= throwIfError: (agpuPushTextureTransitionBarrier(self address, texture getPointer, old_usage, new_usage, subresource_range)).
+
+	inline method popBufferTransitionBarrier ::=> Void
+		:= throwIfError: (agpuPopBufferTransitionBarrier(self address)).
+
+	inline method popTextureTransitionBarrier ::=> Void
+		:= throwIfError: (agpuPopTextureTransitionBarrier(self address)).
+
+	inline method copyBuffer: (source_buffer: BufferRef const ref) sourceOffset: (source_offset: UInt32) destBuffer: (dest_buffer: BufferRef const ref) destOffset: (dest_offset: UInt32) copySize: (copy_size: UInt32) ::=> Void
+		:= throwIfError: (agpuCopyBuffer(self address, source_buffer getPointer, source_offset, dest_buffer getPointer, dest_offset, copy_size)).
+
+	inline method copyBufferToTexture: (buffer: BufferRef const ref) texture: (texture: TextureRef const ref) copyRegion: (copy_region: BufferImageCopyRegion pointer) ::=> Void
+		:= throwIfError: (agpuCopyBufferToTexture(self address, buffer getPointer, texture getPointer, copy_region)).
+
+	inline method copyTextureToBuffer: (texture: TextureRef const ref) buffer: (buffer: BufferRef const ref) copyRegion: (copy_region: BufferImageCopyRegion pointer) ::=> Void
+		:= throwIfError: (agpuCopyTextureToBuffer(self address, texture getPointer, buffer getPointer, copy_region)).
+
+	inline method copyTexture: (source_texture: TextureRef const ref) destTexture: (dest_texture: TextureRef const ref) copyRegion: (copy_region: ImageCopyRegion pointer) ::=> Void
+		:= throwIfError: (agpuCopyTexture(self address, source_texture getPointer, dest_texture getPointer, copy_region)).
+
+}.
+
+Texture extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddTextureReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseTexture(self address)).
+
+	inline method getDescription: (description: TextureDescription pointer) ::=> Void
+		:= throwIfError: (agpuGetTextureDescription(self address, description)).
+
+	inline method mapLevel: (level: Int32) arrayIndex: (arrayIndex: Int32) flags: (flags: MappingAccess) region: (region: Region3d pointer) ::=> Void pointer
+		:= agpuMapTextureLevel(self address, level, arrayIndex, flags, region).
+
+	inline method unmapLevel ::=> Void
+		:= throwIfError: (agpuUnmapTextureLevel(self address)).
+
+	inline method readTextureData: (level: Int32) arrayIndex: (arrayIndex: Int32) pitch: (pitch: Int32) slicePitch: (slicePitch: Int32) buffer: (buffer: Void pointer) ::=> Void
+		:= throwIfError: (agpuReadTextureData(self address, level, arrayIndex, pitch, slicePitch, buffer)).
+
+	inline method readTextureSubData: (level: Int32) arrayIndex: (arrayIndex: Int32) pitch: (pitch: Int32) slicePitch: (slicePitch: Int32) sourceRegion: (sourceRegion: Region3d pointer) destSize: (destSize: Size3d pointer) buffer: (buffer: Void pointer) ::=> Void
+		:= throwIfError: (agpuReadTextureSubData(self address, level, arrayIndex, pitch, slicePitch, sourceRegion, destSize, buffer)).
+
+	inline method uploadTextureData: (level: Int32) arrayIndex: (arrayIndex: Int32) pitch: (pitch: Int32) slicePitch: (slicePitch: Int32) data: (data: Void pointer) ::=> Void
+		:= throwIfError: (agpuUploadTextureData(self address, level, arrayIndex, pitch, slicePitch, data)).
+
+	inline method uploadTextureSubData: (level: Int32) arrayIndex: (arrayIndex: Int32) pitch: (pitch: Int32) slicePitch: (slicePitch: Int32) sourceSize: (sourceSize: Size3d pointer) destRegion: (destRegion: Region3d pointer) data: (data: Void pointer) ::=> Void
+		:= throwIfError: (agpuUploadTextureSubData(self address, level, arrayIndex, pitch, slicePitch, sourceSize, destRegion, data)).
+
+	inline method getFullViewDescription: (result: TextureViewDescription pointer) ::=> Void
+		:= throwIfError: (agpuGetTextureFullViewDescription(self address, result)).
+
+	inline method createView: (description: TextureViewDescription pointer) ::=> TextureViewRef
+		:= TextureViewRef for: (agpuCreateTextureView(self address, description)).
+
+	inline method getOrCreateFullView ::=> TextureViewRef
+		:= TextureViewRef for: (agpuGetOrCreateFullTextureView(self address)).
+
+}.
+
+TextureView extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddTextureViewReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseTextureView(self address)).
+
+	inline method getTexture ::=> TextureRef
+		:= TextureRef for: (agpuGetTextureFromView(self address)).
+
+}.
+
+Sampler extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddSamplerReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseSampler(self address)).
+
+}.
+
+Buffer extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddBufferReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseBuffer(self address)).
+
+	inline method mapBuffer: (flags: MappingAccess) ::=> Void pointer
+		:= agpuMapBuffer(self address, flags).
+
+	inline method unmapBuffer ::=> Void
+		:= throwIfError: (agpuUnmapBuffer(self address)).
+
+	inline method getDescription: (description: BufferDescription pointer) ::=> Void
+		:= throwIfError: (agpuGetBufferDescription(self address, description)).
+
+	inline method uploadBufferData: (offset: UInt32) size: (size: UInt32) data: (data: Void pointer) ::=> Void
+		:= throwIfError: (agpuUploadBufferData(self address, offset, size, data)).
+
+	inline method readBufferData: (offset: UInt32) size: (size: UInt32) data: (data: Void pointer) ::=> Void
+		:= throwIfError: (agpuReadBufferData(self address, offset, size, data)).
+
+	inline method flushWholeBuffer ::=> Void
+		:= throwIfError: (agpuFlushWholeBuffer(self address)).
+
+	inline method invalidateWholeBuffer ::=> Void
+		:= throwIfError: (agpuInvalidateWholeBuffer(self address)).
+
+}.
+
+VertexBinding extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddVertexBindingReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseVertexBinding(self address)).
+
+	inline method bindVertexBuffers: (count: UInt32) vertexBuffers: (vertex_buffers: BufferRef pointer) ::=> Void
+		:= throwIfError: (agpuBindVertexBuffers(self address, count, vertex_buffers reinterpretCastTo: Buffer pointer pointer)).
+
+	inline method bindVertexBuffersWithOffsets: (count: UInt32) vertexBuffers: (vertex_buffers: BufferRef pointer) offsets: (offsets: UInt32 pointer) ::=> Void
+		:= throwIfError: (agpuBindVertexBuffersWithOffsets(self address, count, vertex_buffers reinterpretCastTo: Buffer pointer pointer, offsets)).
+
+}.
+
+VertexLayout extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddVertexLayoutReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseVertexLayout(self address)).
+
+	inline method addVertexAttributeBindings: (vertex_buffer_count: UInt32) vertexStrides: (vertex_strides: UInt32 pointer) attributeCount: (attribute_count: UInt32) attributes: (attributes: VertexAttribDescription pointer) ::=> Void
+		:= throwIfError: (agpuAddVertexAttributeBindings(self address, vertex_buffer_count, vertex_strides, attribute_count, attributes)).
+
+}.
+
+Shader extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddShaderReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseShader(self address)).
+
+	inline method setShaderSource: (language: ShaderLanguage) sourceText: (sourceText: Char8 const pointer) sourceTextLength: (sourceTextLength: UInt32) ::=> Void
+		:= throwIfError: (agpuSetShaderSource(self address, language, sourceText, sourceTextLength)).
+
+	inline method compileShader: (options: Char8 const pointer) ::=> Error
+		:= agpuCompileShader(self address, options).
+
+	inline method getCompilationLogLength ::=> UInt32
+		:= agpuGetShaderCompilationLogLength(self address).
+
+	inline method getCompilationLog: (buffer_size: UInt32) buffer: (buffer: Char8 pointer) ::=> Void
+		:= throwIfError: (agpuGetShaderCompilationLog(self address, buffer_size, buffer)).
+
+}.
+
+Framebuffer extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddFramebufferReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseFramebuffer(self address)).
+
+	inline method getWidth ::=> UInt32
+		:= agpuGetFramebufferWidth(self address).
+
+	inline method getHeight ::=> UInt32
+		:= agpuGetFramebufferHeight(self address).
+
+}.
+
+Renderpass extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddRenderPassReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseRenderPass(self address)).
+
+	inline method setDepthStencilClearValue: (value: DepthStencilValue) ::=> Void
+		:= throwIfError: (agpuSetDepthStencilClearValue(self address, value)).
+
+	inline method setColorClearValue: (attachment_index: UInt32) value: (value: Color4f) ::=> Void
+		:= throwIfError: (agpuSetColorClearValue(self address, attachment_index, value)).
+
+	inline method setColorClearValueFrom: (attachment_index: UInt32) value: (value: Color4f pointer) ::=> Void
+		:= throwIfError: (agpuSetColorClearValueFrom(self address, attachment_index, value)).
+
+	inline method getColorAttachmentFormats: (color_attachment_count: UInt32 pointer) formats: (formats: TextureFormat pointer) ::=> Void
+		:= throwIfError: (agpuGetRenderPassColorAttachmentFormats(self address, color_attachment_count, formats)).
+
+	inline method getDepthStencilAttachmentFormat ::=> TextureFormat
+		:= agpuGetRenderPassDepthStencilAttachmentFormat(self address).
+
+	inline method getSampleCount ::=> UInt32
+		:= agpuGetRenderPassSampleCount(self address).
+
+	inline method getSampleQuality ::=> UInt32
+		:= agpuGetRenderPassSampleQuality(self address).
+
+}.
+
+ShaderSignatureBuilder extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddShaderSignatureBuilderReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseShaderSignatureBuilder(self address)).
+
+	inline method build ::=> ShaderSignatureRef
+		:= ShaderSignatureRef for: (agpuBuildShaderSignature(self address)).
+
+	inline method addBindingConstant ::=> Void
+		:= throwIfError: (agpuAddShaderSignatureBindingConstant(self address)).
+
+	inline method addBindingElement: (type: ShaderBindingType) maxBindings: (maxBindings: UInt32) ::=> Void
+		:= throwIfError: (agpuAddShaderSignatureBindingElement(self address, type, maxBindings)).
+
+	inline method beginBindingBank: (maxBindings: UInt32) ::=> Void
+		:= throwIfError: (agpuBeginShaderSignatureBindingBank(self address, maxBindings)).
+
+	inline method addBindingBankElement: (type: ShaderBindingType) bindingPointCount: (bindingPointCount: UInt32) ::=> Void
+		:= throwIfError: (agpuAddShaderSignatureBindingBankElement(self address, type, bindingPointCount)).
+
+	inline method addBindingBankArray: (type: ShaderBindingType) size: (size: UInt32) ::=> Void
+		:= throwIfError: (agpuAddShaderSignatureBindingBankArray(self address, type, size)).
+
+}.
+
+ShaderSignature extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddShaderSignature(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseShaderSignature(self address)).
+
+	inline method createShaderResourceBinding: (element: UInt32) ::=> ShaderResourceBindingRef
+		:= ShaderResourceBindingRef for: (agpuCreateShaderResourceBinding(self address, element)).
+
+}.
+
+ShaderResourceBinding extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddShaderResourceBindingReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseShaderResourceBinding(self address)).
+
+	inline method bindUniformBuffer: (location: Int32) uniformBuffer: (uniform_buffer: BufferRef const ref) ::=> Void
+		:= throwIfError: (agpuBindUniformBuffer(self address, location, uniform_buffer getPointer)).
+
+	inline method bindUniformBufferRange: (location: Int32) uniformBuffer: (uniform_buffer: BufferRef const ref) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
+		:= throwIfError: (agpuBindUniformBufferRange(self address, location, uniform_buffer getPointer, offset, size)).
+
+	inline method bindStorageBuffer: (location: Int32) storageBuffer: (storage_buffer: BufferRef const ref) ::=> Void
+		:= throwIfError: (agpuBindStorageBuffer(self address, location, storage_buffer getPointer)).
+
+	inline method bindStorageBufferRange: (location: Int32) storageBuffer: (storage_buffer: BufferRef const ref) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
+		:= throwIfError: (agpuBindStorageBufferRange(self address, location, storage_buffer getPointer, offset, size)).
+
+	inline method bindSampledTextureView: (location: Int32) view: (view: TextureViewRef const ref) ::=> Void
+		:= throwIfError: (agpuBindSampledTextureView(self address, location, view getPointer)).
+
+	inline method bindArrayOfSampledTextureView: (location: Int32) firstIndex: (first_index: Int32) count: (count: UInt32) views: (views: TextureViewRef pointer) ::=> Void
+		:= throwIfError: (agpuBindArrayOfSampledTextureView(self address, location, first_index, count, views reinterpretCastTo: TextureView pointer pointer)).
+
+	inline method bindStorageImageView: (location: Int32) view: (view: TextureViewRef const ref) ::=> Void
+		:= throwIfError: (agpuBindStorageImageView(self address, location, view getPointer)).
+
+	inline method bindSampler: (location: Int32) sampler: (sampler: SamplerRef const ref) ::=> Void
+		:= throwIfError: (agpuBindSampler(self address, location, sampler getPointer)).
+
+}.
+
+Fence extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddFenceReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseFenceReference(self address)).
+
+	inline method waitOnClient ::=> Void
+		:= throwIfError: (agpuWaitOnClient(self address)).
+
+}.
+
+OfflineShaderCompiler extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddOfflineShaderCompilerReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseOfflineShaderCompiler(self address)).
+
+	inline method isShaderLanguageSupported: (language: ShaderLanguage) ::=> Int32
+		:= agpuIsShaderLanguageSupportedByOfflineCompiler(self address, language).
+
+	inline method isTargetShaderLanguageSupported: (language: ShaderLanguage) ::=> Int32
+		:= agpuIsTargetShaderLanguageSupportedByOfflineCompiler(self address, language).
+
+	inline method setShaderSource: (language: ShaderLanguage) stage: (stage: ShaderType) sourceText: (sourceText: Char8 const pointer) sourceTextLength: (sourceTextLength: UInt32) ::=> Void
+		:= throwIfError: (agpuSetOfflineShaderCompilerSource(self address, language, stage, sourceText, sourceTextLength)).
+
+	inline method compileShader: (target_language: ShaderLanguage) options: (options: Char8 const pointer) ::=> Error
+		:= agpuCompileOfflineShader(self address, target_language, options).
+
+	inline method getCompilationLogLength ::=> UInt32
+		:= agpuGetOfflineShaderCompilationLogLength(self address).
+
+	inline method getCompilationLog: (buffer_size: UInt32) buffer: (buffer: Char8 pointer) ::=> Void
+		:= throwIfError: (agpuGetOfflineShaderCompilationLog(self address, buffer_size, buffer)).
+
+	inline method getCompilationResultLength ::=> UInt32
+		:= agpuGetOfflineShaderCompilationResultLength(self address).
+
+	inline method getCompilationResult: (buffer_size: UInt32) buffer: (buffer: Char8 pointer) ::=> Void
+		:= throwIfError: (agpuGetOfflineShaderCompilationResult(self address, buffer_size, buffer)).
+
+	inline method getResultAsShader ::=> ShaderRef
+		:= ShaderRef for: (agpuGetOfflineShaderCompilerResultAsShader(self address)).
+
+}.
+
+StateTrackerCache extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddStateTrackerCacheReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseStateTrackerCacheReference(self address)).
+
+	inline method createStateTracker: (type: CommandListType) commandQueue: (command_queue: CommandQueueRef const ref) ::=> StateTrackerRef
+		:= StateTrackerRef for: (agpuCreateStateTracker(self address, type, command_queue getPointer)).
+
+	inline method createStateTrackerWithCommandAllocator: (type: CommandListType) commandQueue: (command_queue: CommandQueueRef const ref) commandAllocator: (command_allocator: CommandAllocatorRef const ref) ::=> StateTrackerRef
+		:= StateTrackerRef for: (agpuCreateStateTrackerWithCommandAllocator(self address, type, command_queue getPointer, command_allocator getPointer)).
+
+	inline method createStateTrackerWithFrameBuffering: (type: CommandListType) commandQueue: (command_queue: CommandQueueRef const ref) framebufferingCount: (framebuffering_count: UInt32) ::=> StateTrackerRef
+		:= StateTrackerRef for: (agpuCreateStateTrackerWithFrameBuffering(self address, type, command_queue getPointer, framebuffering_count)).
+
+	inline method createImmediateRenderer ::=> ImmediateRendererRef
+		:= ImmediateRendererRef for: (agpuCreateImmediateRenderer(self address)).
+
+}.
+
+StateTracker extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddStateTrackerReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseStateTrackerReference(self address)).
+
+	inline method beginRecordingCommands ::=> Void
+		:= throwIfError: (agpuStateTrackerBeginRecordingCommands(self address)).
+
+	inline method endRecordingCommands ::=> CommandListRef
+		:= CommandListRef for: (agpuStateTrackerEndRecordingCommands(self address)).
+
+	inline method endRecordingAndFlushCommands ::=> Void
+		:= throwIfError: (agpuStateTrackerEndRecordingAndFlushCommands(self address)).
+
+	inline method reset ::=> Void
+		:= throwIfError: (agpuStateTrackerReset(self address)).
+
+	inline method resetGraphicsPipeline ::=> Void
+		:= throwIfError: (agpuStateTrackerResetGraphicsPipeline(self address)).
+
+	inline method resetComputePipeline ::=> Void
+		:= throwIfError: (agpuStateTrackerResetComputePipeline(self address)).
+
+	inline method setComputeStage: (shader: ShaderRef const ref) entryPoint: (entryPoint: Char8 const pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetComputeStage(self address, shader getPointer, entryPoint)).
+
+	inline method setComputeStageWithMain: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetComputeStageWithMain(self address, shader getPointer)).
+
+	inline method setVertexStage: (shader: ShaderRef const ref) entryPoint: (entryPoint: Char8 const pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetVertexStage(self address, shader getPointer, entryPoint)).
+
+	inline method setVertexStageWithMain: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetVertexStageWithMain(self address, shader getPointer)).
+
+	inline method setFragmentStage: (shader: ShaderRef const ref) entryPoint: (entryPoint: Char8 const pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetFragmentStage(self address, shader getPointer, entryPoint)).
+
+	inline method setFragmentStageWithMain: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetFragmentStageWithMain(self address, shader getPointer)).
+
+	inline method setGeometryStage: (shader: ShaderRef const ref) entryPoint: (entryPoint: Char8 const pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetGeometryStage(self address, shader getPointer, entryPoint)).
+
+	inline method setGeometryStageWithMain: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetGeometryStageWithMain(self address, shader getPointer)).
+
+	inline method setTessellationControlStage: (shader: ShaderRef const ref) entryPoint: (entryPoint: Char8 const pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetTessellationControlStage(self address, shader getPointer, entryPoint)).
+
+	inline method setTessellationControlStageWithMain: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetTessellationControlStageWithMain(self address, shader getPointer)).
+
+	inline method setTessellationEvaluationStage: (shader: ShaderRef const ref) entryPoint: (entryPoint: Char8 const pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetTessellationEvaluationStage(self address, shader getPointer, entryPoint)).
+
+	inline method setTessellationEvaluationStageWithMain: (shader: ShaderRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetTessellationEvaluationStageWithMain(self address, shader getPointer)).
+
+	inline method setBlendState: (renderTargetMask: Int32) enabled: (enabled: Int32) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetBlendState(self address, renderTargetMask, enabled)).
+
+	inline method setBlendFunction: (renderTargetMask: Int32) sourceFactor: (sourceFactor: BlendingFactor) destFactor: (destFactor: BlendingFactor) colorOperation: (colorOperation: BlendingOperation) sourceAlphaFactor: (sourceAlphaFactor: BlendingFactor) destAlphaFactor: (destAlphaFactor: BlendingFactor) alphaOperation: (alphaOperation: BlendingOperation) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetBlendFunction(self address, renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation)).
+
+	inline method setColorMask: (renderTargetMask: Int32) redEnabled: (redEnabled: Int32) greenEnabled: (greenEnabled: Int32) blueEnabled: (blueEnabled: Int32) alphaEnabled: (alphaEnabled: Int32) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetColorMask(self address, renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled)).
+
+	inline method setFrontFace: (winding: FaceWinding) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetFrontFace(self address, winding)).
+
+	inline method setCullMode: (mode: CullMode) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetCullMode(self address, mode)).
+
+	inline method setDepthBias: (constant_factor: Float32) clamp: (clamp: Float32) slopeFactor: (slope_factor: Float32) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetDepthBias(self address, constant_factor, clamp, slope_factor)).
+
+	inline method setDepthState: (enabled: Int32) writeMask: (writeMask: Int32) function: (function: CompareFunction) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetDepthState(self address, enabled, writeMask, function)).
+
+	inline method setPolygonMode: (mode: PolygonMode) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetPolygonMode(self address, mode)).
+
+	inline method setStencilState: (enabled: Int32) writeMask: (writeMask: Int32) readMask: (readMask: Int32) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetStencilState(self address, enabled, writeMask, readMask)).
+
+	inline method setStencilFrontFace: (stencilFailOperation: StencilOperation) depthFailOperation: (depthFailOperation: StencilOperation) stencilDepthPassOperation: (stencilDepthPassOperation: StencilOperation) stencilFunction: (stencilFunction: CompareFunction) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetStencilFrontFace(self address, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction)).
+
+	inline method setStencilBackFace: (stencilFailOperation: StencilOperation) depthFailOperation: (depthFailOperation: StencilOperation) stencilDepthPassOperation: (stencilDepthPassOperation: StencilOperation) stencilFunction: (stencilFunction: CompareFunction) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetStencilBackFace(self address, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction)).
+
+	inline method setPrimitiveType: (type: PrimitiveTopology) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetPrimitiveType(self address, type)).
+
+	inline method setVertexLayout: (layout: VertexLayoutRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetVertexLayout(self address, layout getPointer)).
+
+	inline method setShaderSignature: (signature: ShaderSignatureRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetShaderSignature(self address, signature getPointer)).
+
+	inline method setSampleDescription: (sample_count: UInt32) sampleQuality: (sample_quality: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetSampleDescription(self address, sample_count, sample_quality)).
+
+	inline method setViewport: (x: Int32) y: (y: Int32) w: (w: Int32) h: (h: Int32) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetViewport(self address, x, y, w, h)).
+
+	inline method setScissor: (x: Int32) y: (y: Int32) w: (w: Int32) h: (h: Int32) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetScissor(self address, x, y, w, h)).
+
+	inline method useVertexBinding: (vertex_binding: VertexBindingRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerUseVertexBinding(self address, vertex_binding getPointer)).
+
+	inline method useIndexBuffer: (index_buffer: BufferRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerUseIndexBuffer(self address, index_buffer getPointer)).
+
+	inline method useIndexBufferAt: (index_buffer: BufferRef const ref) offset: (offset: UInt32) indexSize: (index_size: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerUseIndexBufferAt(self address, index_buffer getPointer, offset, index_size)).
+
+	inline method useDrawIndirectBuffer: (draw_buffer: BufferRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerUseDrawIndirectBuffer(self address, draw_buffer getPointer)).
+
+	inline method useComputeDispatchIndirectBuffer: (buffer: BufferRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerUseComputeDispatchIndirectBuffer(self address, buffer getPointer)).
+
+	inline method useShaderResources: (binding: ShaderResourceBindingRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerUseShaderResources(self address, binding getPointer)).
+
+	inline method useShaderResourcesInSlot: (binding: ShaderResourceBindingRef const ref) slot: (slot: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerUseShaderResourcesInSlot(self address, binding getPointer, slot)).
+
+	inline method useComputeShaderResources: (binding: ShaderResourceBindingRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerUseComputeShaderResources(self address, binding getPointer)).
+
+	inline method useComputeShaderResourcesInSlot: (binding: ShaderResourceBindingRef const ref) slot: (slot: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerUseComputeShaderResourcesInSlot(self address, binding getPointer, slot)).
+
+	inline method drawArrays: (vertex_count: UInt32) instanceCount: (instance_count: UInt32) firstVertex: (first_vertex: UInt32) baseInstance: (base_instance: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerDrawArrays(self address, vertex_count, instance_count, first_vertex, base_instance)).
+
+	inline method drawArraysIndirect: (offset: UInt32) drawcount: (drawcount: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerDrawArraysIndirect(self address, offset, drawcount)).
+
+	inline method drawElements: (index_count: UInt32) instanceCount: (instance_count: UInt32) firstIndex: (first_index: UInt32) baseVertex: (base_vertex: Int32) baseInstance: (base_instance: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerDrawElements(self address, index_count, instance_count, first_index, base_vertex, base_instance)).
+
+	inline method drawElementsIndirect: (offset: UInt32) drawcount: (drawcount: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerDrawElementsIndirect(self address, offset, drawcount)).
+
+	inline method dispatchCompute: (group_count_x: UInt32) groupCountY: (group_count_y: UInt32) groupCountZ: (group_count_z: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerDispatchCompute(self address, group_count_x, group_count_y, group_count_z)).
+
+	inline method dispatchComputeIndirect: (offset: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerDispatchComputeIndirect(self address, offset)).
+
+	inline method setStencilReference: (reference: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerSetStencilReference(self address, reference)).
+
+	inline method executeBundle: (bundle: CommandListRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerExecuteBundle(self address, bundle getPointer)).
+
+	inline method beginRenderPass: (renderpass: RenderpassRef const ref) framebuffer: (framebuffer: FramebufferRef const ref) bundleContent: (bundle_content: Int32) ::=> Void
+		:= throwIfError: (agpuStateTrackerBeginRenderPass(self address, renderpass getPointer, framebuffer getPointer, bundle_content)).
+
+	inline method endRenderPass ::=> Void
+		:= throwIfError: (agpuStateTrackerEndRenderPass(self address)).
+
+	inline method resolveFramebuffer: (destFramebuffer: FramebufferRef const ref) sourceFramebuffer: (sourceFramebuffer: FramebufferRef const ref) ::=> Void
+		:= throwIfError: (agpuStateTrackerResolveFramebuffer(self address, destFramebuffer getPointer, sourceFramebuffer getPointer)).
+
+	inline method resolveTexture: (sourceTexture: TextureRef const ref) sourceLevel: (sourceLevel: UInt32) sourceLayer: (sourceLayer: UInt32) destTexture: (destTexture: TextureRef const ref) destLevel: (destLevel: UInt32) destLayer: (destLayer: UInt32) levelCount: (levelCount: UInt32) layerCount: (layerCount: UInt32) aspect: (aspect: TextureAspect) ::=> Void
+		:= throwIfError: (agpuStateTrackerResolveTexture(self address, sourceTexture getPointer, sourceLevel, sourceLayer, destTexture getPointer, destLevel, destLayer, levelCount, layerCount, aspect)).
+
+	inline method pushConstants: (offset: UInt32) size: (size: UInt32) values: (values: Void pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerPushConstants(self address, offset, size, values)).
+
+	inline method memoryBarrier: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) ::=> Void
+		:= throwIfError: (agpuStateTrackerMemoryBarrier(self address, source_stage, dest_stage, source_accesses, dest_accesses)).
+
+	inline method bufferMemoryBarrier: (buffer: BufferRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) offset: (offset: UInt32) size: (size: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerBufferMemoryBarrier(self address, buffer getPointer, source_stage, dest_stage, source_accesses, dest_accesses, offset, size)).
+
+	inline method textureMemoryBarrier: (texture: TextureRef const ref) sourceStage: (source_stage: PipelineStageFlags) destStage: (dest_stage: PipelineStageFlags) sourceAccesses: (source_accesses: AccessFlags) destAccesses: (dest_accesses: AccessFlags) oldUsage: (old_usage: TextureUsageModeMask) newUsage: (new_usage: TextureUsageModeMask) subresourceRange: (subresource_range: TextureSubresourceRange pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerTextureMemoryBarrier(self address, texture getPointer, source_stage, dest_stage, source_accesses, dest_accesses, old_usage, new_usage, subresource_range)).
+
+	inline method pushBufferTransitionBarrier: (buffer: BufferRef const ref) oldUsage: (old_usage: BufferUsageMask) newUsage: (new_usage: BufferUsageMask) ::=> Void
+		:= throwIfError: (agpuStateTrackerPushBufferTransitionBarrier(self address, buffer getPointer, old_usage, new_usage)).
+
+	inline method pushTextureTransitionBarrier: (texture: TextureRef const ref) oldUsage: (old_usage: TextureUsageModeMask) newUsage: (new_usage: TextureUsageModeMask) subresourceRange: (subresource_range: TextureSubresourceRange pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerPushTextureTransitionBarrier(self address, texture getPointer, old_usage, new_usage, subresource_range)).
+
+	inline method popBufferTransitionBarrier ::=> Void
+		:= throwIfError: (agpuStateTrackerPopBufferTransitionBarrier(self address)).
+
+	inline method popTextureTransitionBarrier ::=> Void
+		:= throwIfError: (agpuStateTrackerPopTextureTransitionBarrier(self address)).
+
+	inline method copyBuffer: (source_buffer: BufferRef const ref) sourceOffset: (source_offset: UInt32) destBuffer: (dest_buffer: BufferRef const ref) destOffset: (dest_offset: UInt32) copySize: (copy_size: UInt32) ::=> Void
+		:= throwIfError: (agpuStateTrackerCopyBuffer(self address, source_buffer getPointer, source_offset, dest_buffer getPointer, dest_offset, copy_size)).
+
+	inline method copyBufferToTexture: (buffer: BufferRef const ref) texture: (texture: TextureRef const ref) copyRegion: (copy_region: BufferImageCopyRegion pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerCopyBufferToTexture(self address, buffer getPointer, texture getPointer, copy_region)).
+
+	inline method copyTextureToBuffer: (texture: TextureRef const ref) buffer: (buffer: BufferRef const ref) copyRegion: (copy_region: BufferImageCopyRegion pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerCopyTextureToBuffer(self address, texture getPointer, buffer getPointer, copy_region)).
+
+	inline method copyTexture: (source_texture: TextureRef const ref) destTexture: (dest_texture: TextureRef const ref) copyRegion: (copy_region: ImageCopyRegion pointer) ::=> Void
+		:= throwIfError: (agpuStateTrackerCopyTexture(self address, source_texture getPointer, dest_texture getPointer, copy_region)).
+
+}.
+
+ImmediateRenderer extend: {
+	inline method addReference ::=> Void
+		:= throwIfError: (agpuAddImmediateRendererReference(self address)).
+
+	inline method release ::=> Void
+		:= throwIfError: (agpuReleaseImmediateRendererReference(self address)).
+
+	inline method beginRendering: (state_tracker: StateTrackerRef const ref) ::=> Void
+		:= throwIfError: (agpuBeginImmediateRendering(self address, state_tracker getPointer)).
+
+	inline method endRendering ::=> Void
+		:= throwIfError: (agpuEndImmediateRendering(self address)).
+
+	inline method setBlendState: (renderTargetMask: Int32) enabled: (enabled: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetBlendState(self address, renderTargetMask, enabled)).
+
+	inline method setBlendFunction: (renderTargetMask: Int32) sourceFactor: (sourceFactor: BlendingFactor) destFactor: (destFactor: BlendingFactor) colorOperation: (colorOperation: BlendingOperation) sourceAlphaFactor: (sourceAlphaFactor: BlendingFactor) destAlphaFactor: (destAlphaFactor: BlendingFactor) alphaOperation: (alphaOperation: BlendingOperation) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetBlendFunction(self address, renderTargetMask, sourceFactor, destFactor, colorOperation, sourceAlphaFactor, destAlphaFactor, alphaOperation)).
+
+	inline method setColorMask: (renderTargetMask: Int32) redEnabled: (redEnabled: Int32) greenEnabled: (greenEnabled: Int32) blueEnabled: (blueEnabled: Int32) alphaEnabled: (alphaEnabled: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetColorMask(self address, renderTargetMask, redEnabled, greenEnabled, blueEnabled, alphaEnabled)).
+
+	inline method setFrontFace: (winding: FaceWinding) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetFrontFace(self address, winding)).
+
+	inline method setCullMode: (mode: CullMode) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetCullMode(self address, mode)).
+
+	inline method setDepthBias: (constant_factor: Float32) clamp: (clamp: Float32) slopeFactor: (slope_factor: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetDepthBias(self address, constant_factor, clamp, slope_factor)).
+
+	inline method setDepthState: (enabled: Int32) writeMask: (writeMask: Int32) function: (function: CompareFunction) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetDepthState(self address, enabled, writeMask, function)).
+
+	inline method setPolygonMode: (mode: PolygonMode) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetPolygonMode(self address, mode)).
+
+	inline method setStencilState: (enabled: Int32) writeMask: (writeMask: Int32) readMask: (readMask: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetStencilState(self address, enabled, writeMask, readMask)).
+
+	inline method setStencilFrontFace: (stencilFailOperation: StencilOperation) depthFailOperation: (depthFailOperation: StencilOperation) stencilDepthPassOperation: (stencilDepthPassOperation: StencilOperation) stencilFunction: (stencilFunction: CompareFunction) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetStencilFrontFace(self address, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction)).
+
+	inline method setStencilBackFace: (stencilFailOperation: StencilOperation) depthFailOperation: (depthFailOperation: StencilOperation) stencilDepthPassOperation: (stencilDepthPassOperation: StencilOperation) stencilFunction: (stencilFunction: CompareFunction) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetStencilBackFace(self address, stencilFailOperation, depthFailOperation, stencilDepthPassOperation, stencilFunction)).
+
+	inline method setSamplingMode: (filter: Filter) maxAnisotropy: (maxAnisotropy: Float32) addressU: (addressU: TextureAddressMode) addressV: (addressV: TextureAddressMode) addressW: (addressW: TextureAddressMode) ::=> Void
+		:= throwIfError: (agpuImmediateSetSamplingMode(self address, filter, maxAnisotropy, addressU, addressV, addressW)).
+
+	inline method setViewport: (x: Int32) y: (y: Int32) w: (w: Int32) h: (h: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetViewport(self address, x, y, w, h)).
+
+	inline method setScissor: (x: Int32) y: (y: Int32) w: (w: Int32) h: (h: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetScissor(self address, x, y, w, h)).
+
+	inline method setStencilReference: (reference: UInt32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetStencilReference(self address, reference)).
+
+	inline method projectionMatrixMode ::=> Void
+		:= throwIfError: (agpuImmediateRendererProjectionMatrixMode(self address)).
+
+	inline method modelViewMatrixMode ::=> Void
+		:= throwIfError: (agpuImmediateRendererModelViewMatrixMode(self address)).
+
+	inline method textureMatrixMode ::=> Void
+		:= throwIfError: (agpuImmediateRendererTextureMatrixMode(self address)).
+
+	inline method loadIdentity ::=> Void
+		:= throwIfError: (agpuImmediateRendererIdentity(self address)).
+
+	inline method pushMatrix ::=> Void
+		:= throwIfError: (agpuImmediateRendererPushMatrix(self address)).
+
+	inline method popMatrix ::=> Void
+		:= throwIfError: (agpuImmediateRendererPopMatrix(self address)).
+
+	inline method loadMatrix: (elements: Float32 pointer) ::=> Void
+		:= throwIfError: (agpuImmediateRendererLoadMatrix(self address, elements)).
+
+	inline method loadTransposeMatrix: (elements: Float32 pointer) ::=> Void
+		:= throwIfError: (agpuImmediateRendererLoadTransposeMatrix(self address, elements)).
+
+	inline method multiplyMatrix: (elements: Float32 pointer) ::=> Void
+		:= throwIfError: (agpuImmediateRendererMultiplyMatrix(self address, elements)).
+
+	inline method multiplyTransposeMatrix: (elements: Float32 pointer) ::=> Void
+		:= throwIfError: (agpuImmediateRendererMultiplyTransposeMatrix(self address, elements)).
+
+	inline method ortho: (left: Float32) right: (right: Float32) bottom: (bottom: Float32) top: (top: Float32) near: (near: Float32) far: (far: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererOrtho(self address, left, right, bottom, top, near, far)).
+
+	inline method frustum: (left: Float32) right: (right: Float32) bottom: (bottom: Float32) top: (top: Float32) near: (near: Float32) far: (far: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererFrustum(self address, left, right, bottom, top, near, far)).
+
+	inline method perspective: (fovy: Float32) aspect: (aspect: Float32) near: (near: Float32) far: (far: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererPerspective(self address, fovy, aspect, near, far)).
+
+	inline method rotate: (angle: Float32) x: (x: Float32) y: (y: Float32) z: (z: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererRotate(self address, angle, x, y, z)).
+
+	inline method translate: (x: Float32) y: (y: Float32) z: (z: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererTranslate(self address, x, y, z)).
+
+	inline method scale: (x: Float32) y: (y: Float32) z: (z: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererScale(self address, x, y, z)).
+
+	inline method setFlatShading: (enabled: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetFlatShading(self address, enabled)).
+
+	inline method setLightingEnabled: (enabled: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetLightingEnabled(self address, enabled)).
+
+	inline method setLightingModel: (model: ImmediateRendererLightingModel) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetLightingModel(self address, model)).
+
+	inline method clearLights ::=> Void
+		:= throwIfError: (agpuImmediateRendererClearLights(self address)).
+
+	inline method setAmbientLighting: (r: Float32) g: (g: Float32) b: (b: Float32) a: (a: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetAmbientLighting(self address, r, g, b, a)).
+
+	inline method setLight: (index: UInt32) enabled: (enabled: Int32) state: (state: ImmediateRendererLight pointer) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetLight(self address, index, enabled, state)).
+
+	inline method setMaterial: (state: ImmediateRendererMaterial pointer) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetMaterial(self address, state)).
+
+	inline method setSkinningEnabled: (enabled: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetSkinningEnabled(self address, enabled)).
+
+	inline method setSkinBones: (count: UInt32) matrices: (matrices: Float32 pointer) transpose: (transpose: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetSkinBones(self address, count, matrices, transpose)).
+
+	inline method setTexturingEnabled: (enabled: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetTextureEnabled(self address, enabled)).
+
+	inline method setTangentSpaceEnabled: (enabled: Int32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetTangentSpaceEnabled(self address, enabled)).
+
+	inline method bindTexture: (texture: TextureRef const ref) ::=> Void
+		:= throwIfError: (agpuImmediateRendererBindTexture(self address, texture getPointer)).
+
+	inline method bindTextureIn: (texture: TextureRef const ref) binding: (binding: ImmediateRendererTextureBinding) ::=> Void
+		:= throwIfError: (agpuImmediateRendererBindTextureIn(self address, texture getPointer, binding)).
+
+	inline method setClipPlane: (index: UInt32) enabled: (enabled: Int32) p1: (p1: Float32) p2: (p2: Float32) p3: (p3: Float32) p4: (p4: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetClipPlane(self address, index, enabled, p1, p2, p3, p4)).
+
+	inline method setFogMode: (mode: ImmediateRendererFogMode) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetFogMode(self address, mode)).
+
+	inline method setFogColor: (r: Float32) g: (g: Float32) b: (b: Float32) a: (a: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetFogColor(self address, r, g, b, a)).
+
+	inline method setFogDistances: (start: Float32) end: (end: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetFogDistances(self address, start, end)).
+
+	inline method setFogDensity: (density: Float32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetFogDensity(self address, density)).
+
+	inline method beginPrimitives: (type: PrimitiveTopology) ::=> Void
+		:= throwIfError: (agpuBeginImmediateRendererPrimitives(self address, type)).
+
+	inline method endPrimitives ::=> Void
+		:= throwIfError: (agpuEndImmediateRendererPrimitives(self address)).
+
+	inline method color: (r: Float32) g: (g: Float32) b: (b: Float32) a: (a: Float32) ::=> Void
+		:= throwIfError: (agpuSetImmediateRendererColor(self address, r, g, b, a)).
+
+	inline method texcoord: (x: Float32) y: (y: Float32) ::=> Void
+		:= throwIfError: (agpuSetImmediateRendererTexcoord(self address, x, y)).
+
+	inline method normal: (x: Float32) y: (y: Float32) z: (z: Float32) ::=> Void
+		:= throwIfError: (agpuSetImmediateRendererNormal(self address, x, y, z)).
+
+	inline method vertex: (x: Float32) y: (y: Float32) z: (z: Float32) ::=> Void
+		:= throwIfError: (agpuAddImmediateRendererVertex(self address, x, y, z)).
+
+	inline method beginMeshWithVertices: (vertexCount: UInt32) stride: (stride: UInt32) elementCount: (elementCount: UInt32) vertices: (vertices: Void pointer) ::=> Void
+		:= throwIfError: (agpuBeginImmediateRendererMeshWithVertices(self address, vertexCount, stride, elementCount, vertices)).
+
+	inline method beginMeshWithVertexBinding: (layout: VertexLayoutRef const ref) vertices: (vertices: VertexBindingRef const ref) ::=> Void
+		:= throwIfError: (agpuBeginImmediateRendererMeshWithVertexBinding(self address, layout getPointer, vertices getPointer)).
+
+	inline method useIndexBuffer: (index_buffer: BufferRef const ref) ::=> Void
+		:= throwIfError: (agpuImmediateRendererUseIndexBuffer(self address, index_buffer getPointer)).
+
+	inline method useIndexBufferAt: (index_buffer: BufferRef const ref) offset: (offset: UInt32) indexSize: (index_size: UInt32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererUseIndexBufferAt(self address, index_buffer getPointer, offset, index_size)).
+
+	inline method setCurrentMeshColors: (stride: UInt32) elementCount: (elementCount: UInt32) colors: (colors: Void pointer) ::=> Void
+		:= throwIfError: (agpuSetImmediateRendererCurrentMeshColors(self address, stride, elementCount, colors)).
+
+	inline method setCurrentMeshNormals: (stride: UInt32) elementCount: (elementCount: UInt32) normals: (normals: Void pointer) ::=> Void
+		:= throwIfError: (agpuSetImmediateRendererCurrentMeshNormals(self address, stride, elementCount, normals)).
+
+	inline method setCurrentMeshTexCoords: (stride: UInt32) elementCount: (elementCount: UInt32) texcoords: (texcoords: Void pointer) ::=> Void
+		:= throwIfError: (agpuSetImmediateRendererCurrentMeshTexCoords(self address, stride, elementCount, texcoords)).
+
+	inline method setPrimitiveType: (type: PrimitiveTopology) ::=> Void
+		:= throwIfError: (agpuImmediateRendererSetPrimitiveType(self address, type)).
+
+	inline method drawArrays: (vertex_count: UInt32) instanceCount: (instance_count: UInt32) firstVertex: (first_vertex: UInt32) baseInstance: (base_instance: UInt32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererDrawArrays(self address, vertex_count, instance_count, first_vertex, base_instance)).
+
+	inline method drawElements: (index_count: UInt32) instanceCount: (instance_count: UInt32) firstIndex: (first_index: UInt32) baseVertex: (base_vertex: Int32) baseInstance: (base_instance: UInt32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererDrawElements(self address, index_count, instance_count, first_index, base_vertex, base_instance)).
+
+	inline method drawElementsWithIndices: (mode: PrimitiveTopology) indices: (indices: Void pointer) indexCount: (index_count: UInt32) instanceCount: (instance_count: UInt32) firstIndex: (first_index: UInt32) baseVertex: (base_vertex: Int32) baseInstance: (base_instance: UInt32) ::=> Void
+		:= throwIfError: (agpuImmediateRendererDrawElementsWithIndices(self address, mode, indices, index_count, instance_count, first_index, base_vertex, base_instance)).
+
+	inline method endMesh ::=> Void
+		:= throwIfError: (agpuEndImmediateRendererMesh(self address)).
+
+}.
+
+
+
+inline method throwIfError: (errorCode: Error) ::=> Void := {
+    if: errorCode value < 0 then: {
+        ##StdNative stderr << "Got error code in binding call " << errorCode value; nl.
+        ##StdNative abort().
+    }.
+}.
+
+}. ## End of namespace AGPU

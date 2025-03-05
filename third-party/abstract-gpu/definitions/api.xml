@@ -1,0 +1,3143 @@
+<api name="Abstract GPU">
+<bindings>
+    <language name="C">
+        <property key="headerFile" value="agpu.h" />
+        <property key="constantPrefix" value="AGPU_" />
+        <property key="typePrefix" value="agpu_" />
+        <property key="functionPrefix" value="agpu" />
+        <property key="headerInclude" value="&lt;AGPU/agpu.h&gt;" />
+        <property key="icdIncludeFile" value="agpu_icd.10.inc" />
+    </language>
+
+    <language name="C++">
+        <property key="headerFile" value="agpu.hpp" />
+    </language>
+
+    <language name="C++/Impl">
+        <property key="headerFile" value="agpu_impl.hpp" />
+        <property key="dispatchIncludeFile" value="agpu_impl_dispatch.inc" />
+        <property key="namespace" value="agpu" />
+    </language>
+
+    <language name="Pharo">
+        <property key="namespacePrefix" value="AGPU" />
+        <property key="package" value="AbstractGPU-GeneratedPharo" />
+    </language>
+
+    <language name="Squeak">
+        <property key="namespacePrefix" value="AGPU" />
+        <property key="package" value="AbstractGPU-GeneratedSqueak" />
+        <property key="externalStructureSuperClass" value="ExternalStructure" />
+        <property key="externalUnionSuperClass" value="ExternalUnion" />
+    </language>
+
+    <language name="Sysmel">
+        <property key="namespace" value="AGPU" />
+    </language>
+</bindings>
+
+<version name="1.0">
+    <types>
+        <typedef name="byte" ctype="unsigned char" sysmelType="UInt8"/>
+        <typedef name="sbyte" ctype="signed char" sysmelType="Int8" />
+        <typedef name="short" ctype="signed short" sysmelType="Int16" />
+        <typedef name="ushort" ctype="unsigned short" sysmelType="UInt16" />
+        <typedef name="int" ctype="signed int" sysmelType="Int32" />
+        <typedef name="uint" ctype="unsigned int" sysmelType="UInt32" />
+        <typedef name="pointer" ctype="void*" sysmelType="Void pointer" />
+        <typedef name="size" ctype="unsigned int" sysmelType="UInt32" />
+        <typedef name="enum" ctype="int" sysmelType="Int32" />
+        <typedef name="bool" ctype="int" sysmelType="Int32" />
+        <typedef name="ulong" ctype="unsigned long long" sysmelType="UInt64" />
+
+        <typedef name="float" ctype="float" sysmelType="Float32" />
+        <typedef name="double" ctype="double" sysmelType="Float64" />
+
+        <typedef name="bitfield" ctype="unsigned int" sysmelType="UInt32" />
+
+        <typedef name="cstring" ctype="const char*" sysmelType="Char8 const pointer" />
+        <typedef name="string" ctype="const char*" pharoType="byte*" sysmelType="Char8 const pointer" />
+        <typedef name="string_length" ctype="int" sysmelType="UInt32" />
+
+        <typedef name="cstring_buffer" ctype="char*" sysmelType="Char8 pointer" />
+        <typedef name="string_buffer" ctype="char*" pharoType="byte*" sysmelType="Char8 pointer" />
+    </types>
+
+	<structs>
+        <struct name="device_open_info">
+            <field name="display" type="pointer" />
+            <field name="window_system_name" type="cstring" />
+            <field name="debug_layer" type="bool" />
+            <field name="application_name" type="cstring" />
+            <field name="application_version" type="uint" />
+            <field name="engine_name" type="cstring" />
+            <field name="engine_version" type="uint" />
+            <field name="gpu_index" type="int" />
+            <field name="open_flags" type="device_open_flags" />
+        </struct>
+
+        <struct name="swap_chain_create_info">
+            <field name="display" type="pointer" />
+            <field name="window" type="pointer" />
+            <field name="window_system_name" type="cstring" />
+            <field name="surface" type="pointer" />
+            <field name="colorbuffer_format" type="texture_format" />
+            <field name="depth_stencil_format" type="texture_format" />
+            <field name="width" type="uint" />
+            <field name="height" type="uint" />
+            <field name="layers" type="uint" />
+            <field name="buffer_count" type="uint" />
+            <field name="sample_buffers" type="bool" />
+            <field name="samples" type="int" />
+            <field name="flags" type="swap_chain_flags" />
+            <field name="old_swap_chain" type="swap_chain*" />
+            <field name="presentation_mode" type="swap_chain_presentation_mode" />
+            <field name="fallback_presentation_mode" type="swap_chain_presentation_mode" />
+            <field name="x" type="int" />
+            <field name="y" type="int" />
+        </struct>
+
+		<struct name="buffer_description">
+			<field name="size" type="uint" />
+			<field name="heap_type" type="memory_heap_type" />
+			<field name="usage_modes" type="buffer_usage_mask" />
+            <field name="main_usage_mode" type="buffer_usage_mask" />
+			<field name="mapping_flags" type="bitfield" bits="buffer_mapping_flags" />
+			<field name="stride" type="uint" />
+		</struct>
+
+        <struct name="color4f">
+            <field name="r" type="float" />
+            <field name="g" type="float" />
+            <field name="b" type="float" />
+            <field name="a" type="float" />
+        </struct>
+
+        <struct name="depth_stencil_value">
+            <field name="depth" type="float" />
+            <field name="stencil" type="byte" />
+        </struct>
+
+        <union name="texture_clear_value">
+            <field name="color" type="color4f" />
+            <field name="depth_stencil" type="depth_stencil_value" />
+        </union>
+
+        <struct name="texture_description">
+            <field name="type" type="texture_type" />
+            <field name="width" type="uint" />
+            <field name="height" type="uint" />
+            <field name="depth" type="uint" />
+            <field name="layers" type="uint" />
+            <field name="miplevels" type="ushort" />
+            <field name="format" type="texture_format" />
+            <field name="usage_modes" type="texture_usage_mode_mask" />
+            <field name="main_usage_mode" type="texture_usage_mode_mask" />
+            <field name="heap_type" type="memory_heap_type" />
+            <field name="sample_count" type="uint" />
+            <field name="sample_quality" type="uint" />
+            <field name="clear_value" type="texture_clear_value" />
+        </struct>
+
+        <struct name="components_swizzle">
+            <field name="r" type="component_swizzle" />
+            <field name="g" type="component_swizzle" />
+            <field name="b" type="component_swizzle" />
+            <field name="a" type="component_swizzle" />
+        </struct>
+
+        <struct name="texture_subresource_range" >
+            <field name="aspect" type="texture_aspect"/>
+            <field name="base_miplevel" type="uint"/>
+            <field name="level_count" type="uint"/>
+            <field name="base_arraylayer" type="uint"/>
+            <field name="layer_count" type="uint"/>
+        </struct>
+
+        <struct name="texture_subresource_level" >
+            <field name="aspect" type="texture_aspect"/>
+            <field name="miplevel" type="uint"/>
+            <field name="base_arraylayer" type="uint"/>
+            <field name="layer_count" type="uint"/>
+        </struct>
+
+        <struct name="texture_view_description">
+            <field name="type" type="texture_type" />
+            <field name="format" type="texture_format" />
+            <field name="sample_count" type="uint" />
+            <field name="usage_mode" type="texture_usage_mode_mask" />
+            <field name="components" type="components_swizzle" />
+            <field name="subresource_range" type="texture_subresource_range" />
+        </struct>
+
+		<struct name="draw_elements_command">
+			<field name="index_count" type="uint" />
+			<field name="instance_count" type="uint" />
+			<field name="first_index" type="uint" />
+			<field name="base_vertex" type="int" />
+			<field name="base_instance" type="uint" />
+		</struct>
+
+        <struct name="vertex_attrib_description">
+            <field name="buffer" type="uint" />
+            <field name="binding" type="uint" />
+            <field name="format" type="texture_format" />
+            <field name="offset" type="size" />
+            <field name="divisor" type="uint" />
+        </struct>
+
+        <struct name="sampler_description">
+            <field name="filter" type="filter" />
+            <field name="address_u" type="texture_address_mode" />
+            <field name="address_v" type="texture_address_mode" />
+            <field name="address_w" type="texture_address_mode" />
+            <field name="mip_lod_bias" type="float" />
+            <field name="maxanisotropy" type="float" />
+            <field name="comparison_enabled" type="bool" />
+            <field name="comparison_function" type="compare_function" />
+            <field name="border_color" type="color4f" />
+            <field name="min_lod" type="float" />
+            <field name="max_lod" type="float" />
+        </struct>
+
+        <struct name="renderpass_color_attachment_description">
+            <field name="format" type="texture_format" />
+            <field name="sample_count" type="uint" />
+            <field name="sample_quality" type="uint" />
+            <field name="begin_action" type="renderpass_attachment_action" />
+            <field name="end_action" type="renderpass_attachment_action" />
+            <field name="clear_value" type="color4f" />
+        </struct>
+
+        <struct name="renderpass_depth_stencil_description">
+            <field name="format" type="texture_format" />
+            <field name="sample_count" type="uint" />
+            <field name="sample_quality" type="uint" />
+            <field name="begin_action" type="renderpass_attachment_action" />
+            <field name="end_action" type="renderpass_attachment_action" />
+            <field name="stencil_begin_action" type="renderpass_attachment_action" />
+            <field name="stencil_end_action" type="renderpass_attachment_action" />
+            <field name="clear_value" type="depth_stencil_value" />
+        </struct>
+
+        <struct name="renderpass_description">
+            <field name="color_attachment_count" type="size" />
+            <field name="color_attachments" type="renderpass_color_attachment_description*"/>
+            <field name="depth_stencil_attachment" type="renderpass_depth_stencil_description*"/>
+        </struct>
+
+        <struct name="inheritance_info">
+            <field name="flat" type="int" />
+            <field name="renderpass" type="renderpass*" />
+        </struct>
+
+        <struct name="vector2f">
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+        </struct>
+
+        <struct name="vector3f">
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+            <field name="z" type="float" />
+        </struct>
+
+        <struct name="vector4f">
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+            <field name="z" type="float" />
+            <field name="w" type="float" />
+        </struct>
+
+        <struct name="quaternionf">
+            <field name="w" type="float" />
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+            <field name="z" type="float" />
+        </struct>
+
+        <struct name="matrix3x3f">
+            <field name="c1" type="vector3f" />
+            <field name="c2" type="vector3f" />
+            <field name="c3" type="vector3f" />
+        </struct>
+
+        <struct name="matrix4x4f">
+            <field name="c1" type="vector4f" />
+            <field name="c2" type="vector4f" />
+            <field name="c3" type="vector4f" />
+            <field name="c4" type="vector4f" />
+        </struct>
+
+        <struct name="size2d">
+            <field name="width" type="uint" />
+            <field name="height" type="uint" />
+        </struct>
+
+        <struct name="size3d">
+            <field name="width" type="uint" />
+            <field name="height" type="uint" />
+            <field name="depth" type="uint" />
+        </struct>
+
+        <struct name="frustum_tangents">
+            <field name="left" type="float" />
+            <field name="right" type="float" />
+            <field name="top" type="float" />
+            <field name="bottom" type="float" />
+        </struct>
+
+        <struct name="offset3d">
+            <field name="x" type="uint" />
+            <field name="y" type="uint" />
+            <field name="z" type="uint" />
+        </struct>
+
+        <struct name="region3d">
+            <field name="x" type="uint" />
+            <field name="y" type="uint" />
+            <field name="z" type="uint" />
+            <field name="width" type="uint" />
+            <field name="height" type="uint" />
+            <field name="depth" type="uint" />
+        </struct>
+
+        <struct name="buffer_image_copy_region">
+            <field name="buffer_offset" type="size" />
+            <field name="buffer_pitch" type="size" />
+            <field name="buffer_slice_pitch" type="size" />
+            <field name="texture_usage_mode" type="texture_usage_mode_mask" />
+            <field name="texture_subresource_level" type="texture_subresource_level" />
+            <field name="texture_region" type="region3d" />
+        </struct>
+
+        <struct name="image_copy_region">
+            <field name="source_usage_mode" type="texture_usage_mode_mask" />
+            <field name="source_subresource_level" type="texture_subresource_level" />
+            <field name="source_offset" type="offset3d" />
+            <field name="destination_usage_mode" type="texture_usage_mode_mask" />
+            <field name="destination_subresource_level" type="texture_subresource_level" />
+            <field name="destination_offset" type="offset3d" />
+            <field name="extent" type="size3d" />
+        </struct>
+
+        <struct name="vr_tracked_device_pose">
+            <field name="device_id" type="uint" />
+            <field name="device_class" type="vr_tracked_device_class" />
+            <field name="device_role" type="vr_tracked_device_role" />
+
+            <field name="device_to_absolute_tracking" type="matrix4x4f" />
+            <field name="velocity" type="vector3f" />
+            <field name="angular_velocity" type="vector3f" />
+
+            <field name="is_valid" type="bool" />
+        </struct>
+
+        <struct name="vr_generic_event">
+            <field name="word1" type="uint" />
+            <field name="word2" type="uint" />
+            <field name="word3" type="uint" />
+            <field name="word4" type="uint" />
+            <field name="word5" type="uint" />
+            <field name="word6" type="uint" />
+            <field name="word7" type="uint" />
+            <field name="word8" type="uint" />
+        </struct>
+
+        <struct name="vr_controller_event">
+            <field name="button" type="uint" />
+        </struct>
+
+        <struct name="vr_controller_axis_state">
+            <field name="type" type="vr_controller_axis_type" />
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+        </struct>
+
+        <struct name="vr_controller_state">
+            <field name="buttons_pressed" type="ulong" />
+            <field name="buttons_touched" type="ulong" />
+
+            <field name="axis0" type="vr_controller_axis_state" />
+            <field name="axis1" type="vr_controller_axis_state" />
+            <field name="axis2" type="vr_controller_axis_state" />
+            <field name="axis3" type="vr_controller_axis_state" />
+            <field name="axis4" type="vr_controller_axis_state" />
+        </struct>
+
+        <struct name="vr_dual_analog_event">
+            <field name="x" type="float" />
+            <field name="y" type="float" />
+            <field name="transformed_x" type="float" />
+            <field name="transformed_y" type="float" />
+            <field name="which" type="uint" />
+        </struct>
+
+        <union name="vr_event_data">
+            <field name="type" type="uint" />
+            <field name="generic" type="vr_generic_event" />
+            <field name="controller" type="vr_controller_event" />
+            <field name="dual_analog" type="vr_dual_analog_event" />
+        </union>
+
+        <struct name="vr_event">
+            <field name="type" type="uint" />
+            <field name="tracked_device_index" type="uint" />
+            <field name="event_age_seconds" type="float" />
+            <field name="data" type="vr_event_data" />
+        </struct>
+
+        <struct name="vr_render_model_texture">
+            <field name="width" type="ushort" />
+            <field name="height" type="ushort" />
+            <field name="pitch" type="uint" />
+            <field name="data" type="byte*" />
+        </struct>
+
+        <struct name="vr_render_model_vertex">
+            <field name="position" type="vector3f" />
+            <field name="normal" type="vector3f" />
+            <field name="texcoord" type="vector2f" />
+        </struct>
+
+        <struct name="vr_render_model">
+            <field name="vertex_count" type="uint" />
+            <field name="vertices" type="vr_render_model_vertex*" />
+            <field name="triangle_count" type="uint" />
+            <field name="indices" type="ushort*" />
+            <field name="texture" type="vr_render_model_texture*" />
+        </struct>
+
+        <struct name="immediate_renderer_light_classic">
+            <field name="ambient" type="vector4f" />
+            <field name="diffuse" type="vector4f" />
+            <field name="specular" type="vector4f" />
+            <field name="position" type="vector4f" />
+            <field name="spot_direction" type="vector3f" />
+            <field name="spot_exponent" type="float" />
+            <field name="spot_cutoff" type="float" />
+            <field name="constant_attenuation" type="float" />
+            <field name="linear_attenuation" type="float" />
+            <field name="quadratic_attenuation" type="float" />
+        </struct>
+
+        <struct name="immediate_renderer_light_pbr">
+            <field name="ambient" type="vector3f" />
+            <field name="ambient_reserved" type="float" />
+            <field name="intensity" type="vector3f" />
+            <field name="intensity_reserved" type="float" />
+
+            <field name="reserved_specular" type="vector4f" />
+            <field name="position" type="vector4f" />
+            <field name="spot_direction" type="vector3f" />
+            <field name="spot_exponent" type="float" />
+            <field name="spot_cutoff" type="float" />
+            <field name="spot_inner_cutoff" type="float" />
+            <field name="radius" type="float" />
+            <field name="reserved_attenuation" type="float" />
+        </struct>
+
+        <union name="immediate_renderer_light">
+            <field name="classic" type="immediate_renderer_light_classic" />
+            <field name="pbr" type="immediate_renderer_light_pbr" />
+        </union>
+
+        <struct name="immediate_renderer_material_classic">
+            <field name="emission" type="vector4f" />
+            <field name="ambient" type="vector4f" />
+            <field name="diffuse" type="vector4f" />
+            <field name="specular" type="vector4f" />
+            <field name="shininess" type="float" />
+            <field name="alpha_cutoff" type="float" />
+        </struct>
+
+        <struct name="immediate_renderer_material_metallic_roughness">
+            <field name="emission" type="vector4f" />
+            <field name="base_color" type="vector4f" />
+            <field name="metallic_factor" type="float" />
+            <field name="roughness_factor" type="float" />
+            <field name="occlusion_factor" type="float" />
+            <field name="alpha_cutoff" type="float" />
+        </struct>
+
+        <struct name="immediate_renderer_material_flat_color">
+            <field name="color" type="vector4f" />
+            <field name="alpha_cutoff" type="float" />
+        </struct>
+
+        <union name="immediate_renderer_material">
+            <field name="classic" type="immediate_renderer_material_classic" />
+            <field name="metallic_roughness" type="immediate_renderer_material_metallic_roughness" />
+            <field name="flat_color" type="immediate_renderer_material_flat_color" />
+        </union>
+	</structs>
+
+    <constants>
+        <enum name="error">
+            <constant name="Ok" value="0" />
+            <constant name="Error" value="-1" />
+            <constant name="NullPointer" value="-2" />
+            <constant name="InvalidOperation" value="-3" />
+            <constant name="InvalidParameter" value="-4" />
+            <constant name="OutOfBounds" value="-5" />
+            <constant name="Unsupported" value="-6" />
+            <constant name="Unimplemented" value="-7" />
+            <constant name="NotCurrentContext" value="-8" />
+            <constant name="CompilationError" value="-9" />
+            <constant name="LinkingError" value="-10" />
+            <constant name="CommandListClosed" value="-11" />
+            <constant name="OutOfMemory" value="-12" />
+            <constant name="OutOfDate" value="-13" />
+            <constant name="Suboptimal" value="-14" />
+        </enum>
+
+        <enum name="device_open_flags" optionalPrefix="DeviceOpenFlag">
+            <constant name="DeviceOpenFlagNone" value="0" />
+            <constant name="DeviceOpenFlagAllowVR" value="1" />
+        </enum>
+
+        <enum name="swap_chain_flags" optionalPrefix="SwapChainFlag">
+            <constant name="SwapChainFlagNone" value="0" />
+            <constant name="SwapChainFlagOverlayWindow" value="1" />
+            <constant name="SwapChainFlagApplyScaleFactorForHiDPI" value="2" />
+        </enum>
+
+        <enum name="swap_chain_presentation_mode" optionalPrefix="SwapChainPresentationMode">
+            <constant name="SwapChainPresentationModeDefault" value="0" />
+            <constant name="SwapChainPresentationModeImmediate" value="1" />
+            <constant name="SwapChainPresentationModeMailbox" value="2" />
+            <constant name="SwapChainPresentationModeFifo" value="3" />
+            <constant name="SwapChainPresentationModeFifoRelaxed" value="4" />
+        </enum>
+
+        <enum name="command_queue_type" optionalPrefix="CommandQueueType">
+            <constant name="CommandQueueTypeGraphics" value="0" />
+            <constant name="CommandQueueTypeCompute" value="1" />
+            <constant name="CommandQueueTypeTransfer" value="2" />
+        </enum>
+
+        <enum name="access_flags" optionalPrefix="Access">
+            <!-- Same bit patterns as Vulkan VkAccessFlags -->
+            <constant name="AccessIndirectCommandRead" value="1" />
+            <constant name="AccessIndexRead" value="2" />
+            <constant name="AccessVertexAttributeRead" value="4" />
+            <constant name="AccessUniformRead" value="8" />
+            <constant name="AccessInputAttachmentRead" value="16" />
+            <constant name="AccessShaderRead" value="32" />
+            <constant name="AccessShaderWrite" value="64" />
+            <constant name="AccessColorAttachmentRead" value="128" />
+            <constant name="AccessColorAttachmentWrite" value="256" />
+            <constant name="AccessDepthStencilAttachmentRead" value="512" />
+            <constant name="AccessDepthStencilAttachmentWrite" value="1024" />
+            <constant name="AccessTransferRead" value="2048" />
+            <constant name="AccessTransferWrite" value="4096" />
+            <constant name="AccessHostRead" value="8192" />
+            <constant name="AccessHostWrite" value="16384" />
+            <constant name="AccessMemoryRead" value="32768" />
+            <constant name="AccessMemoryWrite" value="65536" />
+            <constant name="AccessTransformFeedbackWrite" value="33554432" />
+            <constant name="AccessTransformFeedbackCounterRead" value="67108864" />
+            <constant name="AccessTransformFeedbackCounterWrite" value="134217728" />
+        </enum>
+
+        <enum name="pipeline_stage_flags" optionalPrefix="PipelineStage">
+            <!-- Same bit patterns as VkPipelineStageFlagBits -->
+            <constant name="PipelineStageTopOfPipe" value="1" />
+            <constant name="PipelineStageDrawIndirect" value="2" />
+            <constant name="PipelineStageVertexInput" value="4" />
+            <constant name="PipelineStageVertexShader" value="8" />
+            <constant name="PipelineStageTessellationControl" value="16" />
+            <constant name="PipelineStageTessellationEvaluation" value="32" />
+            <constant name="PipelineStageGeometryShader" value="64" />
+            <constant name="PipelineStageFragmentShader" value="128" />
+            <constant name="PipelineStageEarlyFragmentTests" value="256" />
+            <constant name="PipelineStageLateFragmentTests" value="512" />
+            <constant name="PipelineStageColorAttachmentOutput" value="1024" />
+            <constant name="PipelineStageComputeShader" value="2048" />
+            <constant name="PipelineStageTransfer" value="4096" />
+            <constant name="PipelineStageBottomOfPipe" value="8192" />
+            <constant name="PipelineStageHost" value="16384" />
+            <constant name="PipelineStageAllGraphics" value="32768" />
+            <constant name="PipelineStageAllCommands" value="65536" />
+            <constant name="PipelineStageTransformFeedback" value="16777216" />
+            <constant name="PipelineStageConditionalRendering" value="262144" />
+        </enum>
+
+		<enum name="primitive_topology">
+            <constant name="Points" value="0" />
+
+            <constant name="Lines" value="1" />
+            <constant name="LinesAdjacency" value="2" />
+            <constant name="LineStrip" value="3" />
+            <constant name="LineStripAdjacency" value="4" />
+
+            <constant name="Triangles" value="5" />
+            <constant name="TrianglesAdjacency" value="6" />
+            <constant name="TriangleStrip" value="7" />
+            <constant name="TriangleStripAdjacency" value="8" />
+
+            <constant name="Patches" value="9" />
+
+            <constant name="ImmediateTriangleFan" value="100" />
+            <constant name="ImmediateQuads" value="101" />
+            <constant name="ImmediatePolygon" value="102" />
+		</enum>
+
+        <enum name="polygon_mode" optionalPrefix="PolygonMode">
+            <constant name="PolygonModeFill" value="0" />
+            <constant name="PolygonModeLine" value="1" />
+            <constant name="PolygonModePoint" value="2" />
+        </enum>
+
+        <enum name="device_type" optionalPrefix="DeviceType">
+            <constant name="DeviceTypeOther" value="0" />
+            <constant name="DeviceTypeIntegratedGPU" value="1" />
+            <constant name="DeviceTypeDiscreteGPU" value="2" />
+            <constant name="DeviceTypeVirtualGPU" value="3" />
+            <constant name="DeviceTypeCPU" value="4" />
+        </enum>
+
+        <enum name="feature" optionalPrefix="Feature">
+            <constant name="FeaturePersistentMemoryMapping" value="1" />
+            <constant name="FeatureCoherentMemoryMapping" value="2" />
+            <constant name="FeaturePersistentCoherentMemoryMapping" value="3" />
+            <constant name="FeatureCommandListReuse" value="4" />
+            <constant name="FeatureNonEmulatedCommandListReuse" value="5" />
+            <constant name="FeatureVRDisplay" value="6" />
+            <constant name="FeatureVRInputDevices" value="7" />
+            <constant name="FeatureDualSourceBlending" value="8" />
+            <constant name="FeatureGeometryShader" value="9" />
+            <constant name="FeatureTessellationShader" value="10" />
+            <constant name="FeatureComputeShader" value="11" />
+            <constant name="FeatureMultiDrawIndirect" value="12" />
+            <constant name="FeatureDrawIndirect" value="13" />
+            <constant name="FeatureTextureCompressionBC" value="14" />
+            <constant name="FeatureTextureCompressionETC2" value="15" />
+            <constant name="FeatureTextureCompressionASTC_LDR" value="16" />
+            <constant name="FeatureShaderClipDistance" value="17" />
+            <constant name="FeatureShaderCullDistance" value="18" />
+            <constant name="FeatureShaderFloat64" value="19" />
+            <constant name="FeatureShaderInt64" value="20" />
+            <constant name="FeatureShaderInt16" value="21" />
+            <constant name="FeatureSampleShading" value="22" />
+            <constant name="FeatureFillModeNonSolid" value="23" />
+        </enum>
+
+        <enum name="limit" optionalPrefix="Limit">
+            <constant name="LimitNonCoherentAtomSize" value="1" />
+            <constant name="LimitMinMemoryMapAlignment" value="2" />
+            <constant name="LimitMinTexelBufferOffsetAlignment" value="3" />
+            <constant name="LimitMinUniformBufferOffsetAlignment" value="4" />
+            <constant name="LimitMinStorageBufferOffsetAlignment" value="5" />
+            <constant name="LimitMaxImageDimension1D" value="6" />
+            <constant name="LimitMaxImageDimension2D" value="7" />
+            <constant name="LimitMaxImageDimension3D" value="8" />
+            <constant name="LimitMaxImageDimensionCube" value="9" />
+            <constant name="LimitMaxImageArrayLayers" value="10" />
+            <constant name="LimitMaxFramebufferWidth" value="11" />
+            <constant name="LimitMaxFramebufferHeight" value="12" />
+            <constant name="LimitMaxFramebufferLayers" value="13" />
+            <constant name="LimitMaxClipDistances" value="14" />
+            <constant name="LimitMaxCullDistances" value="15" />
+            <constant name="LimitMaxCombinedClipAndCullDistances" value="16" />
+            <constant name="LimitMaxTexelBufferElements" value="17" />
+            <constant name="LimitMaxUniformBufferRange" value="18" />
+            <constant name="LimitMaxStorageBufferRange" value="19" />
+            <constant name="LimitMaxPushConstantsSize" value="20" />
+            <constant name="LimitMaxBoundShaderResourceBindings" value="21" />
+            <constant name="LimitMaxComputeSharedMemorySize" value="22" />
+            <constant name="LimitMaxComputeWorkGroupInvocations" value="23" />
+            <constant name="LimitMaxComputeWorkGroupXCount" value="24" />
+            <constant name="LimitMaxComputeWorkGroupXSize" value="25" />
+            <constant name="LimitMaxComputeWorkGroupYCount" value="26" />
+            <constant name="LimitMaxComputeWorkGroupYSize" value="27" />
+            <constant name="LimitMaxComputeWorkGroupZCount" value="28" />
+            <constant name="LimitMaxComputeWorkGroupZSize" value="29" />
+            <constant name="LimitMaxSamplerLodBias" value="30" />
+            <constant name="LimitMaxSamplerAnisotropy" value="31" />
+            <constant name="LimitSampledImageColorSupportedSampleCountMask" value="32" />
+            <constant name="LimitSampledImageIntegerSupportedSampleCountMask" value="33" />
+            <constant name="LimitSampledImageDepthSupportedSampleCountMask" value="34" />
+            <constant name="LimitSampledImageStencilSupportedSampleCountMask" value="35" />
+            <constant name="LimitStorageImageSupportedSampleCountMask" value="36" />
+            <constant name="LimitDedicatedVideoMemoryInMB" value="37" />
+            <constant name="LimitAvailableVideoMemoryInMB" value="38" />
+            <constant name="LimitMinTextureDataOffsetAlignment" value="39" />
+            <constant name="LimitMinTextureDataPitchAlignment" value="40" />
+        </enum>
+
+        <enum name="renderpass_attachment_action" optionalPrefix="Attachment">
+            <constant name="AttachmentKeep" value="0" />
+            <constant name="AttachmentClear" value="1" />
+            <constant name="AttachmentDiscard" value="2" />
+        </enum>
+
+        <enum name="stencil_operation">
+            <constant name="Keep" value="0" />
+            <constant name="Zero" value="1" />
+            <constant name="Replace" value="2" />
+            <constant name="Invert" value="3" />
+            <constant name="Increase" value="4" />
+            <constant name="IncreaseWrap" value="5" />
+            <constant name="Decrease" value="6" />
+            <constant name="DecreaseWrap" value="7" />
+        </enum>
+
+        <enum name="compare_function">
+            <constant name="Always" value="0" />
+            <constant name="Never" value="1" />
+            <constant name="Less" value="2" />
+            <constant name="LessEqual" value="3" />
+            <constant name="Equal" value="4" />
+            <constant name="NotEqual" value="5" />
+            <constant name="Greater" value="6" />
+            <constant name="GreaterEqual" value="7" />
+        </enum>
+
+        <enum name="texture_type">
+            <constant name="TextureUnknown" value="0" />
+            <constant name="TextureBuffer" value="1" />
+            <constant name="Texture1D" value="2" />
+            <constant name="Texture2D" value="3" />
+            <constant name="TextureCube" value="4" />
+            <constant name="Texture3D" value="5" />
+        </enum>
+
+        <enum name="texture_usage_mode_mask" optionalPrefix="TextureUsage">
+            <constant name="TextureUsageNone" value="0" />
+            <constant name="TextureUsageSampled" value="1" />
+            <constant name="TextureUsageColorAttachment" value="2" />
+            <constant name="TextureUsageDepthAttachment" value="4" />
+            <constant name="TextureUsageStencilAttachment" value="8" />
+            <constant name="TextureUsageStorage" value="16" />
+            <constant name="TextureUsageCopySource" value="32" />
+            <constant name="TextureUsageCopyDestination" value="64" />
+            <constant name="TextureUsageReadedBack" value="32" />
+            <constant name="TextureUsageUploaded" value="64" />
+            <constant name="TextureUsagePresent" value="128" />
+            <constant name="TextureUsageGeneral" value="256" />
+        </enum>
+
+		<enum name="shader_type" optionalSuffix="Shader">
+			<constant name="VertexShader" value="0" />
+			<constant name="FragmentShader" value="1" />
+			<constant name="GeometryShader" value="2" />
+			<constant name="ComputeShader" value="3" />
+			<constant name="TessellationControlShader" value="4" />
+			<constant name="TessellationEvaluationShader" value="5" />
+			<constant name="LibraryShader" value="6" />
+		</enum>
+
+		<enum name="memory_heap_type" optionalPrefix="MemoryHeapType">
+            <constant name="MemoryHeapTypeDeviceLocal" value="0" />
+            <constant name="MemoryHeapTypeHostToDevice" value="1" />
+            <constant name="MemoryHeapTypeDeviceToHost" value="2" />
+            <constant name="MemoryHeapTypeHost" value="3" />
+            <constant name="MemoryHeapTypeCustom" value="4" />
+
+            <constant name="MemoryHeapTypeStagingUpload" value="3" />
+
+            <!-- These constants are for compatibility purpose -->
+            <constant name="Static" value="0" />
+            <constant name="Dynamic" value="1" />
+            <constant name="Stream" value="1" />
+		</enum>
+
+		<enum name="buffer_usage_mask">
+            <constant name="CopyDestinationBuffer" value="1" />
+            <constant name="CopySourceBuffer" value="2" />
+            <constant name="GenericDataBuffer" value="3" />
+
+			<constant name="ArrayBuffer" value="4" />
+			<constant name="ElementArrayBuffer" value="8" />
+			<constant name="UniformBuffer" value="16" />
+			<constant name="DrawIndirectBuffer" value="32" />
+			<constant name="StorageBuffer" value="64" />
+            <constant name="UniformTexelBuffer" value="128" />
+            <constant name="StorageTexelBuffer" value="256" />
+            <constant name="ComputeDispatchIndirectBuffer" value="512" />
+		</enum>
+
+		<enum name="buffer_mapping_flags" optionalPrefix="Map">
+			<constant name="MapReadBit" value="1" />
+			<constant name="MapWriteBit" value="2" />
+			<constant name="MapPersistentBit" value="4" />
+			<constant name="MapCoherentBit" value="8" />
+            <constant name="MapDynamicStorageBit" value="16" />
+		</enum>
+
+		<enum name="mapping_access">
+			<constant name="ReadOnly" value="1" />
+			<constant name="WriteOnly" value="2" />
+			<constant name="ReadWrite" value="3" />
+		</enum>
+
+		<enum name="render_buffer_bit">
+			<constant name="DepthBufferBit" value="1" />
+			<constant name="StencilBufferBit" value="2" />
+			<constant name="ColorBufferBit" value="4" />
+		</enum>
+
+        <enum name="shader_binding_type" optionalPrefix="ShaderBindingType">
+            <constant name="ShaderBindingTypeSampledImage" value="0" />
+            <constant name="ShaderBindingTypeStorageImage" value="1" />
+            <constant name="ShaderBindingTypeUniformTexelBuffer" value="2" />
+            <constant name="ShaderBindingTypeStorageTexelBuffer" value="3" />
+            <constant name="ShaderBindingTypeUniformBuffer" value="4" />
+            <constant name="ShaderBindingTypeStorageBuffer" value="5" />
+            <constant name="ShaderBindingTypeSampler" value="6" />
+            <constant name="ShaderBindingTypeCount" value="7" />
+        </enum>
+
+		<enum name="shader_language" optionalPrefix="ShaderLanguage">
+            <constant name="ShaderLanguageNone" value="0" />
+			<constant name="ShaderLanguageGlsl" value="1" />
+            <constant name="ShaderLanguageEglsl" value="2" />
+            <constant name="ShaderLanguageVglsl" value="3" />
+			<constant name="ShaderLanguageSpirV" value="4" />
+            <constant name="ShaderLanguageHlsl" value="5" />
+            <constant name="ShaderLanguageMetal" value="6" />
+            <constant name="ShaderLanguageMetalAir" value="7" />
+            <constant name="ShaderLanguageBinary" value="8" />
+            <constant name="ShaderLanguageSpirVAssembly" value="9" />
+            <constant name="ShaderLanguageDeviceShader" value="10" />
+		</enum>
+
+        <enum name="field_type">
+            <constant name="Float" value="0" />
+            <constant name="HalfFloat" value="1" />
+            <constant name="Double" value="2" />
+            <constant name="Fixed" value="3" />
+
+            <constant name="Byte" value="4" />
+            <constant name="UnsignedByte" value="5" />
+            <constant name="Short" value="6" />
+            <constant name="UnsignedShort" value="7" />
+            <constant name="Int" value="8" />
+            <constant name="UnsignedInt" value="9" />
+        </enum>
+
+        <enum name="texture_format" optionalPrefix="TextureFormat">
+            <constant name="TextureFormatUnknown" value="0" />
+            <constant name="TextureFormatR32G32B32A32_Typeless" value="1" />
+            <constant name="TextureFormatR32G32B32A32_Float" value="2" />
+            <constant name="TextureFormatR32G32B32A32_UInt" value="3" />
+            <constant name="TextureFormatR32G32B32A32_SInt" value="4" />
+            <constant name="TextureFormatR32G32B32_Typeless" value="5" />
+            <constant name="TextureFormatR32G32B32_Float" value="6" />
+            <constant name="TextureFormatR32G32B32_UInt" value="7" />
+            <constant name="TextureFormatR32G32B32_SInt" value="8" />
+
+            <constant name="TextureFormatR16G16B16A16_Typeless" value="9" />
+            <constant name="TextureFormatR16G16B16A16_Float" value="10" />
+            <constant name="TextureFormatR16G16B16A16_UNorm" value="11" />
+            <constant name="TextureFormatR16G16B16A16_UInt" value="12" />
+            <constant name="TextureFormatR16G16B16A16_SNorm" value="13" />
+            <constant name="TextureFormatR16G16B16A16_SInt" value="14" />
+
+            <constant name="TextureFormatR32G32_Typeless" value="15" />
+            <constant name="TextureFormatR32G32_Float" value="16" />
+            <constant name="TextureFormatR32G32_UInt" value="17" />
+            <constant name="TextureFormatR32G32_SInt" value="18" />
+            <constant name="TextureFormatR32G8X24_Typeless" value="19" />
+
+            <constant name="TextureFormatD32_Float_S8X24_UInt" value="20" />
+            <constant name="TextureFormatR32_Float_S8X24_Typeless" value="21" />
+            <constant name="TextureFormatX32_Typeless_G8X24_UInt" value="22" />
+
+            <constant name="TextureFormatR10G10B10A2_Typeless" value="23" />
+            <constant name="TextureFormatR10G10B10A2_UNorm" value="24" />
+            <constant name="TextureFormatR10G10B10A2_UInt" value="25" />
+            <constant name="TextureFormatR11G11B10_Float" value="26" />
+
+            <constant name="TextureFormatR8G8B8A8_Typeless" value="27" />
+            <constant name="TextureFormatR8G8B8A8_UNorm" value="28" />
+            <constant name="TextureFormatR8G8B8A8_UNormSRGB" value="29" />
+            <constant name="TextureFormatR8G8B8A8_UInt" value="30" />
+            <constant name="TextureFormatR8G8B8A8_SNorm" value="31" />
+            <constant name="TextureFormatR8G8B8A8_SInt" value="32" />
+
+            <constant name="TextureFormatR16G16_Typeless" value="33" />
+            <constant name="TextureFormatR16G16_Float" value="34" />
+            <constant name="TextureFormatR16G16_UNorm" value="35" />
+            <constant name="TextureFormatR16G16_UInt" value="36" />
+            <constant name="TextureFormatR16G16_SNorm" value="37" />
+            <constant name="TextureFormatR16G16_SInt" value="38" />
+
+            <constant name="TextureFormatR32_Typeless" value="39" />
+            <constant name="TextureFormatD32_Float" value="40" />
+            <constant name="TextureFormatR32_Float" value="41" />
+            <constant name="TextureFormatR32_UInt" value="42" />
+            <constant name="TextureFormatR32_SInt" value="43" />
+
+            <constant name="TextureFormatR24G8_Typeless" value="44" />
+            <constant name="TextureFormatD24_UnormS8_UInt" value="45" />
+            <constant name="TextureFormatR24_UnormX8_Typeless" value="46" />
+            <constant name="TextureFormatX24TG8_UInt" value="47" />
+
+            <constant name="TextureFormatR8G8_Typeless" value="48" />
+            <constant name="TextureFormatR8G8_UNorm" value="49" />
+            <constant name="TextureFormatR8G8_UInt" value="50" />
+            <constant name="TextureFormatR8G8_SNorm" value="51" />
+            <constant name="TextureFormatR8G8_SInt" value="52" />
+
+            <constant name="TextureFormatR16_Typeless" value="53" />
+            <constant name="TextureFormatR16_Float" value="54" />
+            <constant name="TextureFormatD16_UNorm" value="55" />
+            <constant name="TextureFormatR16_UNorm" value="56" />
+            <constant name="TextureFormatR16_UInt" value="57" />
+            <constant name="TextureFormatR16_SNorm" value="58" />
+            <constant name="TextureFormatR16_SInt" value="59" />
+
+            <constant name="TextureFormatR8_Typeless" value="60" />
+            <constant name="TextureFormatR8_UNorm" value="61" />
+            <constant name="TextureFormatR8_UInt" value="62" />
+            <constant name="TextureFormatR8_SNorm" value="63" />
+            <constant name="TextureFormatR8_SInt" value="64" />
+            <constant name="TextureFormatA8_UNorm" value="65" />
+            <constant name="TextureFormatR1_UNorm" value="66" />
+
+            <constant name="TextureFormatBC1_Typeless" value="70" />
+            <constant name="TextureFormatBC1_UNorm" value="71" />
+            <constant name="TextureFormatBC1_UNormSRGB" value="72" />
+            <constant name="TextureFormatBC2_Typeless" value="73" />
+            <constant name="TextureFormatBC2_UNorm" value="74" />
+            <constant name="TextureFormatBC2_UNormSRGB" value="75" />
+            <constant name="TextureFormatBC3_Typeless" value="76" />
+            <constant name="TextureFormatBC3_UNorm" value="77" />
+            <constant name="TextureFormatBC3_UNormSRGB" value="78" />
+            <constant name="TextureFormatBC4_Typeless" value="79" />
+            <constant name="TextureFormatBC4_UNorm" value="80" />
+            <constant name="TextureFormatBC4_SNorm" value="81" />
+            <constant name="TextureFormatBC5_Typeless" value="82" />
+            <constant name="TextureFormatBC5_UNorm" value="83" />
+            <constant name="TextureFormatBC5_SNorm" value="84" />
+
+            <constant name="TextureFormatB5G6R5_UNorm" value="85" />
+            <constant name="TextureFormatB5G5R5A1_UNorm" value="86" />
+            <constant name="TextureFormatB8G8R8A8_UNorm" value="87" />
+            <constant name="TextureFormatB8G8R8X8_UNorm" value="88" />
+
+            <constant name="TextureFormatB8G8R8A8_Typeless" value="90" />
+            <constant name="TextureFormatB8G8R8A8_UNormSRGB" value="91" />
+            <constant name="TextureFormatB8G8R8X8_Typeless" value="92" />
+            <constant name="TextureFormatB8G8R8X8_UNormSRGB" value="93" />
+
+            <!-- Extra formats that are not being exposed by D3D12 -->
+            <constant name="TextureFormatETC2_R8G8B8_UNorm" value="200" />
+            <constant name="TextureFormatETC2_R8G8B8_UNormSRGB" value="201" />
+            <constant name="TextureFormatETC2_R8G8B8A1_UNorm" value="202" />
+            <constant name="TextureFormatETC2_R8G8B8A1_UNormSRGB" value="203" />
+            <constant name="TextureFormatETC2_R8G8B8A8_UNorm" value="204" />
+            <constant name="TextureFormatETC2_R8G8B8A8_UNormSRGB" value="205" />
+            <constant name="TextureFormatEAC_R11_UNorm" value="206" />
+            <constant name="TextureFormatEAC_R11_SNorm" value="207" />
+            <constant name="TextureFormatEAC_R11G11_UNorm" value="208" />
+            <constant name="TextureFormatEAC_R11G11_SNorm" value="209" />
+
+            <constant name="TextureFormatASTC4X4_UNorm" value="230" />
+            <constant name="TextureFormatASTC4X4_UNormSRGB" value="231" />
+            <constant name="TextureFormatASTC5X4_UNorm" value="232" />
+            <constant name="TextureFormatASTC5X4_UNormSRGB" value="233" />
+            <constant name="TextureFormatASTC5X5_UNorm" value="234" />
+            <constant name="TextureFormatASTC5X5_UNormSRGB" value="235" />
+            <constant name="TextureFormatASTC6X5_UNorm" value="236" />
+            <constant name="TextureFormatASTC6X5_UNormSRGB" value="237" />
+            <constant name="TextureFormatASTC6X6_UNorm" value="238" />
+            <constant name="TextureFormatASTC6X6_UNormSRGB" value="239" />
+            <constant name="TextureFormatASTC8X5_UNorm" value="240" />
+            <constant name="TextureFormatASTC8X5_UNormSRGB" value="241" />
+            <constant name="TextureFormatASTC8X6_UNorm" value="242" />
+            <constant name="TextureFormatASTC8X6_UNormSRGB" value="243" />
+            <constant name="TextureFormatASTC8X8_UNorm" value="244" />
+            <constant name="TextureFormatASTC8X8_UNormSRGB" value="245" />
+            <constant name="TextureFormatASTC10X5_UNorm" value="246" />
+            <constant name="TextureFormatASTC10X5_UNormSRGB" value="247" />
+            <constant name="TextureFormatASTC10X6_UNorm" value="248" />
+            <constant name="TextureFormatASTC10X6_UNormSRGB" value="249" />
+            <constant name="TextureFormatASTC10X8_UNorm" value="250" />
+            <constant name="TextureFormatASTC10X8_UNormSRGB" value="251" />
+            <constant name="TextureFormatASTC10X10_UNorm" value="252" />
+            <constant name="TextureFormatASTC10X10_UNormSRGB" value="253" />
+            <constant name="TextureFormatASTC12X10_UNorm" value="254" />
+            <constant name="TextureFormatASTC12X10_UNormSRGB" value="255" />
+            <constant name="TextureFormatASTC12X12_UNorm" value="256" />
+            <constant name="TextureFormatASTC12X12_UNormSRGB" value="257" />
+        </enum>
+
+        <enum name="filter" optionalPrefix="Filter">
+            <constant name="FilterMinNearestMagNearestMipmapNearest" value="0x0" />
+            <constant name="FilterMinNearestMagNearestMipmapLinear" value="0x1" />
+            <constant name="FilterMinNearestMagLinearMipmapNearest" value="0x4" />
+            <constant name="FilterMinNearestMagLinearMipmapLinear" value="0x5" />
+            <constant name="FilterMinLinearMagNearestMipmapNearest" value="0x10" />
+            <constant name="FilterMinLinearMagNearestMipmapLinear" value="0x11" />
+            <constant name="FilterMinLinearMagLinearMipmapNearest" value="0x14" />
+            <constant name="FilterMinLinearMagLinearMipmapLinear" value="0x15" />
+            <constant name="FilterAnisotropic" value="0x55" />
+        </enum>
+
+        <enum name="texture_address_mode" optionalPrefix="TextureAddressMode">
+            <constant name="TextureAddressModeWrap" value="1" />
+            <constant name="TextureAddressModeMirror" value="2" />
+            <constant name="TextureAddressModeClamp" value="3" />
+            <constant name="TextureAddressModeBorder" value="4" />
+            <constant name="TextureAddressModeMirrorOnce" value="5" />
+        </enum>
+
+        <enum name="texture_aspect" optionalPrefix="TextureAspect">
+            <constant name="TextureAspectColor" value="1" />
+            <constant name="TextureAspectDepth" value="2" />
+            <constant name="TextureAspectStencil" value="4" />
+            <constant name="TextureAspectAll" value="-1" />
+        </enum>
+
+        <enum name="command_list_type" optionalPrefix="CommandListType">
+            <constant name="CommandListTypeDirect" value="1" />
+            <constant name="CommandListTypeBundle" value="2" />
+            <constant name="CommandListTypeCompute" value="3" />
+            <constant name="CommandListTypeCopy" value="4" />
+        </enum>
+
+        <enum name="blending_factor" optionalPrefix="Blending">
+            <constant name="BlendingZero" value="1" />
+            <constant name="BlendingOne" value="2" />
+            <constant name="BlendingSrcColor" value="3" />
+            <constant name="BlendingInvertedSrcColor" value="4" />
+            <constant name="BlendingSrcAlpha" value="5" />
+            <constant name="BlendingInvertedSrcAlpha" value="6" />
+            <constant name="BlendingDestAlpha" value="7" />
+            <constant name="BlendingInvertedDestAlpha" value="8" />
+            <constant name="BlendingDestColor" value="9" />
+            <constant name="BlendingInvertedDestColor" value="10" />
+            <constant name="BlendingSrcAlphaSat" value="11" />
+            <constant name="BlendingConstantFactor" value="14" />
+            <constant name="BlendingInvertedConstantFactor" value="15" />
+            <constant name="BlendingSrc1Color" value="16" />
+            <constant name="BlendingInvertedSrc1Color" value="17" />
+            <constant name="BlendingSrc1Alpha" value="18" />
+            <constant name="BlendingInvertedSrc1Alpha" value="19" />
+        </enum>
+
+        <enum name="blending_operation" optionalPrefix="BlendingOperation">
+            <constant name="BlendingOperationAdd" value="1" />
+            <constant name="BlendingOperationSubtract" value="2" />
+            <constant name="BlendingOperationReverseSubtract" value="3" />
+            <constant name="BlendingOperationMin" value="4" />
+            <constant name="BlendingOperationMax" value="5" />
+        </enum>
+
+        <enum name="component_swizzle" optionalPrefix="ComponentSwizzle">
+            <constant name="ComponentSwizzleIdentity" value="0" />
+            <constant name="ComponentSwizzleOne" value="1" />
+            <constant name="ComponentSwizzleZero" value="2" />
+            <constant name="ComponentSwizzleR" value="3" />
+            <constant name="ComponentSwizzleG" value="4" />
+            <constant name="ComponentSwizzleB" value="5" />
+            <constant name="ComponentSwizzleA" value="6" />
+        </enum>
+
+        <enum name="face_winding">
+            <constant name="CounterClockwise" value="0" />
+            <constant name="Clockwise" value="1" />
+        </enum>
+
+        <enum name="cull_mode" optionalPrefix="CullMode">
+            <constant name="CullModeNone" value="0" />
+            <constant name="CullModeFront" value="1" />
+            <constant name="CullModeBack" value="2" />
+            <constant name="CullModeFrontAndBack" value="3" />
+        </enum>
+
+        <enum name="vr_eye" optionalPrefix="VrEye">
+            <constant name="VrEyeLeft" value="0" />
+            <constant name="VrEyeRight" value="1" />
+        </enum>
+
+        <enum name="vr_tracked_device_class" optionalPrefix="VrTrackedDeviceClass">
+            <constant name="VrTrackedDeviceClassInvalid" value="0" />
+            <constant name="VrTrackedDeviceClassHmd" value="1" />
+            <constant name="VrTrackedDeviceClassController" value="2" />
+            <constant name="VrTrackedDeviceClassGenericTracker" value="3" />
+            <constant name="VrTrackedDeviceClassTrackingReference" value="4" />
+            <constant name="VrTrackedDeviceClassDisplayRedirect" value="5" />
+        </enum>
+
+        <enum name="vr_tracked_device_role" optionalPrefix="VrTrackedDeviceRole">
+            <constant name="VrTrackedDeviceRoleInvalid" value="0" />
+            <constant name="VrTrackedDeviceRoleLeftHand" value="1" />
+            <constant name="VrTrackedDeviceRoleRightHand" value="2" />
+            <constant name="VrTrackedDeviceRoleOptOut" value="3" />
+            <constant name="VrTrackedDeviceRoleThreadmill" value="4" />
+        </enum>
+
+        <enum name="vr_button" optionalPrefix="VrButton">
+            <constant name="VrButtonSystem" value="0" />
+            <constant name="VrButtonApplicationMenu" value="1" />
+            <constant name="VrButtonGrip" value="2" />
+            <constant name="VrButtonDpadLeft" value="3" />
+            <constant name="VrButtonDpadUp" value="4" />
+            <constant name="VrButtonDpadRight" value="5" />
+            <constant name="VrButtonDpadDown" value="6" />
+            <constant name="VrButtonA" value="7" />
+
+            <constant name="VrButtonProximitySensor" value="31" />
+            <constant name="VrButtonAxis0" value="32" />
+            <constant name="VrButtonAxis1" value="33" />
+            <constant name="VrButtonAxis2" value="34" />
+            <constant name="VrButtonAxis3" value="35" />
+            <constant name="VrButtonAxis4" value="36" />
+
+            <constant name="VrButtonSteamVrTouchpad" value="32" />
+            <constant name="VrButtonSteamVrTrigger" value="33" />
+            <constant name="VrButtonDashboardBack" value="2" />
+
+            <constant name="VrButtonKnucklesA" value="2" />
+            <constant name="VrButtonKnucklesB" value="1" />
+            <constant name="VrButtonKnucklesJoyStick" value="35" />
+        </enum>
+
+        <enum name="vr_dual_analog_which" optionalPrefix="VrDualAnalog">
+            <constant name="VrDualAnalogLeft" value="0" />
+            <constant name="VrDualAnalogRight" value="1" />
+        </enum>
+
+        <enum name="vr_event_type" optionalPrefix="VrEventType">
+            <constant name="VrEventTypeInvalid" value="0" />
+
+            <constant name="VrEventTypeTrackedDeviceActivated" value="100" />
+            <constant name="VrEventTypeTrackedDeviceDeactivated" value="101" />
+            <constant name="VrEventTypeTrackedDeviceUpdated" value="102" />
+            <constant name="VrEventTypeTrackedDeviceUserInteractionStarted" value="103" />
+            <constant name="VrEventTypeTrackedDeviceUserInteractionEnded" value="104" />
+            <constant name="VrEventTypeIpdChanged" value="105" />
+            <constant name="VrEventTypeEnterStandbyMode" value="106" />
+            <constant name="VrEventTypeLeaveStandbyMode" value="107" />
+            <constant name="VrEventTypeTrackedDeviceRoleChanged" value="108" />
+            <constant name="VrEventTypeWirelessDisconnect" value="112" />
+            <constant name="VrEventTypeWirelessReconnect" value="113" />
+
+            <constant name="VrEventTypeButtonPressed" value="200" />
+            <constant name="VrEventTypeButtonReleased" value="201" />
+            <constant name="VrEventTypeButtonTouch" value="202" />
+            <constant name="VrEventTypeButtonUntouch" value="203" />
+
+            <constant name="VrEventTypeDualAnalogPressed" value="250" />
+            <constant name="VrEventTypeDualAnalogReleased" value="251" />
+            <constant name="VrEventTypeDualAnalogTouch" value="252" />
+            <constant name="VrEventTypeDualAnalogUntouch" value="253" />
+            <constant name="VrEventTypeDualAnalogMove" value="254" />
+            <constant name="VrEventTypeDualAnalogModeSwitch1" value="255" />
+            <constant name="VrEventTypeDualAnalogModeSwitch2" value="256" />
+            <constant name="VrEventTypeDualAnalogCancel" value="257" />
+        </enum>
+
+        <enum name="vr_controller_axis_type" optionalPrefix="VrControllerAxisType">
+            <constant name="VrControllerAxisTypeNone" value="0" />
+            <constant name="VrControllerAxisTrackPad" value="1" />
+            <constant name="VrControllerAxisJoystick" value="2" />
+            <constant name="VrControllerAxisTrigger" value="3" />
+        </enum>
+
+        <enum name="immediate_renderer_vertex_attribute" optionalPrefix="ImmediateRendererVertexAttribute">
+            <constant name="ImmediateRendererVertexAttributePosition" value="0" />
+            <constant name="ImmediateRendererVertexAttributeColor" value="1" />
+            <constant name="ImmediateRendererVertexAttributeNormal" value="2" />
+            <constant name="ImmediateRendererVertexAttributeTexcoord" value="3" />
+            <constant name="ImmediateRendererVertexAttributeTexcoord2" value="4" />
+            <constant name="ImmediateRendererVertexAttributeBoneIndices" value="5" />
+            <constant name="ImmediateRendererVertexAttributeBoneWeights" value="6" />
+            <constant name="ImmediateRendererVertexAttributeTangent4" value="7" />
+        </enum>
+
+        <enum name="immediate_renderer_lighting_model" optionalPrefix="ImmediateRendererLightingModel">
+            <constant name="ImmediateRendererLightingModelPerVertex" value="0" />
+            <constant name="ImmediateRendererLightingModelPerFragment" value="1" />
+            <constant name="ImmediateRendererLightingModelMetallicRoughness" value="2" />
+            <constant name="ImmediateRendererLightingModelFlatColor" value="3" />
+            <constant name="ImmediateRendererLightingModelCount" value="4" />
+        </enum>
+
+        <enum name="immediate_renderer_fog_mode" optionalPrefix="ImmediateRendererFogMode">
+            <constant name="ImmediateRendererFogModeNone" value="0" />
+            <constant name="ImmediateRendererFogModeLinear" value="1" />
+            <constant name="ImmediateRendererFogModeExponential" value="2" />
+            <constant name="ImmediateRendererFogModeExponentialSquared" value="3" />
+        </enum>
+
+        <enum name="immediate_renderer_texture_binding" optionalPrefix="ImmediateRendererTextureBinding">
+            <constant name="ImmediateRendererTextureBindingAlbedo" value="0" />
+            <constant name="ImmediateRendererTextureBindingEmission" value="1" />
+            <constant name="ImmediateRendererTextureBindingNormal" value="2" />
+            <constant name="ImmediateRendererTextureBindingRoughnessMetallicAmbient" value="3" />
+            <constant name="ImmediateRendererTextureBindingAmbientOcclusion" value="4" />
+            <constant name="ImmediateRendererTextureBindingRoughnessMetallic" value="5" />
+            <constant name="ImmediateRendererTextureBindingBrdfLut" value="6" />
+            <constant name="ImmediateRendererTextureBindingDiffuseLightProbe" value="7" />
+            <constant name="ImmediateRendererTextureBindingSpecularLightProbe" value="8" />
+        </enum>
+    </constants>
+
+    <globals>
+        <function name="getPlatforms" cname="GetPlatforms" returnType="error" category="platform">
+            <arg name="numplatforms" type="size" />
+            <arg name="platforms" type="platform**" arrayReturn="true"/>
+            <arg name="ret_numplatforms" type="size*" />
+        </function>
+    </globals>
+
+    <interfaces>
+        <interface name="platform">
+            <method name="openDevice" cname="OpenDevice" returnType="device*">
+                <arg name="openInfo" type="device_open_info*" />
+            </method>
+
+            <method name="getName" cname="GetPlatformName" returnType="cstring">
+            </method>
+
+            <method name="getGpuCount" cname="GetPlatformGpuCount" returnType="size">
+            </method>
+
+            <method name="getGpuName" cname="GetPlatformGpuName" returnType="cstring">
+                <arg name="gpu_index" type="size" />
+            </method>
+
+            <method name="getGpuDeviceType" cname="GetPlatformGpuDeviceType" returnType="device_type">
+                <arg name="gpu_index" type="size" />
+            </method>
+
+            <method name="isFeatureSupportedOnGPU" cname="IsFeatureSupportedOnGPU" returnType="bool">
+                <arg name="gpu_index" type="size" />
+                <arg name="feature" type="feature" />
+            </method>
+
+            <method name="getLimitValueOnGPU" cname="GetLimitValueOnGPU" returnType="uint">
+                <arg name="gpu_index" type="size" />
+                <arg name="limit" type="limit" />
+            </method>
+
+            <method name="getVersion" cname="GetPlatformVersion" returnType="int">
+            </method>
+
+            <method name="getImplementationVersion" cname="GetPlatformImplementationVersion" returnType="int">
+            </method>
+
+            <method name="hasRealMultithreading" cname="PlatformHasRealMultithreading" returnType="bool">
+            </method>
+
+            <method name="isNative" cname="IsNativePlatform" returnType="bool">
+            </method>
+
+            <method name="isCrossPlatform" cname="IsCrossPlatform" returnType="bool">
+            </method>
+
+            <method name="createOfflineShaderCompiler" cname="CreateOfflineShaderCompiler" returnType="offline_shader_compiler*">
+            </method>
+        </interface>
+
+        <interface name="device">
+            <method name="addReference" cname="AddDeviceReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseDevice" returnType="error">
+            </method>
+
+            <method name="getDefaultCommandQueue" cname="GetDefaultCommandQueue" returnType="command_queue*">
+            </method>
+
+            <method name="createSwapChain" cname="CreateSwapChain" returnType="swap_chain*">
+                <arg name="commandQueue" type="command_queue*" />
+                <arg name="swapChainInfo" type="swap_chain_create_info*" />
+            </method>
+
+            <method name="createBuffer" cname="CreateBuffer" returnType="buffer*">
+                <arg name="description" type="buffer_description*" />
+                <arg name="initial_data" type="pointer" />
+            </method>
+
+            <method name="createVertexLayout" cname="CreateVertexLayout" returnType="vertex_layout*">
+            </method>
+
+            <method name="createVertexBinding" cname="CreateVertexBinding" returnType="vertex_binding*">
+                <arg name="layout" type="vertex_layout*" />
+            </method>
+
+            <method name="createShader" cname="CreateShader" returnType="shader*">
+                <arg name="type" type="shader_type" />
+            </method>
+
+            <method name="createShaderSignatureBuilder" cname="CreateShaderSignatureBuilder" returnType="shader_signature_builder*">
+            </method>
+
+            <method name="createPipelineBuilder" cname="CreatePipelineBuilder" returnType="pipeline_builder*">
+            </method>
+
+            <method name="createComputePipelineBuilder" cname="CreateComputePipelineBuilder" returnType="compute_pipeline_builder*">
+            </method>
+
+            <method name="createCommandAllocator" cname="CreateCommandAllocator" returnType="command_allocator*">
+                <arg name="type" type="command_list_type" />
+                <arg name="queue" type="command_queue*" />
+            </method>
+
+            <method name="createCommandList" cname="CreateCommandList" returnType="command_list*">
+                <arg name="type" type="command_list_type" />
+                <arg name="allocator" type="command_allocator*" />
+                <arg name="initial_pipeline_state" type="pipeline_state*" />
+            </method>
+
+            <method name="getPreferredShaderLanguage" cname="GetPreferredShaderLanguage" returnType="shader_language">
+            </method>
+
+            <method name="getPreferredIntermediateShaderLanguage" cname="GetPreferredIntermediateShaderLanguage" returnType="shader_language">
+            </method>
+
+            <method name="getPreferredHighLevelShaderLanguage" cname="GetPreferredHighLevelShaderLanguage" returnType="shader_language">
+            </method>
+
+            <method name="createFrameBuffer" cname="CreateFrameBuffer" returnType="framebuffer*">
+                <arg name="width" type="uint" />
+                <arg name="height" type="uint" />
+                <arg name="colorCount" type="uint" />
+                <arg name="colorViews" type="texture_view**" pointerList="true"/>
+                <arg name="depthStencilView" type="texture_view*" />
+            </method>
+
+            <method name="createRenderPass" cname="CreateRenderPass" returnType="renderpass*">
+                <arg name="description" type="renderpass_description*" />
+            </method>
+
+            <method name="createTexture" cname="CreateTexture" returnType="texture*">
+                <arg name="description" type="texture_description*" />
+            </method>
+
+            <method name="createSampler" cname="CreateSampler" returnType="sampler*">
+                <arg name="description" type="sampler_description*" />
+            </method>
+
+            <method name="createFence" cname="CreateFence" returnType="fence*">
+            </method>
+
+            <method name="getMultiSampleQualityLevels" cname="GetMultiSampleQualityLevels" returnType="int">
+                <arg name="format" type="texture_format" />
+                <arg name="sample_count" type="uint" />
+            </method>
+
+            <method name="hasTopLeftNdcOrigin" cname="HasTopLeftNdcOrigin" returnType="bool">
+            </method>
+
+            <method name="hasBottomLeftTextureCoordinates" cname="HasBottomLeftTextureCoordinates" returnType="bool">
+            </method>
+
+            <method name="getName" cname="GetDeviceName" returnType="cstring">
+            </method>
+
+            <method name="getType" cname="GetDeviceType" returnType="device_type">
+            </method>
+
+            <method name="isFeatureSupported" cname="IsFeatureSupportedOnDevice" returnType="bool">
+                <arg name="feature" type="feature" />
+            </method>
+
+            <method name="getLimitValue" cname="GetLimitValue" returnType="uint">
+                <arg name="limit" type="limit" />
+            </method>
+
+            <method name="getVRSystem" cname="GetVRSystem" returnType="vr_system*">
+            </method>
+
+            <method name="createWindowScraper" cname="CreateWindowScraper" returnType="window_scraper*">
+            </method>
+
+            <!-- Common utilities -->
+            <method name="createOfflineShaderCompiler" cname="CreateOfflineShaderCompilerForDevice" returnType="offline_shader_compiler*">
+            </method>
+
+            <method name="createStateTrackerCache" cname="CreateStateTrackerCache" returnType="state_tracker_cache*">
+                <arg name="command_queue_family" type="command_queue*" />
+            </method>
+
+            <method name="finishExecution" cname="FinishDeviceExecution" returnType="error">
+            </method>
+        </interface>
+
+        <interface name="vr_system">
+            <method name="addReference" cname="AddVRSystemReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseVRSystem" returnType="error">
+            </method>
+
+            <method name="getVRSystemName" cname="GetVRSystemName" returnType="cstring">
+            </method>
+
+            <method name="getNativeHandle" cname="GetVRSystemNativeHandle" returnType="pointer">
+            </method>
+
+            <method name="getRecommendedRenderTargetSize" cname="GetVRRecommendedRenderTargetSize" returnType="error">
+                <arg name="size" type="size2d*" />
+            </method>
+
+            <method name="getEyeToHeadTransform" cname="GetVREyeToHeadTransformInto" returnType="error">
+                <arg name="eye" type="vr_eye" />
+                <arg name="transform" type="matrix4x4f*" />
+            </method>
+
+            <method name="getProjectionMatrix" cname="GetVRProjectionMatrix" returnType="error">
+                <arg name="eye" type="vr_eye" />
+                <arg name="near_distance" type="float" />
+                <arg name="far_distance" type="float" />
+                <arg name="projection_matrix" type="matrix4x4f*" />
+            </method>
+
+            <method name="getProjectionFrustumTangents" cname="GetVRProjectionFrustumTangents" returnType="error">
+                <arg name="eye" type="vr_eye" />
+                <arg name="frustum" type="frustum_tangents*" />
+            </method>
+
+            <method name="submitEyeRenderTargets" cname="SubmitVREyeRenderTargets" returnType="error">
+                <arg name="left_eye" type="texture*" />
+                <arg name="right_eye" type="texture*" />
+            </method>
+
+            <method name="waitAndFetchPoses" cname="WaitAndFetchVRPoses" returnType="error">
+            </method>
+
+            <method name="getMaxTrackedDevicePoseCount" cname="GetMaxVRTrackedDevicePoseCount" returnType="size">
+            </method>
+
+            <method name="getCurrentTrackedDevicePoseCount" cname="GetCurrentVRTrackedDevicePoseCount" returnType="size">
+            </method>
+
+            <method name="getCurrentTrackedDevicePoseInto" cname="GetCurrentVRTrackedDevicePoseInto" returnType="error">
+                <arg name="index" type="size" />
+                <arg name="dest" type="vr_tracked_device_pose*" />
+            </method>
+
+            <method name="getMaxRenderTrackedDevicePoseCount" cname="GetMaxVRRenderTrackedDevicePoseCount" returnType="size">
+            </method>
+
+            <method name="getCurrentRenderTrackedDevicePoseCount" cname="GetCurrentVRRenderTrackedDevicePoseCount" returnType="size">
+            </method>
+
+            <method name="getCurrentRenderTrackedDevicePoseInto" cname="GetCurrentVRRenderTrackedDevicePoseInto" returnType="error">
+                <arg name="index" type="size" />
+                <arg name="dest" type="vr_tracked_device_pose*" />
+            </method>
+
+            <method name="getTrackedDeviceRenderModel" cname="GetVRTrackedDeviceRenderModel" returnType="vr_render_model*">
+                <arg name="index" type="size" />
+            </method>
+
+            <method name="getControllerState" cname="GetVRControllerState" returnType="bool">
+                <arg name="index" type="size" />
+                <arg name="dest" type="vr_controller_state*" />
+            </method>
+
+            <method name="pollEvent" cname="PollVREvent" returnType="bool">
+                <arg name="event" type="vr_event*" />
+            </method>
+        </interface>
+
+        <interface name="window_scraper">
+            <method name="addReference" cname="AddWindowScraperReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseWindowScraper" returnType="error">
+            </method>
+
+            <method name="enumerateWindows" cname="WindowScraperEnumerateWindows" returnType="uint">
+            </method>
+
+            <method name="getWindowTitle" cname="WindowScraperGetWindowTitle" returnType="cstring">
+                <arg name="index" type="uint" />
+            </method>
+
+            <method name="createWindowHandle" cname="WindowScraperCreateWindowHandle" returnType="window_scraper_handle*">
+                <arg name="index" type="uint" />
+            </method>
+        </interface>
+
+        <interface name="window_scraper_handle">
+            <method name="addReference" cname="AddWindowScraperHandleReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseWindowHandleScraper" returnType="error">
+            </method>
+
+            <method name="isValid" cname="WindowScraperHandleIsValid" returnType="bool">
+            </method>
+
+            <method name="isVisible" cname="WindowScraperHandleIsVisible" returnType="bool">
+            </method>
+
+            <method name="getWidth" cname="WindowScraperHandleGetWidth" returnType="uint">
+            </method>
+
+            <method name="getHeight" cname="WindowScraperHandleGetHeight" returnType="uint">
+            </method>
+
+            <method name="captureInTexture" cname="WindowScraperHandleCaptureInTexture" returnType="texture*">
+            </method>
+        </interface>
+
+        <interface name="swap_chain">
+            <method name="addReference" cname="AddSwapChainReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseSwapChain" returnType="error">
+            </method>
+
+            <method name="swapBuffers" cname="SwapBuffers" returnType="error" errorIsNotException="true">
+            </method>
+
+            <method name="getCurrentBackBuffer" cname="GetCurrentBackBuffer" returnType="framebuffer*">
+            </method>
+
+            <method name="getCurrentBackBufferForLayer" cname="GetCurrentBackBufferForLayer" returnType="framebuffer*">
+                <arg name="layer" type="uint" />
+            </method>
+
+            <method name="getCurrentBackBufferIndex" cname="GetCurrentBackBufferIndex" returnType="size">
+            </method>
+
+            <method name="getFramebufferCount" cname="GetFramebufferCount" returnType="size">
+            </method>
+
+            <method name="getWidth" cname="GetSwapChainWidth" returnType="uint">
+            </method>
+
+            <method name="getHeight" cname="GetSwapChainHeight" returnType="uint">
+            </method>
+
+            <method name="getLayerCount" cname="GetSwapChainLayerCount" returnType="uint">
+            </method>
+
+            <method name="setOverlayPosition" cname="SetSwapChainOverlayPosition" returnType="error">
+                <arg name="x" type="int" />
+                <arg name="y" type="int" />
+            </method>
+        </interface>
+
+        <interface name="compute_pipeline_builder">
+            <method name="addReference" cname="AddComputePipelineBuilderReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseComputePipelineBuilder" returnType="error">
+            </method>
+
+            <method name="build" cname="BuildComputePipelineState" returnType="pipeline_state*">
+            </method>
+
+            <method name="attachShader" cname="AttachComputeShader" returnType="error">
+                <arg name="shader" type="shader*" />
+            </method>
+
+            <method name="attachShaderWithEntryPoint" cname="AttachComputeShaderWithEntryPoint" returnType="error">
+                <arg name="shader" type="shader*" />
+                <arg name="type" type="shader_type" />
+                <arg name="entry_point" type="cstring" />
+            </method>
+
+            <method name="getBuildingLogLength" cname="GetComputePipelineBuildingLogLength" returnType="size">
+            </method>
+
+            <method name="getBuildingLog" cname="GetComputePipelineBuildingLog" returnType="error">
+                <arg name="buffer_size" type="size" />
+                <arg name="buffer" type="string_buffer" />
+            </method>
+
+            <method name="setShaderSignature" cname="SetComputePipelineShaderSignature" returnType="error">
+                <arg name="signature" type="shader_signature*" />
+            </method>
+        </interface>
+
+        <interface name="pipeline_builder">
+            <method name="addReference" cname="AddPipelineBuilderReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleasePipelineBuilder" returnType="error">
+            </method>
+
+            <method name="build" cname="BuildPipelineState" returnType="pipeline_state*">
+            </method>
+
+            <method name="attachShader" cname="AttachShader" returnType="error">
+                <arg name="shader" type="shader*" />
+            </method>
+
+            <method name="attachShaderWithEntryPoint" cname="AttachShaderWithEntryPoint" returnType="error">
+                <arg name="shader" type="shader*" />/>
+                <arg name="type" type="shader_type" />
+                <arg name="entry_point" type="cstring" />
+            </method>
+
+            <method name="getBuildingLogLength" cname="GetPipelineBuildingLogLength" returnType="size">
+            </method>
+
+            <method name="getBuildingLog" cname="GetPipelineBuildingLog" returnType="error">
+                <arg name="buffer_size" type="size" />
+                <arg name="buffer" type="string_buffer" />
+            </method>
+
+            <method name="setBlendState" cname="SetBlendState" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="setBlendFunction" cname="SetBlendFunction" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="sourceFactor" type="blending_factor" />
+                <arg name="destFactor" type="blending_factor" />
+                <arg name="colorOperation" type="blending_operation" />
+                <arg name="sourceAlphaFactor" type="blending_factor" />
+                <arg name="destAlphaFactor" type="blending_factor" />
+                <arg name="alphaOperation" type="blending_operation" />
+            </method>
+
+            <method name="setColorMask" cname="SetColorMask" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="redEnabled" type="bool" />
+                <arg name="greenEnabled" type="bool" />
+                <arg name="blueEnabled" type="bool" />
+                <arg name="alphaEnabled" type="bool" />
+            </method>
+
+            <method name="setFrontFace" cname="SetFrontFace" returnType="error">
+                <arg name="winding" type="face_winding" />
+            </method>
+
+            <method name="setCullMode" cname="SetCullMode" returnType="error">
+                <arg name="mode" type="cull_mode" />
+            </method>
+
+            <method name="setDepthBias" cname="SetDepthBias" returnType="error">
+                <arg name="constant_factor" type="float" />
+                <arg name="clamp" type="float" />
+                <arg name="slope_factor" type="float" />
+            </method>
+
+            <method name="setDepthState" cname="SetDepthState" returnType="error">
+                <arg name="enabled" type="bool" />
+                <arg name="writeMask" type="bool" />
+                <arg name="function" type="compare_function" />
+            </method>
+
+            <method name="setPolygonMode" cname="SetPolygonMode" returnType="error">
+                <arg name="mode" type="polygon_mode" />
+            </method>
+
+            <method name="setStencilState" cname="SetStencilState" returnType="error">
+                <arg name="enabled" type="bool" />
+                <arg name="writeMask" type="int" />
+                <arg name="readMask" type="int" />
+            </method>
+
+            <method name="setStencilFrontFace" cname="SetStencilFrontFace" returnType="error">
+                <arg name="stencilFailOperation" type="stencil_operation" />
+                <arg name="depthFailOperation" type="stencil_operation" />
+                <arg name="stencilDepthPassOperation" type="stencil_operation" />
+                <arg name="stencilFunction" type="compare_function" />
+            </method>
+
+            <method name="setStencilBackFace" cname="SetStencilBackFace" returnType="error">
+                <arg name="stencilFailOperation" type="stencil_operation" />
+                <arg name="depthFailOperation" type="stencil_operation" />
+                <arg name="stencilDepthPassOperation" type="stencil_operation" />
+                <arg name="stencilFunction" type="compare_function" />
+            </method>
+
+            <method name="setRenderTargetCount" cname="SetRenderTargetCount" returnType="error">
+                <arg name="count" type="int" />
+            </method>
+
+            <method name="setRenderTargetFormat" cname="SetRenderTargetFormat" returnType="error">
+                <arg name="index" type="uint" />
+                <arg name="format" type="texture_format" />
+            </method>
+
+            <method name="setDepthStencilFormat" cname="SetDepthStencilFormat" returnType="error">
+                <arg name="format" type="texture_format" />
+            </method>
+
+            <method name="setPrimitiveType" cname="SetPrimitiveType" returnType="error">
+                <arg name="type" type="primitive_topology" />
+            </method>
+
+            <method name="setVertexLayout" cname="SetVertexLayout" returnType="error">
+                <arg name="layout" type="vertex_layout*" />
+            </method>
+
+            <method name="setShaderSignature" cname="SetPipelineShaderSignature" returnType="error">
+                <arg name="signature" type="shader_signature*" />
+            </method>
+
+            <method name="setSampleDescription" cname="SetSampleDescription" returnType="error">
+                <arg name="sample_count" type="uint" />
+                <arg name="sample_quality" type="uint" />
+            </method>
+        </interface>
+
+        <interface name="pipeline_state">
+            <method name="addReference" cname="AddPipelineStateReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleasePipelineState" returnType="error">
+            </method>
+        </interface>
+
+        <interface name="command_queue">
+            <method name="addReference" cname="AddCommandQueueReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseCommandQueue" returnType="error">
+            </method>
+
+            <method name="addCommandList" cname="AddCommandList" returnType="error">
+                <arg name="command_list" type="command_list*" />
+            </method>
+
+            <method name="addCommandListsAndSignalFence" cname="AddCommandListsAndSignalFence" returnType="error">
+                <arg name="count" type="uint" />
+                <arg name="command_lists" type="command_list**" pointerList="true"/>
+                <arg name="fence" type="fence*" />
+            </method>
+
+            <method name="finishExecution" cname="FinishQueueExecution" returnType="error">
+            </method>
+
+            <method name="signalFence" cname="SignalFence" returnType="error">
+                <arg name="fence" type="fence*" />
+            </method>
+
+            <method name="waitFence" cname="WaitFence" returnType="error">
+                <arg name="fence" type="fence*" />
+            </method>
+
+        </interface>
+
+        <interface name="command_allocator">
+            <method name="addReference" cname="AddCommandAllocatorReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseCommandAllocator" returnType="error">
+            </method>
+
+            <method name="reset" cname="ResetCommandAllocator" returnType="error">
+            </method>
+        </interface>
+
+        <interface name="command_list">
+            <method name="addReference" cname="AddCommandListReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseCommandList" returnType="error">
+            </method>
+
+            <method name="setShaderSignature" cname="SetShaderSignature" returnType="error">
+                <arg name="signature" type="shader_signature*" />
+            </method>
+
+            <method name="setViewport" cname="SetViewport" returnType="error">
+                <arg name="x" type="int" />
+                <arg name="y" type="int" />
+                <arg name="w" type="int" />
+                <arg name="h" type="int" />
+            </method>
+
+            <method name="setScissor" cname="SetScissor" returnType="error">
+                <arg name="x" type="int" />
+                <arg name="y" type="int" />
+                <arg name="w" type="int" />
+                <arg name="h" type="int" />
+            </method>
+
+            <method name="usePipelineState" cname="UsePipelineState" returnType="error">
+                <arg name="pipeline" type="pipeline_state*" />
+            </method>
+
+            <method name="useVertexBinding" cname="UseVertexBinding" returnType="error">
+                <arg name="vertex_binding" type="vertex_binding*" />
+            </method>
+
+            <method name="useIndexBuffer" cname="UseIndexBuffer" returnType="error">
+                <arg name="index_buffer" type="buffer*" />
+            </method>
+
+            <method name="useIndexBufferAt" cname="UseIndexBufferAt" returnType="error">
+                <arg name="index_buffer" type="buffer*" />
+                <arg name="offset" type="size" />
+                <arg name="index_size" type="size" />
+            </method>
+
+            <method name="useDrawIndirectBuffer" cname="UseDrawIndirectBuffer" returnType="error">
+                <arg name="draw_buffer" type="buffer*" />
+            </method>
+
+            <method name="useComputeDispatchIndirectBuffer" cname="UseComputeDispatchIndirectBuffer" returnType="error">
+                <arg name="buffer" type="buffer*" />
+            </method>
+
+            <method name="useShaderResources" cname="UseShaderResources" returnType="error">
+                <arg name="binding" type="shader_resource_binding*" />
+            </method>
+
+            <method name="useShaderResourcesInSlot" cname="UseShaderResourcesInSlot" returnType="error">
+                <arg name="binding" type="shader_resource_binding*" />
+                <arg name="slot" type="uint" />
+            </method>
+
+            <method name="useComputeShaderResources" cname="UseComputeShaderResources" returnType="error">
+                <arg name="binding" type="shader_resource_binding*" />
+            </method>
+
+            <method name="useComputeShaderResourcesInSlot" cname="UseComputeShaderResourcesInSlot" returnType="error">
+                <arg name="binding" type="shader_resource_binding*" />
+                <arg name="slot" type="uint" />
+            </method>
+
+            <method name="drawArrays" cname="DrawArrays" returnType="error">
+    			<arg name="vertex_count" type="uint" />
+    			<arg name="instance_count" type="uint" />
+    			<arg name="first_vertex" type="uint" />
+    			<arg name="base_instance" type="uint" />
+            </method>
+
+            <method name="drawArraysIndirect" cname="DrawArraysIndirect" returnType="error">
+                <arg name="offset" type="size" />
+                <arg name="drawcount" type="size" />
+            </method>
+
+            <method name="drawElements" cname="DrawElements" returnType="error">
+    			<arg name="index_count" type="uint" />
+    			<arg name="instance_count" type="uint" />
+    			<arg name="first_index" type="uint" />
+    			<arg name="base_vertex" type="int" />
+    			<arg name="base_instance" type="uint" />
+            </method>
+
+            <method name="drawElementsIndirect" cname="DrawElementsIndirect" returnType="error">
+                <arg name="offset" type="size" />
+                <arg name="drawcount" type="size" />
+            </method>
+
+            <method name="dispatchCompute" cname="DispatchCompute" returnType="error">
+    			<arg name="group_count_x" type="uint" />
+    			<arg name="group_count_y" type="uint" />
+    			<arg name="group_count_z" type="uint" />
+            </method>
+
+            <method name="dispatchComputeIndirect" cname="DispatchComputeIndirect" returnType="error">
+                <arg name="offset" type="size" />
+            </method>
+
+            <method name="setStencilReference" cname="SetStencilReference" returnType="error">
+                <arg name="reference" type="uint" />
+            </method>
+
+             <method name="executeBundle" cname="ExecuteBundle" returnType="error">
+                <arg name="bundle" type="command_list*" />
+            </method>
+
+            <method name="close" cname="CloseCommandList" returnType="error">
+            </method>
+
+            <method name="reset" cname="ResetCommandList" returnType="error">
+                <arg name="allocator" type="command_allocator*" />
+                <arg name="initial_pipeline_state" type="pipeline_state*" />
+            </method>
+
+            <method name="resetBundle" cname="ResetBundleCommandList" returnType="error">
+                <arg name="allocator" type="command_allocator*" />
+                <arg name="initial_pipeline_state" type="pipeline_state*" />
+                <arg name="inheritance_info" type="inheritance_info*" />
+            </method>
+
+            <method name="beginRenderPass" cname="BeginRenderPass" returnType="error">
+                <arg name="renderpass" type="renderpass*" />
+                <arg name="framebuffer" type="framebuffer*" />
+                <arg name="bundle_content" type="bool" />
+            </method>
+
+            <method name="endRenderPass" cname="EndRenderPass" returnType="error">
+            </method>
+
+            <method name="resolveFramebuffer" cname="ResolveFramebuffer" returnType="error">
+                <arg name="destFramebuffer" type="framebuffer*" />
+                <arg name="sourceFramebuffer" type="framebuffer*" />
+            </method>
+
+            <method name="resolveTexture" cname="ResolveTexture" returnType="error">
+                <arg name="sourceTexture" type="texture*" />
+                <arg name="sourceLevel" type="uint" />
+                <arg name="sourceLayer" type="uint" />
+
+                <arg name="destTexture" type="texture*" />
+                <arg name="destLevel" type="uint" />
+                <arg name="destLayer" type="uint" />
+
+                <arg name="levelCount" type="uint" />
+                <arg name="layerCount" type="uint" />
+                <arg name="aspect" type="texture_aspect" />
+            </method>
+
+            <method name="pushConstants" cname="PushConstants" returnType="error">
+                <arg name="offset" type="uint" />
+                <arg name="size" type="uint" />
+                <arg name="values" type="pointer" />
+            </method>
+
+            <method name="memoryBarrier" cname="MemoryBarrier" returnType="error">
+                <arg name="source_stage" type="pipeline_stage_flags" />
+                <arg name="dest_stage" type="pipeline_stage_flags" />
+                <arg name="source_accesses" type="access_flags" />
+                <arg name="dest_accesses" type="access_flags" />
+            </method>
+
+            <method name="bufferMemoryBarrier" cname="BufferMemoryBarrier" returnType="error">
+                <arg name="buffer" type="buffer*" />
+                <arg name="source_stage" type="pipeline_stage_flags" />
+                <arg name="dest_stage" type="pipeline_stage_flags" />
+                <arg name="source_accesses" type="access_flags" />
+                <arg name="dest_accesses" type="access_flags" />
+                <arg name="offset" type="size" />
+                <arg name="size" type="size" />
+            </method>
+
+            <method name="textureMemoryBarrier" cname="TextureMemoryBarrier" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="source_stage" type="pipeline_stage_flags" />
+                <arg name="dest_stage" type="pipeline_stage_flags" />
+                <arg name="source_accesses" type="access_flags" />
+                <arg name="dest_accesses" type="access_flags" />
+                <arg name="old_usage" type="texture_usage_mode_mask" />
+                <arg name="new_usage" type="texture_usage_mode_mask" />
+                <arg name="subresource_range" type="texture_subresource_range*" />
+            </method>
+
+            <method name="pushBufferTransitionBarrier" cname="PushBufferTransitionBarrier" returnType="error">
+                <arg name="buffer" type="buffer*" />
+                <arg name="old_usage" type="buffer_usage_mask" />
+                <arg name="new_usage" type="buffer_usage_mask" />
+            </method>
+
+            <method name="pushTextureTransitionBarrier" cname="PushTextureTransitionBarrier" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="old_usage" type="texture_usage_mode_mask" />
+                <arg name="new_usage" type="texture_usage_mode_mask" />
+                <arg name="subresource_range" type="texture_subresource_range*" />
+            </method>
+
+            <method name="popBufferTransitionBarrier" cname="PopBufferTransitionBarrier" returnType="error">
+            </method>
+
+            <method name="popTextureTransitionBarrier" cname="PopTextureTransitionBarrier" returnType="error">
+            </method>
+
+            <method name="copyBuffer" cname="CopyBuffer" returnType="error">
+                <arg name="source_buffer" type="buffer*" />
+                <arg name="source_offset" type="size" />
+                <arg name="dest_buffer" type="buffer*" />
+                <arg name="dest_offset" type="size" />
+                <arg name="copy_size" type="size" />
+            </method>
+
+            <method name="copyBufferToTexture" cname="CopyBufferToTexture" returnType="error">
+                <arg name="buffer" type="buffer*" />
+                <arg name="texture" type="texture*" />
+                <arg name="copy_region" type="buffer_image_copy_region*" />
+            </method>
+
+            <method name="copyTextureToBuffer" cname="CopyTextureToBuffer" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="buffer" type="buffer*" />
+                <arg name="copy_region" type="buffer_image_copy_region*" />
+            </method>
+
+            <method name="copyTexture" cname="CopyTexture" returnType="error">
+                <arg name="source_texture" type="texture*" />
+                <arg name="dest_texture" type="texture*" />
+                <arg name="copy_region" type="image_copy_region*" />
+            </method>
+        </interface>
+
+        <interface name="texture">
+            <method name="addReference" cname="AddTextureReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseTexture" returnType="error">
+            </method>
+
+            <method name="getDescription" cname="GetTextureDescription" returnType="error">
+                <arg name="description" type="texture_description*" />
+            </method>
+
+            <method name="mapLevel" cname="MapTextureLevel" returnType="pointer">
+                <arg name="level" type="int" />
+                <arg name="arrayIndex" type="int" />
+                <arg name="flags" type="mapping_access"/>
+                <arg name="region" type="region3d*" />
+            </method>
+
+            <method name="unmapLevel" cname="UnmapTextureLevel" returnType="error">
+            </method>
+
+            <method name="readTextureData" cname="ReadTextureData" returnType="error">
+                <arg name="level" type="int" />
+                <arg name="arrayIndex" type="int" />
+                <arg name="pitch" type="int" />
+                <arg name="slicePitch" type="int" />
+                <arg name="buffer" type="pointer" />
+            </method>
+
+            <method name="readTextureSubData" cname="ReadTextureSubData" returnType="error">
+                <arg name="level" type="int" />
+                <arg name="arrayIndex" type="int" />
+                <arg name="pitch" type="int" />
+                <arg name="slicePitch" type="int" />
+                <arg name="sourceRegion" type="region3d*" />
+                <arg name="destSize" type="size3d*" />
+                <arg name="buffer" type="pointer" />
+            </method>
+
+            <method name="uploadTextureData" cname="UploadTextureData" returnType="error">
+                <arg name="level" type="int" />
+                <arg name="arrayIndex" type="int" />
+                <arg name="pitch" type="int" />
+                <arg name="slicePitch" type="int" />
+                <arg name="data" type="pointer" />
+            </method>
+
+            <method name="uploadTextureSubData" cname="UploadTextureSubData" returnType="error">
+                <arg name="level" type="int" />
+                <arg name="arrayIndex" type="int" />
+                <arg name="pitch" type="int" />
+                <arg name="slicePitch" type="int" />
+                <arg name="sourceSize" type="size3d*" />
+                <arg name="destRegion" type="region3d*" />
+                <arg name="data" type="pointer" />
+            </method>
+
+            <method name="getFullViewDescription" cname="GetTextureFullViewDescription" returnType="error">
+                <arg name="result" type="texture_view_description*" />
+            </method>
+
+            <method name="createView" cname="CreateTextureView" returnType="texture_view*">
+                <arg name="description" type="texture_view_description*" />
+            </method>
+
+            <method name="getOrCreateFullView" cname="GetOrCreateFullTextureView" returnType="texture_view*">
+            </method>
+        </interface>
+
+        <interface name="texture_view">
+            <method name="addReference" cname="AddTextureViewReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseTextureView" returnType="error">
+            </method>
+
+            <method name="getTexture" cname="GetTextureFromView" returnType="texture*">
+            </method>
+        </interface>
+
+        <interface name="sampler">
+            <method name="addReference" cname="AddSamplerReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseSampler" returnType="error">
+            </method>
+        </interface>
+
+        <interface name="buffer">
+            <method name="addReference" cname="AddBufferReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseBuffer" returnType="error">
+            </method>
+
+            <method name="mapBuffer" cname="MapBuffer" returnType="pointer">
+                <arg name="flags" type="mapping_access"/>
+            </method>
+
+            <method name="unmapBuffer" cname="UnmapBuffer" returnType="error">
+            </method>
+
+            <method name="getDescription" cname="GetBufferDescription" returnType="error">
+                <arg name="description" type="buffer_description*" />
+            </method>
+
+            <method name="uploadBufferData" cname="UploadBufferData" returnType="error">
+                <arg name="offset" type="size" />
+                <arg name="size" type="size" />
+                <arg name="data" type="pointer"/>
+            </method>
+
+            <method name="readBufferData" cname="ReadBufferData" returnType="error">
+                <arg name="offset" type="size" />
+                <arg name="size" type="size" />
+                <arg name="data" type="pointer"/>
+            </method>
+
+            <method name="flushWholeBuffer" cname="FlushWholeBuffer" returnType="error">
+            </method>
+
+            <method name="invalidateWholeBuffer" cname="InvalidateWholeBuffer" returnType="error">
+            </method>
+
+        </interface>
+
+        <interface name="vertex_binding">
+            <method name="addReference" cname="AddVertexBindingReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseVertexBinding" returnType="error">
+            </method>
+
+            <method name="bindVertexBuffers" cname="BindVertexBuffers" returnType="error">
+                <arg name="count" type="uint" />
+                <arg name="vertex_buffers" type="buffer**" pointerList="true"/>
+            </method>
+            <method name="bindVertexBuffersWithOffsets" cname="BindVertexBuffersWithOffsets" returnType="error">
+                <arg name="count" type="uint" />
+                <arg name="vertex_buffers" type="buffer**" pointerList="true"/>
+                <arg name="offsets" type="size*"/>
+            </method>
+        </interface>
+
+        <interface name="vertex_layout">
+            <method name="addReference" cname="AddVertexLayoutReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseVertexLayout" returnType="error">
+            </method>
+
+            <method name="addVertexAttributeBindings" cname="AddVertexAttributeBindings" returnType="error">
+                <arg name="vertex_buffer_count" type="uint" />
+                <arg name="vertex_strides" type="size*" />
+                <arg name="attribute_count" type="size" />
+                <arg name="attributes" type="vertex_attrib_description*" />
+            </method>
+        </interface>
+
+        <interface name="shader">
+            <method name="addReference" cname="AddShaderReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseShader" returnType="error">
+            </method>
+
+            <method name="setShaderSource" cname="SetShaderSource" returnType="error">
+                <arg name="language" type="shader_language" />
+                <arg name="sourceText" type="string" />
+                <arg name="sourceTextLength" type="string_length" />
+            </method>
+
+            <method name="compileShader" cname="CompileShader" returnType="error" errorIsNotException="true">
+                <arg name="options" type="cstring" />
+            </method>
+
+            <method name="getCompilationLogLength" cname="GetShaderCompilationLogLength" returnType="size">
+            </method>
+
+            <method name="getCompilationLog" cname="GetShaderCompilationLog" returnType="error">
+                <arg name="buffer_size" type="size" />
+                <arg name="buffer" type="string_buffer" />
+            </method>
+        </interface>
+
+        <interface name="framebuffer">
+            <method name="addReference" cname="AddFramebufferReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseFramebuffer" returnType="error">
+            </method>
+
+            <method name="getWidth" cname="GetFramebufferWidth" returnType="uint">
+            </method>
+
+            <method name="getHeight" cname="GetFramebufferHeight" returnType="uint">
+            </method>
+        </interface>
+
+        <interface name="renderpass">
+            <method name="addReference" cname="AddRenderPassReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseRenderPass" returnType="error">
+            </method>
+
+            <method name="setDepthStencilClearValue" cname="SetDepthStencilClearValue" returnType="error">
+                <arg name="value" type="depth_stencil_value" />
+            </method>
+
+            <method name="setColorClearValue" cname="SetColorClearValue" returnType="error">
+                <arg name="attachment_index" type="uint" />
+                <arg name="value" type="color4f" />
+            </method>
+
+            <method name="setColorClearValueFrom" cname="SetColorClearValueFrom" returnType="error">
+                <arg name="attachment_index" type="uint" />
+                <arg name="value" type="color4f*" />
+            </method>
+
+            <!--- These getter methods are used for the generic implementation of the state tracker. -->
+            <method name="getColorAttachmentFormats" cname="GetRenderPassColorAttachmentFormats" returnType="error">
+                <arg name="color_attachment_count" type="uint*" />
+                <arg name="formats" type="texture_format*" />
+            </method>
+
+            <method name="getDepthStencilAttachmentFormat" cname="GetRenderPassDepthStencilAttachmentFormat" returnType="texture_format">
+            </method>
+
+            <method name="getSampleCount" cname="GetRenderPassSampleCount" returnType="uint">
+            </method>
+
+            <method name="getSampleQuality" cname="GetRenderPassSampleQuality" returnType="uint">
+            </method>
+
+        </interface>
+
+        <interface name="shader_signature_builder">
+            <method name="addReference" cname="AddShaderSignatureBuilderReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseShaderSignatureBuilder" returnType="error">
+            </method>
+
+            <method name="build" cname="BuildShaderSignature" returnType="shader_signature*">
+            </method>
+
+            <method name="addBindingConstant" cname="AddShaderSignatureBindingConstant" returnType="error">
+            </method>
+
+            <method name="addBindingElement" cname="AddShaderSignatureBindingElement" returnType="error">
+                <arg name="type" type="shader_binding_type" />
+                <arg name="maxBindings" type="uint" />
+            </method>
+
+            <method name="beginBindingBank" cname="BeginShaderSignatureBindingBank" returnType="error">
+                <arg name="maxBindings" type="uint" />
+            </method>
+
+            <method name="addBindingBankElement" cname="AddShaderSignatureBindingBankElement" returnType="error">
+                <arg name="type" type="shader_binding_type" />
+                <arg name="bindingPointCount" type="uint" />
+            </method>
+
+            <method name="addBindingBankArray" cname="AddShaderSignatureBindingBankArray" returnType="error">
+                <arg name="type" type="shader_binding_type" />
+                <arg name="size" type="uint" />
+            </method>
+        </interface>
+
+        <interface name="shader_signature">
+            <method name="addReference" cname="AddShaderSignature" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseShaderSignature" returnType="error">
+            </method>
+
+            <method name="createShaderResourceBinding" cname="CreateShaderResourceBinding" returnType="shader_resource_binding*">
+                <arg name="element" type="uint" />
+            </method>
+
+        </interface>
+
+        <interface name="shader_resource_binding">
+            <method name="addReference" cname="AddShaderResourceBindingReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseShaderResourceBinding" returnType="error">
+            </method>
+
+            <method name="bindUniformBuffer" cname="BindUniformBuffer" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="uniform_buffer" type="buffer*" />
+            </method>
+
+            <method name="bindUniformBufferRange" cname="BindUniformBufferRange" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="uniform_buffer" type="buffer*" />
+                <arg name="offset" type="size" />
+                <arg name="size" type="size" />
+            </method>
+
+            <method name="bindStorageBuffer" cname="BindStorageBuffer" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="storage_buffer" type="buffer*" />
+            </method>
+
+            <method name="bindStorageBufferRange" cname="BindStorageBufferRange" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="storage_buffer" type="buffer*" />
+                <arg name="offset" type="size" />
+                <arg name="size" type="size" />
+            </method>
+
+            <method name="bindSampledTextureView" cname="BindSampledTextureView" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="view" type="texture_view*" />
+            </method>
+
+            <method name="bindArrayOfSampledTextureView" cname="BindArrayOfSampledTextureView" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="first_index" type="int" />
+                <arg name="count" type="uint" />
+                <arg name="views" type="texture_view**" />
+            </method>
+
+            <method name="bindStorageImageView" cname="BindStorageImageView" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="view" type="texture_view*" />
+            </method>
+
+            <method name="bindSampler" cname="BindSampler" returnType="error">
+                <arg name="location" type="int" />
+                <arg name="sampler" type="sampler*" />
+            </method>
+        </interface>
+
+        <interface name="fence">
+            <method name="addReference" cname="AddFenceReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseFenceReference" returnType="error">
+            </method>
+
+            <method name="waitOnClient" cname="WaitOnClient" returnType="error">
+            </method>
+        </interface>
+
+        <!-- High level interfaces. These are implemented in a common way for the different backends. -->
+        <interface name="offline_shader_compiler">
+            <method name="addReference" cname="AddOfflineShaderCompilerReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseOfflineShaderCompiler" returnType="error">
+            </method>
+
+            <method name="isShaderLanguageSupported" cname="IsShaderLanguageSupportedByOfflineCompiler" returnType="bool">
+                <arg name="language" type="shader_language" />
+            </method>
+
+            <method name="isTargetShaderLanguageSupported" cname="IsTargetShaderLanguageSupportedByOfflineCompiler" returnType="bool">
+                <arg name="language" type="shader_language" />
+            </method>
+
+            <method name="setShaderSource" cname="SetOfflineShaderCompilerSource" returnType="error">
+                <arg name="language" type="shader_language" />
+                <arg name="stage" type="shader_type" />
+                <arg name="sourceText" type="string" />
+                <arg name="sourceTextLength" type="string_length" />
+            </method>
+
+            <method name="compileShader" cname="CompileOfflineShader" returnType="error" errorIsNotException="true">
+                <arg name="target_language" type="shader_language" />
+                <arg name="options" type="cstring" />
+            </method>
+
+            <method name="getCompilationLogLength" cname="GetOfflineShaderCompilationLogLength" returnType="size">
+            </method>
+
+            <method name="getCompilationLog" cname="GetOfflineShaderCompilationLog" returnType="error">
+                <arg name="buffer_size" type="size" />
+                <arg name="buffer" type="string_buffer" />
+            </method>
+
+            <method name="getCompilationResultLength" cname="GetOfflineShaderCompilationResultLength" returnType="size">
+            </method>
+
+            <method name="getCompilationResult" cname="GetOfflineShaderCompilationResult" returnType="error">
+                <arg name="buffer_size" type="size" />
+                <arg name="buffer" type="string_buffer" />
+            </method>
+
+            <method name="getResultAsShader" cname="GetOfflineShaderCompilerResultAsShader" returnType="shader*">
+            </method>
+        </interface>
+
+        <interface name="state_tracker_cache">
+            <method name="addReference" cname="AddStateTrackerCacheReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseStateTrackerCacheReference" returnType="error">
+            </method>
+
+            <method name="createStateTracker" cname="CreateStateTracker" returnType="state_tracker*">
+                <arg name="type" type="command_list_type" />
+                <arg name="command_queue" type="command_queue*" />
+            </method>
+
+            <method name="createStateTrackerWithCommandAllocator" cname="CreateStateTrackerWithCommandAllocator" returnType="state_tracker*">
+                <arg name="type" type="command_list_type" />
+                <arg name="command_queue" type="command_queue*" />
+                <arg name="command_allocator" type="command_allocator*" />
+            </method>
+
+            <method name="createStateTrackerWithFrameBuffering" cname="CreateStateTrackerWithFrameBuffering" returnType="state_tracker*">
+                <arg name="type" type="command_list_type" />
+                <arg name="command_queue" type="command_queue*" />
+                <arg name="framebuffering_count" type="uint" />
+            </method>
+
+            <method name="createImmediateRenderer" cname="CreateImmediateRenderer" returnType="immediate_renderer*">
+            </method>
+
+        </interface>
+
+        <interface name="state_tracker">
+            <method name="addReference" cname="AddStateTrackerReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseStateTrackerReference" returnType="error">
+            </method>
+
+            <method name="beginRecordingCommands" cname="StateTrackerBeginRecordingCommands" returnType="error">
+            </method>
+
+            <method name="endRecordingCommands" cname="StateTrackerEndRecordingCommands" returnType="command_list*">
+            </method>
+
+            <method name="endRecordingAndFlushCommands" cname="StateTrackerEndRecordingAndFlushCommands" returnType="error">
+            </method>
+
+            <method name="reset" cname="StateTrackerReset" returnType="error">
+            </method>
+
+            <method name="resetGraphicsPipeline" cname="StateTrackerResetGraphicsPipeline" returnType="error">
+            </method>
+
+            <method name="resetComputePipeline" cname="StateTrackerResetComputePipeline" returnType="error">
+            </method>
+
+            <!-- Compute pipeline methods -->
+            <method name="setComputeStage" cname="StateTrackerSetComputeStage" returnType="error">
+                <arg name="shader" type="shader*" />
+                <arg name="entryPoint" type="cstring" />
+            </method>
+
+            <method name="setComputeStageWithMain" cname="StateTrackerSetComputeStageWithMain" returnType="error">
+                <arg name="shader" type="shader*" />
+            </method>
+
+            <!-- Graphics pipeline methods -->
+            <method name="setVertexStage" cname="StateTrackerSetVertexStage" returnType="error">
+                <arg name="shader" type="shader*" />
+                <arg name="entryPoint" type="cstring" />
+            </method>
+
+            <method name="setVertexStageWithMain" cname="StateTrackerSetVertexStageWithMain" returnType="error">
+                <arg name="shader" type="shader*" />
+            </method>
+
+            <method name="setFragmentStage" cname="StateTrackerSetFragmentStage" returnType="error">
+                <arg name="shader" type="shader*" />
+                <arg name="entryPoint" type="cstring" />
+            </method>
+
+            <method name="setFragmentStageWithMain" cname="StateTrackerSetFragmentStageWithMain" returnType="error">
+                <arg name="shader" type="shader*" />
+            </method>
+
+            <method name="setGeometryStage" cname="StateTrackerSetGeometryStage" returnType="error">
+                <arg name="shader" type="shader*" />
+                <arg name="entryPoint" type="cstring" />
+            </method>
+
+            <method name="setGeometryStageWithMain" cname="StateTrackerSetGeometryStageWithMain" returnType="error">
+                <arg name="shader" type="shader*" />
+            </method>
+
+            <method name="setTessellationControlStage" cname="StateTrackerSetTessellationControlStage" returnType="error">
+                <arg name="shader" type="shader*" />
+                <arg name="entryPoint" type="cstring" />
+            </method>
+
+            <method name="setTessellationControlStageWithMain" cname="StateTrackerSetTessellationControlStageWithMain" returnType="error">
+                <arg name="shader" type="shader*" />
+            </method>
+
+            <method name="setTessellationEvaluationStage" cname="StateTrackerSetTessellationEvaluationStage" returnType="error">
+                <arg name="shader" type="shader*" />
+                <arg name="entryPoint" type="cstring" />
+            </method>
+
+            <method name="setTessellationEvaluationStageWithMain" cname="StateTrackerSetTessellationEvaluationStageWithMain" returnType="error">
+                <arg name="shader" type="shader*" />
+            </method>
+
+            <method name="setBlendState" cname="StateTrackerSetBlendState" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="setBlendFunction" cname="StateTrackerSetBlendFunction" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="sourceFactor" type="blending_factor" />
+                <arg name="destFactor" type="blending_factor" />
+                <arg name="colorOperation" type="blending_operation" />
+                <arg name="sourceAlphaFactor" type="blending_factor" />
+                <arg name="destAlphaFactor" type="blending_factor" />
+                <arg name="alphaOperation" type="blending_operation" />
+            </method>
+
+            <method name="setColorMask" cname="StateTrackerSetColorMask" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="redEnabled" type="bool" />
+                <arg name="greenEnabled" type="bool" />
+                <arg name="blueEnabled" type="bool" />
+                <arg name="alphaEnabled" type="bool" />
+            </method>
+
+            <method name="setFrontFace" cname="StateTrackerSetFrontFace" returnType="error">
+                <arg name="winding" type="face_winding" />
+            </method>
+
+            <method name="setCullMode" cname="StateTrackerSetCullMode" returnType="error">
+                <arg name="mode" type="cull_mode" />
+            </method>
+
+            <method name="setDepthBias" cname="StateTrackerSetDepthBias" returnType="error">
+                <arg name="constant_factor" type="float" />
+                <arg name="clamp" type="float" />
+                <arg name="slope_factor" type="float" />
+            </method>
+
+            <method name="setDepthState" cname="StateTrackerSetDepthState" returnType="error">
+                <arg name="enabled" type="bool" />
+                <arg name="writeMask" type="bool" />
+                <arg name="function" type="compare_function" />
+            </method>
+
+            <method name="setPolygonMode" cname="StateTrackerSetPolygonMode" returnType="error">
+                <arg name="mode" type="polygon_mode" />
+            </method>
+
+            <method name="setStencilState" cname="StateTrackerSetStencilState" returnType="error">
+                <arg name="enabled" type="bool" />
+                <arg name="writeMask" type="int" />
+                <arg name="readMask" type="int" />
+            </method>
+
+            <method name="setStencilFrontFace" cname="StateTrackerSetStencilFrontFace" returnType="error">
+                <arg name="stencilFailOperation" type="stencil_operation" />
+                <arg name="depthFailOperation" type="stencil_operation" />
+                <arg name="stencilDepthPassOperation" type="stencil_operation" />
+                <arg name="stencilFunction" type="compare_function" />
+            </method>
+
+            <method name="setStencilBackFace" cname="StateTrackerSetStencilBackFace" returnType="error">
+                <arg name="stencilFailOperation" type="stencil_operation" />
+                <arg name="depthFailOperation" type="stencil_operation" />
+                <arg name="stencilDepthPassOperation" type="stencil_operation" />
+                <arg name="stencilFunction" type="compare_function" />
+            </method>
+
+            <method name="setPrimitiveType" cname="StateTrackerSetPrimitiveType" returnType="error">
+                <arg name="type" type="primitive_topology" />
+            </method>
+
+            <method name="setVertexLayout" cname="StateTrackerSetVertexLayout" returnType="error">
+                <arg name="layout" type="vertex_layout*" />
+            </method>
+
+            <method name="setShaderSignature" cname="StateTrackerSetShaderSignature" returnType="error">
+                <arg name="signature" type="shader_signature*" />
+            </method>
+
+            <method name="setSampleDescription" cname="StateTrackerSetSampleDescription" returnType="error">
+                <arg name="sample_count" type="uint" />
+                <arg name="sample_quality" type="uint" />
+            </method>
+
+            <!-- Commands -->
+            <method name="setViewport" cname="StateTrackerSetViewport" returnType="error">
+                <arg name="x" type="int" />
+                <arg name="y" type="int" />
+                <arg name="w" type="int" />
+                <arg name="h" type="int" />
+            </method>
+
+            <method name="setScissor" cname="StateTrackerSetScissor" returnType="error">
+                <arg name="x" type="int" />
+                <arg name="y" type="int" />
+                <arg name="w" type="int" />
+                <arg name="h" type="int" />
+            </method>
+
+            <method name="useVertexBinding" cname="StateTrackerUseVertexBinding" returnType="error">
+                <arg name="vertex_binding" type="vertex_binding*" />
+            </method>
+
+            <method name="useIndexBuffer" cname="StateTrackerUseIndexBuffer" returnType="error">
+                <arg name="index_buffer" type="buffer*" />
+            </method>
+
+            <method name="useIndexBufferAt" cname="StateTrackerUseIndexBufferAt" returnType="error">
+                <arg name="index_buffer" type="buffer*" />
+                <arg name="offset" type="size" />
+                <arg name="index_size" type="size" />
+            </method>
+
+            <method name="useDrawIndirectBuffer" cname="StateTrackerUseDrawIndirectBuffer" returnType="error">
+                <arg name="draw_buffer" type="buffer*" />
+            </method>
+
+            <method name="useComputeDispatchIndirectBuffer" cname="StateTrackerUseComputeDispatchIndirectBuffer" returnType="error">
+                <arg name="buffer" type="buffer*" />
+            </method>
+
+            <method name="useShaderResources" cname="StateTrackerUseShaderResources" returnType="error">
+                <arg name="binding" type="shader_resource_binding*" />
+            </method>
+
+            <method name="useShaderResourcesInSlot" cname="StateTrackerUseShaderResourcesInSlot" returnType="error">
+                <arg name="binding" type="shader_resource_binding*" />
+                <arg name="slot" type="uint" />
+            </method>
+
+            <method name="useComputeShaderResources" cname="StateTrackerUseComputeShaderResources" returnType="error">
+                <arg name="binding" type="shader_resource_binding*" />
+            </method>
+
+            <method name="useComputeShaderResourcesInSlot" cname="StateTrackerUseComputeShaderResourcesInSlot" returnType="error">
+                <arg name="binding" type="shader_resource_binding*" />
+                <arg name="slot" type="uint" />
+            </method>
+
+            <method name="drawArrays" cname="StateTrackerDrawArrays" returnType="error">
+    			<arg name="vertex_count" type="uint" />
+    			<arg name="instance_count" type="uint" />
+    			<arg name="first_vertex" type="uint" />
+    			<arg name="base_instance" type="uint" />
+            </method>
+
+            <method name="drawArraysIndirect" cname="StateTrackerDrawArraysIndirect" returnType="error">
+                <arg name="offset" type="size" />
+                <arg name="drawcount" type="size" />
+            </method>
+
+            <method name="drawElements" cname="StateTrackerDrawElements" returnType="error">
+    			<arg name="index_count" type="uint" />
+    			<arg name="instance_count" type="uint" />
+    			<arg name="first_index" type="uint" />
+    			<arg name="base_vertex" type="int" />
+    			<arg name="base_instance" type="uint" />
+            </method>
+
+            <method name="drawElementsIndirect" cname="StateTrackerDrawElementsIndirect" returnType="error">
+                <arg name="offset" type="size" />
+                <arg name="drawcount" type="size" />
+            </method>
+
+            <method name="dispatchCompute" cname="StateTrackerDispatchCompute" returnType="error">
+    			<arg name="group_count_x" type="uint" />
+    			<arg name="group_count_y" type="uint" />
+    			<arg name="group_count_z" type="uint" />
+            </method>
+
+            <method name="dispatchComputeIndirect" cname="StateTrackerDispatchComputeIndirect" returnType="error">
+                <arg name="offset" type="size" />
+            </method>
+
+            <method name="setStencilReference" cname="StateTrackerSetStencilReference" returnType="error">
+                <arg name="reference" type="uint" />
+            </method>
+
+             <method name="executeBundle" cname="StateTrackerExecuteBundle" returnType="error">
+                <arg name="bundle" type="command_list*" />
+            </method>
+
+            <method name="beginRenderPass" cname="StateTrackerBeginRenderPass" returnType="error">
+                <arg name="renderpass" type="renderpass*" />
+                <arg name="framebuffer" type="framebuffer*" />
+                <arg name="bundle_content" type="bool" />
+            </method>
+
+            <method name="endRenderPass" cname="StateTrackerEndRenderPass" returnType="error">
+            </method>
+
+            <method name="resolveFramebuffer" cname="StateTrackerResolveFramebuffer" returnType="error">
+                <arg name="destFramebuffer" type="framebuffer*" />
+                <arg name="sourceFramebuffer" type="framebuffer*" />
+            </method>
+
+            <method name="resolveTexture" cname="StateTrackerResolveTexture" returnType="error">
+                <arg name="sourceTexture" type="texture*" />
+                <arg name="sourceLevel" type="uint" />
+                <arg name="sourceLayer" type="uint" />
+
+                <arg name="destTexture" type="texture*" />
+                <arg name="destLevel" type="uint" />
+                <arg name="destLayer" type="uint" />
+
+                <arg name="levelCount" type="uint" />
+                <arg name="layerCount" type="uint" />
+                <arg name="aspect" type="texture_aspect" />
+            </method>
+
+            <method name="pushConstants" cname="StateTrackerPushConstants" returnType="error">
+                <arg name="offset" type="uint" />
+                <arg name="size" type="uint" />
+                <arg name="values" type="pointer" />
+            </method>
+
+            <method name="memoryBarrier" cname="StateTrackerMemoryBarrier" returnType="error">
+                <arg name="source_stage" type="pipeline_stage_flags" />
+                <arg name="dest_stage" type="pipeline_stage_flags" />
+                <arg name="source_accesses" type="access_flags" />
+                <arg name="dest_accesses" type="access_flags" />
+            </method>
+
+            <method name="bufferMemoryBarrier" cname="StateTrackerBufferMemoryBarrier" returnType="error">
+                <arg name="buffer" type="buffer*" />
+                <arg name="source_stage" type="pipeline_stage_flags" />
+                <arg name="dest_stage" type="pipeline_stage_flags" />
+                <arg name="source_accesses" type="access_flags" />
+                <arg name="dest_accesses" type="access_flags" />
+                <arg name="offset" type="size" />
+                <arg name="size" type="size" />
+            </method>
+
+            <method name="textureMemoryBarrier" cname="StateTrackerTextureMemoryBarrier" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="source_stage" type="pipeline_stage_flags" />
+                <arg name="dest_stage" type="pipeline_stage_flags" />
+                <arg name="source_accesses" type="access_flags" />
+                <arg name="dest_accesses" type="access_flags" />
+                <arg name="old_usage" type="texture_usage_mode_mask" />
+                <arg name="new_usage" type="texture_usage_mode_mask" />
+                <arg name="subresource_range" type="texture_subresource_range*" />
+            </method>
+
+            <method name="pushBufferTransitionBarrier" cname="StateTrackerPushBufferTransitionBarrier" returnType="error">
+                <arg name="buffer" type="buffer*" />
+                <arg name="old_usage" type="buffer_usage_mask" />
+                <arg name="new_usage" type="buffer_usage_mask" />
+            </method>
+
+            <method name="pushTextureTransitionBarrier" cname="StateTrackerPushTextureTransitionBarrier" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="old_usage" type="texture_usage_mode_mask" />
+                <arg name="new_usage" type="texture_usage_mode_mask" />
+                <arg name="subresource_range" type="texture_subresource_range*" />
+            </method>
+
+            <method name="popBufferTransitionBarrier" cname="StateTrackerPopBufferTransitionBarrier" returnType="error">
+            </method>
+
+            <method name="popTextureTransitionBarrier" cname="StateTrackerPopTextureTransitionBarrier" returnType="error">
+            </method>
+
+            <method name="copyBuffer" cname="StateTrackerCopyBuffer" returnType="error">
+                <arg name="source_buffer" type="buffer*" />
+                <arg name="source_offset" type="size" />
+                <arg name="dest_buffer" type="buffer*" />
+                <arg name="dest_offset" type="size" />
+                <arg name="copy_size" type="size" />
+            </method>
+
+            <method name="copyBufferToTexture" cname="StateTrackerCopyBufferToTexture" returnType="error">
+                <arg name="buffer" type="buffer*" />
+                <arg name="texture" type="texture*" />
+                <arg name="copy_region" type="buffer_image_copy_region*" />
+            </method>
+
+            <method name="copyTextureToBuffer" cname="StateTrackerCopyTextureToBuffer" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="buffer" type="buffer*" />
+                <arg name="copy_region" type="buffer_image_copy_region*" />
+            </method>
+
+            <method name="copyTexture" cname="StateTrackerCopyTexture" returnType="error">
+                <arg name="source_texture" type="texture*" />
+                <arg name="dest_texture" type="texture*" />
+                <arg name="copy_region" type="image_copy_region*" />
+            </method>
+        </interface>
+
+        <interface name="immediate_renderer">
+            <method name="addReference" cname="AddImmediateRendererReference" returnType="error">
+            </method>
+
+            <method name="release" cname="ReleaseImmediateRendererReference" returnType="error">
+            </method>
+
+            <method name="beginRendering" cname="BeginImmediateRendering" returnType="error">
+                <arg name="state_tracker" type="state_tracker*" />
+            </method>
+
+            <method name="endRendering" cname="EndImmediateRendering" returnType="error">
+            </method>
+
+            <!-- Graphics pipeline methods -->
+            <method name="setBlendState" cname="ImmediateRendererSetBlendState" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="setBlendFunction" cname="ImmediateRendererSetBlendFunction" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="sourceFactor" type="blending_factor" />
+                <arg name="destFactor" type="blending_factor" />
+                <arg name="colorOperation" type="blending_operation" />
+                <arg name="sourceAlphaFactor" type="blending_factor" />
+                <arg name="destAlphaFactor" type="blending_factor" />
+                <arg name="alphaOperation" type="blending_operation" />
+            </method>
+
+            <method name="setColorMask" cname="ImmediateRendererSetColorMask" returnType="error">
+                <arg name="renderTargetMask" type="int" />
+                <arg name="redEnabled" type="bool" />
+                <arg name="greenEnabled" type="bool" />
+                <arg name="blueEnabled" type="bool" />
+                <arg name="alphaEnabled" type="bool" />
+            </method>
+
+            <method name="setFrontFace" cname="ImmediateRendererSetFrontFace" returnType="error">
+                <arg name="winding" type="face_winding" />
+            </method>
+
+            <method name="setCullMode" cname="ImmediateRendererSetCullMode" returnType="error">
+                <arg name="mode" type="cull_mode" />
+            </method>
+
+            <method name="setDepthBias" cname="ImmediateRendererSetDepthBias" returnType="error">
+                <arg name="constant_factor" type="float" />
+                <arg name="clamp" type="float" />
+                <arg name="slope_factor" type="float" />
+            </method>
+
+            <method name="setDepthState" cname="ImmediateRendererSetDepthState" returnType="error">
+                <arg name="enabled" type="bool" />
+                <arg name="writeMask" type="bool" />
+                <arg name="function" type="compare_function" />
+            </method>
+
+            <method name="setPolygonMode" cname="ImmediateRendererSetPolygonMode" returnType="error">
+                <arg name="mode" type="polygon_mode" />
+            </method>
+
+            <method name="setStencilState" cname="ImmediateRendererSetStencilState" returnType="error">
+                <arg name="enabled" type="bool" />
+                <arg name="writeMask" type="int" />
+                <arg name="readMask" type="int" />
+            </method>
+
+            <method name="setStencilFrontFace" cname="ImmediateRendererSetStencilFrontFace" returnType="error">
+                <arg name="stencilFailOperation" type="stencil_operation" />
+                <arg name="depthFailOperation" type="stencil_operation" />
+                <arg name="stencilDepthPassOperation" type="stencil_operation" />
+                <arg name="stencilFunction" type="compare_function" />
+            </method>
+
+            <method name="setStencilBackFace" cname="ImmediateRendererSetStencilBackFace" returnType="error">
+                <arg name="stencilFailOperation" type="stencil_operation" />
+                <arg name="depthFailOperation" type="stencil_operation" />
+                <arg name="stencilDepthPassOperation" type="stencil_operation" />
+                <arg name="stencilFunction" type="compare_function" />
+            </method>
+
+            <method name="setSamplingMode" cname="ImmediateSetSamplingMode" returnType="error">
+                <arg name="filter" type="filter" />
+                <arg name="maxAnisotropy" type="float" />
+                <arg name="addressU" type="texture_address_mode" />
+                <arg name="addressV" type="texture_address_mode" />
+                <arg name="addressW" type="texture_address_mode" />
+            </method>
+
+            <!-- Rendering commands -->
+            <method name="setViewport" cname="ImmediateRendererSetViewport" returnType="error">
+                <arg name="x" type="int" />
+                <arg name="y" type="int" />
+                <arg name="w" type="int" />
+                <arg name="h" type="int" />
+            </method>
+
+            <method name="setScissor" cname="ImmediateRendererSetScissor" returnType="error">
+                <arg name="x" type="int" />
+                <arg name="y" type="int" />
+                <arg name="w" type="int" />
+                <arg name="h" type="int" />
+            </method>
+
+            <method name="setStencilReference" cname="ImmediateRendererSetStencilReference" returnType="error">
+                <arg name="reference" type="uint" />
+            </method>
+
+            <!-- Matrix stack -->
+            <method name="projectionMatrixMode" cname="ImmediateRendererProjectionMatrixMode" returnType="error">
+            </method>
+
+            <method name="modelViewMatrixMode" cname="ImmediateRendererModelViewMatrixMode" returnType="error">
+            </method>
+
+            <method name="textureMatrixMode" cname="ImmediateRendererTextureMatrixMode" returnType="error">
+            </method>
+
+            <method name="loadIdentity" cname="ImmediateRendererIdentity" returnType="error">
+            </method>
+
+            <method name="pushMatrix" cname="ImmediateRendererPushMatrix" returnType="error">
+            </method>
+
+            <method name="popMatrix" cname="ImmediateRendererPopMatrix" returnType="error">
+            </method>
+
+            <method name="loadMatrix" cname="ImmediateRendererLoadMatrix" returnType="error">
+                <arg name="elements" type="float*" />
+            </method>
+
+            <method name="loadTransposeMatrix" cname="ImmediateRendererLoadTransposeMatrix" returnType="error">
+                <arg name="elements" type="float*" />
+            </method>
+
+            <method name="multiplyMatrix" cname="ImmediateRendererMultiplyMatrix" returnType="error">
+                <arg name="elements" type="float*" />
+            </method>
+
+            <method name="multiplyTransposeMatrix" cname="ImmediateRendererMultiplyTransposeMatrix" returnType="error">
+                <arg name="elements" type="float*" />
+            </method>
+
+            <method name="ortho" cname="ImmediateRendererOrtho" returnType="error">
+                <arg name="left" type="float" />
+                <arg name="right" type="float" />
+                <arg name="bottom" type="float" />
+                <arg name="top" type="float" />
+                <arg name="near" type="float" />
+                <arg name="far" type="float" />
+            </method>
+
+            <method name="frustum" cname="ImmediateRendererFrustum" returnType="error">
+                <arg name="left" type="float" />
+                <arg name="right" type="float" />
+                <arg name="bottom" type="float" />
+                <arg name="top" type="float" />
+                <arg name="near" type="float" />
+                <arg name="far" type="float" />
+            </method>
+
+            <method name="perspective" cname="ImmediateRendererPerspective" returnType="error">
+                <arg name="fovy" type="float" />
+                <arg name="aspect" type="float" />
+                <arg name="near" type="float" />
+                <arg name="far" type="float" />
+            </method>
+
+            <method name="rotate" cname="ImmediateRendererRotate" returnType="error">
+                <arg name="angle" type="float" />
+                <arg name="x" type="float" />
+                <arg name="y" type="float" />
+                <arg name="z" type="float" />
+            </method>
+
+            <method name="translate" cname="ImmediateRendererTranslate" returnType="error">
+                <arg name="x" type="float" />
+                <arg name="y" type="float" />
+                <arg name="z" type="float" />
+            </method>
+
+            <method name="scale" cname="ImmediateRendererScale" returnType="error">
+                <arg name="x" type="float" />
+                <arg name="y" type="float" />
+                <arg name="z" type="float" />
+            </method>
+
+            <!-- Fixed function pipeline states -->
+            <method name="setFlatShading" cname="ImmediateRendererSetFlatShading" returnType="error">
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="setLightingEnabled" cname="ImmediateRendererSetLightingEnabled" returnType="error">
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="setLightingModel" cname="ImmediateRendererSetLightingModel" returnType="error">
+                <arg name="model" type="immediate_renderer_lighting_model" />
+            </method>
+
+            <method name="clearLights" cname="ImmediateRendererClearLights" returnType="error">
+            </method>
+
+            <method name="setAmbientLighting" cname="ImmediateRendererSetAmbientLighting" returnType="error">
+                <arg name="r" type="float" />
+                <arg name="g" type="float" />
+                <arg name="b" type="float" />
+                <arg name="a" type="float" />
+            </method>
+
+            <method name="setLight" cname="ImmediateRendererSetLight" returnType="error">
+                <arg name="index" type="uint" />
+                <arg name="enabled" type="bool" />
+                <arg name="state" type="immediate_renderer_light*" />
+            </method>
+
+            <method name="setMaterial" cname="ImmediateRendererSetMaterial" returnType="error">
+                <arg name="state" type="immediate_renderer_material*" />
+            </method>
+
+            <method name="setSkinningEnabled" cname="ImmediateRendererSetSkinningEnabled" returnType="error">
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="setSkinBones" cname="ImmediateRendererSetSkinBones" returnType="error">
+                <arg name="count" type="uint" />
+                <arg name="matrices" type="float*" />
+                <arg name="transpose" type="bool" />
+            </method>
+
+            <method name="setTexturingEnabled" cname="ImmediateRendererSetTextureEnabled" returnType="error">
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="setTangentSpaceEnabled" cname="ImmediateRendererSetTangentSpaceEnabled" returnType="error">
+                <arg name="enabled" type="bool" />
+            </method>
+
+            <method name="bindTexture" cname="ImmediateRendererBindTexture" returnType="error">
+                <arg name="texture" type="texture*" />
+            </method>
+
+            <method name="bindTextureIn" cname="ImmediateRendererBindTextureIn" returnType="error">
+                <arg name="texture" type="texture*" />
+                <arg name="binding" type="immediate_renderer_texture_binding" />
+            </method>
+
+            <method name="setClipPlane" cname="ImmediateRendererSetClipPlane" returnType="error">
+                <arg name="index" type="uint" />
+                <arg name="enabled" type="bool" />
+                <arg name="p1" type="float" />
+                <arg name="p2" type="float" />
+                <arg name="p3" type="float" />
+                <arg name="p4" type="float" />
+            </method>
+
+            <method name="setFogMode" cname="ImmediateRendererSetFogMode" returnType="error">
+                <arg name="mode" type="immediate_renderer_fog_mode" />
+            </method>
+
+            <method name="setFogColor" cname="ImmediateRendererSetFogColor" returnType="error">
+                <arg name="r" type="float" />
+                <arg name="g" type="float" />
+                <arg name="b" type="float" />
+                <arg name="a" type="float" />
+            </method>
+
+            <method name="setFogDistances" cname="ImmediateRendererSetFogDistances" returnType="error">
+                <arg name="start" type="float" />
+                <arg name="end" type="float" />
+            </method>
+
+            <method name="setFogDensity" cname="ImmediateRendererSetFogDensity" returnType="error">
+                <arg name="density" type="float" />
+            </method>
+
+            <!-- Geometry -->
+            <method name="beginPrimitives" cname="BeginImmediateRendererPrimitives" returnType="error">
+                <arg name="type" type="primitive_topology" />
+            </method>
+
+            <method name="endPrimitives" cname="EndImmediateRendererPrimitives" returnType="error">
+            </method>
+
+            <method name="color" cname="SetImmediateRendererColor" returnType="error">
+                <arg name="r" type="float" />
+                <arg name="g" type="float" />
+                <arg name="b" type="float" />
+                <arg name="a" type="float" />
+            </method>
+
+            <method name="texcoord" cname="SetImmediateRendererTexcoord" returnType="error">
+                <arg name="x" type="float" />
+                <arg name="y" type="float" />
+            </method>
+
+            <method name="normal" cname="SetImmediateRendererNormal" returnType="error">
+                <arg name="x" type="float" />
+                <arg name="y" type="float" />
+                <arg name="z" type="float" />
+            </method>
+
+            <method name="vertex" cname="AddImmediateRendererVertex" returnType="error">
+                <arg name="x" type="float" />
+                <arg name="y" type="float" />
+                <arg name="z" type="float" />
+            </method>
+
+            <method name="beginMeshWithVertices" cname="BeginImmediateRendererMeshWithVertices" returnType="error">
+                <arg name="vertexCount" type="size" />
+                <arg name="stride" type="size" />
+                <arg name="elementCount" type="size" />
+                <arg name="vertices" type="pointer" />
+            </method>
+
+            <method name="beginMeshWithVertexBinding" cname="BeginImmediateRendererMeshWithVertexBinding" returnType="error">
+                <arg name="layout" type="vertex_layout*" />
+                <arg name="vertices" type="vertex_binding*" />
+            </method>
+
+            <method name="useIndexBuffer" cname="ImmediateRendererUseIndexBuffer" returnType="error">
+                <arg name="index_buffer" type="buffer*" />
+            </method>
+
+            <method name="useIndexBufferAt" cname="ImmediateRendererUseIndexBufferAt" returnType="error">
+                <arg name="index_buffer" type="buffer*" />
+                <arg name="offset" type="size" />
+                <arg name="index_size" type="size" />
+            </method>
+
+            <method name="setCurrentMeshColors" cname="SetImmediateRendererCurrentMeshColors" returnType="error">
+                <arg name="stride" type="size" />
+                <arg name="elementCount" type="size" />
+                <arg name="colors" type="pointer" />
+            </method>
+
+            <method name="setCurrentMeshNormals" cname="SetImmediateRendererCurrentMeshNormals" returnType="error">
+                <arg name="stride" type="size" />
+                <arg name="elementCount" type="size" />
+                <arg name="normals" type="pointer" />
+            </method>
+
+            <method name="setCurrentMeshTexCoords" cname="SetImmediateRendererCurrentMeshTexCoords" returnType="error">
+                <arg name="stride" type="size" />
+                <arg name="elementCount" type="size" />
+                <arg name="texcoords" type="pointer" />
+            </method>
+
+            <method name="setPrimitiveType" cname="ImmediateRendererSetPrimitiveType" returnType="error">
+                <arg name="type" type="primitive_topology" />
+            </method>
+
+            <method name="drawArrays" cname="ImmediateRendererDrawArrays" returnType="error">
+    			<arg name="vertex_count" type="uint" />
+    			<arg name="instance_count" type="uint" />
+    			<arg name="first_vertex" type="uint" />
+    			<arg name="base_instance" type="uint" />
+            </method>
+
+            <method name="drawElements" cname="ImmediateRendererDrawElements" returnType="error">
+    			<arg name="index_count" type="uint" />
+    			<arg name="instance_count" type="uint" />
+    			<arg name="first_index" type="uint" />
+    			<arg name="base_vertex" type="int" />
+    			<arg name="base_instance" type="uint" />
+            </method>
+
+            <method name="drawElementsWithIndices" cname="ImmediateRendererDrawElementsWithIndices" returnType="error">
+                <arg name="mode" type="primitive_topology" />
+                <arg name="indices" type="pointer" />
+                <arg name="index_count" type="uint" />
+    			<arg name="instance_count" type="uint" />
+    			<arg name="first_index" type="uint" />
+    			<arg name="base_vertex" type="int" />
+    			<arg name="base_instance" type="uint" />
+            </method>
+
+            <method name="endMesh" cname="EndImmediateRendererMesh" returnType="error">
+            </method>
+        </interface>
+    </interfaces>
+</version>
+</api>

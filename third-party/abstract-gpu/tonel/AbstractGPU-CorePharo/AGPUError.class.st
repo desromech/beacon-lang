@@ -1,0 +1,21 @@
+"
+I wrap an AGPU error code.
+"
+Class {
+	#name : #AGPUError,
+	#superclass : #Error,
+	#instVars : [
+		'errorCode'
+	],
+	#category : #'AbstractGPU-CorePharo'
+}
+
+{ #category : #accessing }
+AGPUError >> errorCode [
+	^ errorCode
+]
+
+{ #category : #accessing }
+AGPUError >> errorCode: anObject [
+	errorCode := anObject
+]
