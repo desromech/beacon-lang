@@ -139,14 +139,27 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
     {
         agpu_shader_signature_builder *builder = agpuCreateShaderSignatureBuilder(agpu->device);
         
-        agpuBeginShaderSignatureBindingBank(builder, 1);
+        agpuBeginShaderSignatureBindingBank(builder, 1); // Set 0
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_SAMPLER, 1);
 
-        agpuBeginShaderSignatureBindingBank(builder, 128);
-        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1);
-
-        agpuBeginShaderSignatureBindingBank(builder, 1);
+        agpuBeginShaderSignatureBindingBank(builder, 1); // Set 1
         agpuAddShaderSignatureBindingBankArray(builder, AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, BEACON_AGPU_TEXTURE_ARRAY_SIZE);
+
+        agpuBeginShaderSignatureBindingBank(builder, 1); // Set 2
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 0: Render object
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 1: Render model
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 2: Render submesh
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 3: Render material
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 4: Render light source
+
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 5: Vertex Positions
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 6: Vertex Normals
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 7: Vertex Texcoords
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 8: Vertex Tangent4
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 9: Vertex BoneIndices
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 10: Vertex BoneWeights
+
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 11: Gui elements
 
         agpuAddShaderSignatureBindingConstant(builder); // hasTopLeftNDCOrigin
         agpuAddShaderSignatureBindingConstant(builder); // reservedConstant
@@ -243,7 +256,7 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         };
 
         agpu->textureArrayBindingCount = 0;
-        agpu->texturesArrayBinding = agpuCreateShaderResourceBinding(agpu->shaderSignature, 2);
+        agpu->texturesArrayBinding = agpuCreateShaderResourceBinding(agpu->shaderSignature, 1);
         agpu_texture_view *errorTextureView = agpuGetOrCreateFullTextureView(agpu->errorTexture);
 
         for(size_t i = 0; i < BEACON_AGPU_TEXTURE_ARRAY_SIZE; ++i)
@@ -296,6 +309,81 @@ beacon_AGPUTextureHandle_t *beacon_getValidTextureHandleForFontFaceForm(beacon_c
     return (beacon_AGPUTextureHandle_t *)form->textureHandle;
 }
 
+static size_t initializeUpdateBuffer(beacon_AGPUUpdateBuffer_t *buffer, beacon_AGPUUpdateBuffer_t *previous, size_t elementSize, size_t capacity)
+{
+    beacon_AGPUUpdateBuffer_t updateBuffer = {
+        .offset = previous ? previous->endOffset : 0, 
+        .elementSize = elementSize,
+        .capacity = capacity,
+        .byteCapacity = elementSize *capacity,
+        .size = 0,
+        .endOffset = (previous ? previous->endOffset : 0) + elementSize * capacity
+    };
+
+    *buffer = updateBuffer;
+    return updateBuffer.endOffset;
+}
+
+void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_t *agpu)
+{
+    initializeUpdateBuffer(&agpu->renderObjectAttributes, NULL, sizeof(beacon_RenderObjectAttributes_t), BEACON_AGPU_MAX_RENDER_OBJECTS);
+    initializeUpdateBuffer(&agpu->renderModelAttributes, &agpu->renderObjectAttributes, sizeof(beacon_RenderObjectAttributes_t), BEACON_AGPU_MAX_MODELS);
+    initializeUpdateBuffer(&agpu->renderMeshPrimitiveAttributes, &agpu->renderModelAttributes, sizeof(beacon_RenderMeshPrimitiveAttributes_t), BEACON_AGPU_MAX_MESHES);
+    initializeUpdateBuffer(&agpu->renderMaterialsAttributes, &agpu->renderMeshPrimitiveAttributes, sizeof(beacon_RenderMaterialAttributes_t), BEACON_AGPU_MAX_MATERIALS);
+    initializeUpdateBuffer(&agpu->renderLightSourceAttributes, &agpu->renderMaterialsAttributes, sizeof(beacon_RenderMaterialAttributes_t), BEACON_AGPU_MAX_MATERIALS);
+
+    initializeUpdateBuffer(&agpu->vertexPositions,   &agpu->renderLightSourceAttributes, 3*sizeof(float), BEACON_AGPU_MAX_VERTICES);
+    initializeUpdateBuffer(&agpu->vertexNormals,     &agpu->vertexPositions,             3*sizeof(float), BEACON_AGPU_MAX_VERTICES);
+    initializeUpdateBuffer(&agpu->vertexTexcoords,   &agpu->vertexNormals,               2*sizeof(float), BEACON_AGPU_MAX_VERTICES);
+    initializeUpdateBuffer(&agpu->vertexTangent4,    &agpu->vertexTexcoords,             4*sizeof(float), BEACON_AGPU_MAX_VERTICES);
+    initializeUpdateBuffer(&agpu->vertexBoneIndices, &agpu->vertexTangent4,              4*sizeof(uint16_t), BEACON_AGPU_MAX_VERTICES);
+    initializeUpdateBuffer(&agpu->vertexBoneWeights, &agpu->vertexBoneIndices,           4*sizeof(float), BEACON_AGPU_MAX_VERTICES);
+
+    initializeUpdateBuffer(&agpu->guiData, &agpu->vertexBoneWeights, sizeof(beacon_GuiRenderingElement_t), BEACON_AGPU_MAX_NUMBER_OF_QUADS);
+
+    initializeUpdateBuffer(&agpu->indexData, &agpu->guiData, sizeof(uint32_t), BEACON_AGPU_MAX_INDICES);
+
+    agpu_device *device = agpu->device;
+    {
+        agpu_buffer_description desc = {
+            .heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL,
+            .usage_modes = AGPU_COPY_DESTINATION_BUFFER | AGPU_STORAGE_BUFFER,
+            .main_usage_mode = AGPU_STORAGE_BUFFER,
+            .size = agpu->guiData.endOffset,
+        };
+
+        agpu->gpu3DRenderingDataBuffer = agpuCreateBuffer(device, &desc, NULL);
+    }
+
+    {
+        agpu_buffer_description desc = {
+            .heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL,
+            .usage_modes = AGPU_COPY_DESTINATION_BUFFER | AGPU_ELEMENT_ARRAY_BUFFER,
+            .main_usage_mode = AGPU_ELEMENT_ARRAY_BUFFER,
+            .size = agpu->indexData.elementSize*agpu->indexData.capacity,
+            .stride = 4,
+        };
+
+        agpu->gpu3DRenderingIndexBuffer = agpuCreateBuffer(device, &desc, NULL);
+    }
+
+    agpu->renderingDataBinding = agpuCreateShaderResourceBinding(context->roots.agpuCommon->shaderSignature, 2);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 0, agpu->gpu3DRenderingDataBuffer, agpu->renderObjectAttributes.offset,        agpu->renderObjectAttributes.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 1, agpu->gpu3DRenderingDataBuffer, agpu->renderModelAttributes.offset,         agpu->renderModelAttributes.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 2, agpu->gpu3DRenderingDataBuffer, agpu->renderMeshPrimitiveAttributes.offset, agpu->renderMeshPrimitiveAttributes.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 3, agpu->gpu3DRenderingDataBuffer, agpu->renderMaterialsAttributes.offset,     agpu->renderMaterialsAttributes.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 4, agpu->gpu3DRenderingDataBuffer, agpu->renderLightSourceAttributes.offset,   agpu->renderLightSourceAttributes.byteCapacity);
+
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 5,  agpu->gpu3DRenderingDataBuffer, agpu->vertexPositions.offset, agpu->vertexPositions.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 3,  agpu->gpu3DRenderingDataBuffer, agpu->vertexNormals.offset, agpu->vertexNormals.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 7,  agpu->gpu3DRenderingDataBuffer, agpu->vertexTexcoords.offset, agpu->vertexTexcoords.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 8,  agpu->gpu3DRenderingDataBuffer, agpu->vertexTangent4.offset, agpu->vertexTangent4.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 9,  agpu->gpu3DRenderingDataBuffer, agpu->vertexBoneIndices.offset, agpu->vertexBoneIndices.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 10, agpu->gpu3DRenderingDataBuffer, agpu->vertexBoneWeights.offset, agpu->vertexBoneWeights.byteCapacity);
+
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 11, agpu->gpu3DRenderingDataBuffer, agpu->guiData.offset, agpu->guiData.byteCapacity);
+}
+
 beacon_AGPUWindowRenderer_t *beacon_agpu_createWindowRenderer(beacon_context_t *context)
 {
     agpu_device *device = beacon_agpu_getDevice(context, context->roots.agpuCommon);
@@ -304,28 +392,20 @@ beacon_AGPUWindowRenderer_t *beacon_agpu_createWindowRenderer(beacon_context_t *
 
     if(!context->roots.agpuCommon->shaderSignature)
         beacon_agpu_initializeCommonObjects(context, context->roots.agpuCommon);
+    if(!context->roots.agpuCommon->updateBuffersCreated)
+        beacon_agpu_initializeUpdateBuffers(context, context->roots.agpuCommon);
 
     beacon_AGPUWindowRenderer_t *windowRenderer = beacon_allocateObjectWithBehavior(context->heap, context->classes.agpuWindowRendererClass, sizeof(beacon_AGPUWindowRenderer_t), BeaconObjectKindBytes);
     windowRenderer->commandQueue = agpuGetDefaultCommandQueue(device);
-    windowRenderer->frameRenderingDataSize = BEACON_AGPU_FRAMEBUFFERING_COUNT * BEACON_AGPU_MAX_NUMBER_OF_QUADS * sizeof(beacon_GuiRenderingElement_t);
-
-    {
-        agpu_buffer_description desc = {
-            .heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL,
-            .usage_modes = AGPU_COPY_DESTINATION_BUFFER | AGPU_STORAGE_BUFFER,
-            .main_usage_mode = AGPU_STORAGE_BUFFER,
-            .size = windowRenderer->frameRenderingDataSize,
-            .stride = sizeof(beacon_GuiRenderingElement_t)
-        };
-        windowRenderer->renderingDataGpuBuffer = agpuCreateBuffer(device, &desc, NULL);
-    }
-
+    size_t frameRenderingDataSize = context->roots.agpuCommon->guiData.endOffset;
+    windowRenderer->frameRenderingDataUploadSize = frameRenderingDataSize;
+    
     {
         agpu_buffer_description desc = {
             .heap_type = AGPU_MEMORY_HEAP_TYPE_HOST,
             .usage_modes = AGPU_COPY_SOURCE_BUFFER,
             .main_usage_mode = AGPU_COPY_SOURCE_BUFFER,
-            .size = windowRenderer->frameRenderingDataSize,
+            .size = frameRenderingDataSize * BEACON_AGPU_FRAMEBUFFERING_COUNT,
             .stride = sizeof(beacon_GuiRenderingElement_t),
             .mapping_flags = AGPU_MAP_WRITE_BIT | AGPU_MAP_PERSISTENT_BIT
         };
@@ -342,11 +422,6 @@ beacon_AGPUWindowRenderer_t *beacon_agpu_createWindowRenderer(beacon_context_t *
 
         frameState->commandList = agpuCreateCommandList(device, AGPU_COMMAND_LIST_TYPE_DIRECT, windowRenderer->frameState[i].commandAllocator, NULL);
         agpuCloseCommandList(frameState->commandList);
-
-        size_t bufferSize = BEACON_AGPU_MAX_NUMBER_OF_QUADS*sizeof(beacon_GuiRenderingElement_t);
-        frameState->renderingDataBinding = agpuCreateShaderResourceBinding(context->roots.agpuCommon->shaderSignature, 1);
-        agpuBindStorageBufferRange(frameState->renderingDataBinding, 0, windowRenderer->renderingDataGpuBuffer, bufferSize*i, bufferSize);
-        frameState->renderingDataUploadBuffer = windowRenderer->renderingDataUploadBuffer + (BEACON_AGPU_MAX_NUMBER_OF_QUADS*i);
     }
 
     return windowRenderer;
@@ -377,7 +452,9 @@ static beacon_oop_t beacon_agpuWindowRenderer_beginFrame(beacon_context_t *conte
     agpuResetCommandAllocator(thisFrameState->commandAllocator);
     agpuResetCommandList(thisFrameState->commandList, thisFrameState->commandAllocator, NULL);
 
-    thisFrameState->renderingDataUploadSize = 0;
+    uint8_t *renderingDataUploadBuffer = renderer->renderingDataUploadBuffer + renderer->frameRenderingDataUploadSize* renderer->currentFrameBufferingIndex;
+    thisFrameState->guiRenderingDataUploadBuffer = (beacon_GuiRenderingElement_t*)(renderingDataUploadBuffer + context->roots.agpuCommon->guiData.offset);
+    thisFrameState->guiRenderingDataUploadSize = 0;
 
     return receiver;
 }
@@ -386,19 +463,16 @@ static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context
 {
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t*)receiver;
     beacon_AGPUWindowRendererPerFrameState_t *thisFrameState = renderer->frameState + renderer->currentFrameBufferingIndex;
+    beacon_AGPU_t *agpu = context->roots.agpuCommon;
 
-    {
-        size_t offset = BEACON_AGPU_MAX_NUMBER_OF_QUADS*sizeof(beacon_GuiRenderingElement_t)*renderer->currentFrameBufferingIndex;
-        size_t size = thisFrameState->renderingDataUploadSize*sizeof(beacon_GuiRenderingElement_t);
-        agpuCopyBuffer(thisFrameState->commandList,
-            renderer->renderingDataSubmissionBuffer, offset,
-            renderer->renderingDataGpuBuffer, offset,
-            size);
-    }
+    agpuCopyBuffer(thisFrameState->commandList,
+                renderer->renderingDataSubmissionBuffer, agpu->guiData.offset + renderer->frameRenderingDataUploadSize*renderer->currentFrameBufferingIndex,
+                agpu->gpu3DRenderingDataBuffer, agpu->guiData.offset, thisFrameState->guiRenderingDataUploadSize*sizeof(beacon_GuiRenderingElement_t));
+            
 
     agpuSetShaderSignature(thisFrameState->commandList, context->roots.agpuCommon->shaderSignature);
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->linearSamplerBinding);
-    agpuUseShaderResources(thisFrameState->commandList, thisFrameState->renderingDataBinding);
+    agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->renderingDataBinding);
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->texturesArrayBinding);
 
     // Begin the renderpass to the main buffer.
@@ -422,7 +496,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context
     }
 
     agpuUsePipelineState(thisFrameState->commandList, context->roots.agpuCommon->guiPipelineState);
-    agpuDrawArrays(thisFrameState->commandList, 4, thisFrameState->renderingDataUploadSize, 0, 0);
+    agpuDrawArrays(thisFrameState->commandList, 4, thisFrameState->guiRenderingDataUploadSize, 0, 0);
 
     // End the main buffer renderpass.
     agpuEndRenderPass(thisFrameState->commandList);
@@ -493,7 +567,7 @@ static void beacon_agpuWindowRenderer_renderText(beacon_context_t *context, beac
             },
         };
 
-        thisFrameState->renderingDataUploadBuffer[thisFrameState->renderingDataUploadSize++] = quad;
+        thisFrameState->guiRenderingDataUploadBuffer[thisFrameState->guiRenderingDataUploadSize++] = quad;
     }
 }
 
@@ -537,7 +611,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_renderQuadList(beacon_context_t *c
                 },
             };
 
-            thisFrameState->renderingDataUploadBuffer[thisFrameState->renderingDataUploadSize++] = quad;
+            thisFrameState->guiRenderingDataUploadBuffer[thisFrameState->guiRenderingDataUploadSize++] = quad;
 
         }
         else if(quadClass == context->classes.formTextRenderingElementClass)

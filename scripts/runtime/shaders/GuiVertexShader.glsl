@@ -25,7 +25,7 @@ struct GuiElement
     vec4 borderColor;
 };
 
-layout(set=1, binding=0, std430) buffer GuiElementsBlock
+layout(set=2, binding=11, std430) buffer GuiElementsBlock
 {
 	GuiElement[] list;
 } GuiElementList;

@@ -23,13 +23,13 @@ struct GuiElement
     vec4 borderColor;
 };
 
-layout(set=1, binding=0, std430) buffer GuiElementsBlock
+layout(set=2, binding=11, std430) buffer GuiElementsBlock
 {
 	GuiElement[] list;
 } GuiElementList;
 
 layout(set=0, binding=0) uniform sampler TextureSampler;
-layout(set=2, binding=0) uniform texture2D GuiTextures[1024];
+layout(set=1, binding=0) uniform texture2D GuiTextures[1024];
 
 layout(location = 0) in vec2 inTexcoord;
 layout(location = 1) flat in int inGuiElementIndex;
