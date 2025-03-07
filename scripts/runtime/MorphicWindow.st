@@ -15,6 +15,15 @@ renderWithBuilder: renderingBuilder
 ].
 
 MorphicWindow ![
+render3DEnvironmentWith: rendererHandle
+    rootMorph == nil ifTrue: [^ self].
+
+    rootMorph position: 0@0.
+    rootMorph extent: width @ height.
+    rootMorph fullRender3DEnvironmentWith: rendererHandle
+].
+
+MorphicWindow ![
 childChanged: aChild
     self render
 ].

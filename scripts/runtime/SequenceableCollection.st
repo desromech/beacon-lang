@@ -59,6 +59,11 @@ tenth
 ].
 
 SequenceableCollection ![
+last
+    ^ self at: self size
+].
+
+SequenceableCollection ![
 copyFrom: start to: stop
     | newSize |
     newSize := stop - start + 1.
@@ -122,4 +127,11 @@ grownBy: length
 	newCollection := self species ofSize: size + length.
 	newCollection replaceFrom: 1 to: size with: self startingAt: 1.
 	^ newCollection
+].
+
+SequenceableCollection ![
+atAllPut: value
+    1 to: self size do: [:i |
+        self at: i put: value
+    ]
 ].

@@ -5,11 +5,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+static void beacon_displayExceptionStackTrace(beacon_context_t *context);
+
 void beacon_exception_signal(beacon_context_t *context, beacon_Exception_t *exception)
 {
     (void)context;
     size_t messageTextSize = exception->messageText->super.super.super.super.super.header.slotCount;
     fprintf(stderr, "Exception: %.*s\n", (int)messageTextSize, exception->messageText->data);
+    beacon_displayExceptionStackTrace(context);
     abort();
 }
 

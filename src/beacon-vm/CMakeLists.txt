@@ -7,6 +7,7 @@ set(BeaconVM_Sources
     LinearAlgebra.c
     Memory.c
     ArrayList.c
+    ArrayPrimitives.c
     Dictionary.c
     SourceCode.c
     Scanner.c

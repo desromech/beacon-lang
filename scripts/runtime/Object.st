@@ -37,3 +37,13 @@ Object ![
 at: index put: value
     ^ self basicAt: index put: value
 ].
+
+
+Object ![
+postCopy
+].
+
+Object ![
+copy
+    ^ self shallowCopy postCopy
+].

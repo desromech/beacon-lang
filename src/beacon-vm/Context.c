@@ -15,6 +15,7 @@
 
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context);
 void beacon_context_registerArrayListPrimitive(beacon_context_t *context);
+void beacon_context_registerArrayPrimitive(beacon_context_t *context);
 void beacon_context_registerDictionaryPrimitives(beacon_context_t *context);
 void beacon_context_registerExceptionPrimitives(beacon_context_t *context);
 void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context);
@@ -34,7 +35,7 @@ static size_t beacon_context_computeBehaviorSlotCount(beacon_context_t *context,
     return slotCount + beacon_context_computeBehaviorSlotCount(context, behavior->superclass);
 }
 
-static beacon_Behavior_t *beacon_context_createClassAndMetaclass(beacon_context_t *context, beacon_Behavior_t *superclassBehavior, const char *name, size_t instanceSize, beacon_ObjectKind_t objectKind, ...)
+beacon_Behavior_t *beacon_context_createClassAndMetaclass(beacon_context_t *context, beacon_Behavior_t *superclassBehavior, const char *name, size_t instanceSize, beacon_ObjectKind_t objectKind, ...)
 {
     BeaconAssert(context, instanceSize >= sizeof(beacon_ObjectHeader_t));
 
@@ -113,6 +114,12 @@ static beacon_Behavior_t *beacon_context_createClassAndMetaclass(beacon_context_
     return &clazz->super.super;
 }
 
+void beacon_context_registerGlobalClass(beacon_context_t *context, beacon_Behavior_t *behavior)
+{
+    beacon_Class_t *clazz = (beacon_Class_t*)behavior;
+    beacon_MethodDictionary_atPut(context, context->roots.systemDictionary, (beacon_Symbol_t*)clazz->name, (beacon_oop_t)clazz);
+}
+
 static void beacon_context_fixEarlyMetaclass(beacon_context_t *context, beacon_Behavior_t *earlyClassBehavior)
 {
     beacon_Behavior_t *earlyMetaClass = earlyClassBehavior->super.super.header.behavior;
@@ -184,6 +191,10 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     beacon_context_fixEarlyObjectClasses(context, context->classes.symbolClass);
     
     context->classes.byteArrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "ByteArray", sizeof(beacon_ByteArray_t), BeaconObjectKindBytes, NULL);
+    context->classes.uint16ArrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "UInt16Array", sizeof(beacon_UInt16Array_t), BeaconObjectKindBytes, NULL);
+    context->classes.uint32ArrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "UInt32Array", sizeof(beacon_UInt32Array_t), BeaconObjectKindBytes, NULL);
+    context->classes.float32ArrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "Float32Array", sizeof(beacon_Float32Array_t), BeaconObjectKindBytes, NULL);
+    context->classes.float64ArrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "Float64Array", sizeof(beacon_Float64Array_t), BeaconObjectKindBytes, NULL);
     context->classes.stringClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "String", sizeof(beacon_String_t), BeaconObjectKindBytes, NULL);
     context->classes.externalAddressClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "ExternalAddress", sizeof(beacon_ExternalAddress_t), BeaconObjectKindBytes, NULL);
 
@@ -455,6 +466,7 @@ void beacon_context_registerBasicPrimitives(beacon_context_t *context)
 {
     beacon_context_registerObjectBasicPrimitives(context);
     beacon_context_registerArrayListPrimitive(context);
+    beacon_context_registerArrayPrimitive(context);
     beacon_context_registerDictionaryPrimitives(context);
     beacon_context_registerExceptionPrimitives(context);
     beacon_context_registerAgpuRenderingPrimitives(context);
@@ -471,7 +483,7 @@ beacon_context_t *beacon_context_new(void)
     beacon_context_t *context = calloc(1, sizeof(beacon_context_t));
     context->heap = beacon_createMemoryHeap(context);
     context->roots.internedSymbolSet = beacon_allocateObject(context->heap, sizeof(beacon_InternedSymbolSet_t), BeaconObjectKindPointers);
-    context->roots.internedSymbolSet->super.array = beacon_allocateObject(context->heap, sizeof(beacon_Array_t) + sizeof(beacon_oop_t)*1024, BeaconObjectKindPointers);
+    context->roots.internedSymbolSet->super.array = beacon_allocateObject(context->heap, sizeof(beacon_Array_t) + sizeof(beacon_oop_t)*2048, BeaconObjectKindPointers);
     context->roots.internedSymbolSet->super.tally = beacon_encodeSmallInteger(0);
     beacon_context_createBaseClassHierarchy(context);
     beacon_context_createImportantRoots(context);
@@ -543,9 +555,8 @@ intptr_t beacon_InternedSymbolSet_scanForString(beacon_InternedSymbolSet_t *symb
 
 void beacon_InternedSymbolSet_incrementCapacity(beacon_context_t *context, beacon_InternedSymbolSet_t *symbolSet)
 {
-    (void)context;
-    (void)symbolSet;
     fprintf(stderr, "TODO: beacon_InternedSymbolSet_incrementCapacity");
+    abort();
 }
 
 beacon_Symbol_t *beacon_internStringWithSize(beacon_context_t *context, size_t stringSize, const char *string)
@@ -838,6 +849,20 @@ static beacon_oop_t beacon_ObjectPrimitive_basicAtPut(beacon_context_t *context,
         return value;
     }
 }
+
+static beacon_oop_t beacon_ObjectPrimitive_shallowCopy(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    if(beacon_isImmediate(receiver))
+        return receiver;
+
+    BeaconAssert(context, argumentCount == 0);
+    beacon_ObjectHeader_t *receiverHeader = (beacon_ObjectHeader_t*)receiver;
+    size_t objectSize = receiverHeader->objectKind == BeaconObjectKindBytes ? receiverHeader->slotCount : receiverHeader->slotCount * sizeof(beacon_oop_t);
+    beacon_ObjectHeader_t *copyHeader = beacon_allocateObjectWithBehavior(context->heap, receiverHeader->behavior, sizeof(beacon_ObjectHeader_t) + objectSize, receiverHeader->objectKind);
+    memcpy(copyHeader + 1, receiverHeader + 1, objectSize);
+    return (beacon_oop_t)copyHeader;
+}
+
 static beacon_oop_t beacon_ObjectPrimitive_printString(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)receiver;
@@ -1228,6 +1253,17 @@ static beacon_oop_t beacon_Behavior_basicNewWithSize(beacon_context_t *context, 
     return instance;
 }
 
+static beacon_oop_t beacon_Behavior_adoptInstance(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, !beacon_isImmediate(arguments[0]));
+    beacon_Behavior_t *behavior = (beacon_Behavior_t *)receiver;
+    beacon_ObjectHeader_t *argumentHeader = (beacon_ObjectHeader_t *)arguments[0];
+    argumentHeader->behavior = behavior;
+    return receiver;
+}
+
 static beacon_oop_t beacon_Stdio_stdin(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)receiver;
@@ -1474,6 +1510,7 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.objectClass, "basicSize", 0, beacon_ObjectPrimitive_basicSize);
     beacon_addPrimitiveToClass(context, context->classes.objectClass, "basicAt:", 0, beacon_ObjectPrimitive_basicAt);
     beacon_addPrimitiveToClass(context, context->classes.objectClass, "basicAt:put:", 0, beacon_ObjectPrimitive_basicAtPut);
+    beacon_addPrimitiveToClass(context, context->classes.objectClass, "shallowCopy", 0, beacon_ObjectPrimitive_shallowCopy);
 
     beacon_addPrimitiveToClass(context, context->classes.objectClass, "printString", 0, beacon_ObjectPrimitive_printString);
     beacon_addPrimitiveToClass(context, context->classes.trueClass, "printString", 0, beacon_True_printString);
@@ -1533,6 +1570,7 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
 
     beacon_addPrimitiveToClass(context, context->classes.behaviorClass, "basicNew", 0, beacon_Behavior_basicNew);
     beacon_addPrimitiveToClass(context, context->classes.behaviorClass, "basicNew:", 1, beacon_Behavior_basicNewWithSize);
+    beacon_addPrimitiveToClass(context, context->classes.behaviorClass, "adoptInstance:", 1, beacon_Behavior_adoptInstance);
 
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.stdioClass), "stdin", 0, beacon_Stdio_stdin);
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.stdioClass), "stdout", 0, beacon_Stdio_stdout);

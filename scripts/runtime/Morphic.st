@@ -159,6 +159,23 @@ processEvent: anEvent
 ].
 
 Morph ![
+fullRender3DEnvironmentWith: rendererHandle
+    self render3DEnvironmentWith: rendererHandle.
+    self renderChildren3DEnvironment: rendererHandle.
+].
+
+Morph ![
+render3DEnvironmentWith: rendererHandle
+].
+
+Morph ![
+renderChildren3DEnvironment: rendererHandle
+    1 to: submorphs size do: [:index |
+        (submorphs at: index) fullRender3DEnvironmentWith: rendererHandle
+    ]
+].
+
+Morph ![
 renderWithBuilder: renderingBuilder
     renderingBuilder solidRectangle: self localBounds color: color
 ].

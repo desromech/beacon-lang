@@ -5,6 +5,7 @@ FilesToLoad := #(
     'Object.st'
     'Behavior.st'
     'Array.st'
+    'ByteArray.st'
     'ArrayList.st'
     'AbstractBinaryFileStream.st'
     'Number.st'
@@ -18,6 +19,7 @@ FilesToLoad := #(
     'Printing.st'
     'String.st'
     'MethodDictionary.st'
+    'Exceptions.st'
     
     'LinearAlgebra.st'
 

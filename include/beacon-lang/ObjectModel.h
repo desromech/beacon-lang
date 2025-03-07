@@ -283,6 +283,30 @@ typedef struct beacon_ByteArray_s
     uint8_t elements[];
 } beacon_ByteArray_t;
 
+typedef struct beacon_UInt16Array_s
+{
+    beacon_ArrayedCollection_t super;
+    uint16_t elements[];
+} beacon_UInt16Array_t;
+
+typedef struct beacon_UInt32Array_s
+{
+    beacon_ArrayedCollection_t super;
+    uint32_t elements[];
+} beacon_UInt32Array_t;
+
+typedef struct beacon_Float32Array_s
+{
+    beacon_ArrayedCollection_t super;
+    float elements[];
+} beacon_Float32Array_t;
+
+typedef struct beacon_Float64Array_s
+{
+    beacon_ArrayedCollection_t super;
+    double elements[];
+} beacon_Float64Array_t;
+
 typedef struct beacon_ExternalAddress_s
 {
     beacon_ArrayedCollection_t super;
@@ -764,6 +788,13 @@ typedef struct beacon_FormTextRenderingElement_s
     beacon_Color_t *color;
     beacon_FontFace_t *fontFace;
 } beacon_FormTextRenderingElement_t;
+
+typedef struct beacon_TextureRenderingElement_s
+{
+    beacon_FormRenderingElement_t super;
+    beacon_oop_t textureIndex;
+    beacon_Rectangle_t *textureRectangle;
+} beacon_TextureRenderingElement_t;
 
 typedef struct beacon_Window_s
 {

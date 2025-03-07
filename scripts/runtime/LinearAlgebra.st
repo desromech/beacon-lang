@@ -77,3 +77,34 @@ printOn: aStream
         nextPutAll: ' w: '; print: self w;
         nextPut: $)
 ].
+
+
+Matrix2x2 ![
+printOn: aStream
+    aStream
+        nextPutAll: '(Matrix2x2 rows: {'; lf;
+        print: self firstRow; nextPut: $.; lf;
+        print: self secondRow; nextPut: $.; lf;
+        nextPutAll: '})'
+].
+
+Matrix3x3 ![
+printOn: aStream
+    aStream
+        nextPutAll: '(Matrix3x3 rows: {'; lf;
+        print: self firstRow; nextPut: $.; lf;
+        print: self secondRow; nextPut: $.; lf;
+        print: self thirdRow; lf;
+        nextPutAll: '})'
+].
+
+Matrix4x4 ![
+printOn: aStream
+    aStream
+        nextPutAll: '(Matrix4x4 rows: {'; lf;
+        print: self firstRow; nextPut: $.; lf;
+        print: self secondRow; nextPut: $.; lf;
+        print: self thirdRow; nextPut: $.; lf;
+        print: self fourthRow; lf;
+        nextPutAll: '})'
+].

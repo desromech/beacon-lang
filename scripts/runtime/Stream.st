@@ -82,6 +82,16 @@ nextPut: anElement
 ].
 
 WriteStream ![
+lf
+    self nextPut: 10 asCharacter
+].
+
+WriteStream ![
+cr
+    self nextPut: 13 asCharacter
+].
+
+WriteStream ![
 pastEndPut: anObject
 	"Grow the collection, then put <anObject> at the current write position."
 	collection := collection grownBy: (collection size max: 20).

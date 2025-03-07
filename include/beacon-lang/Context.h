@@ -35,6 +35,10 @@ struct beacon_context_s
         beacon_Behavior_t *arrayedCollectionClass;
         beacon_Behavior_t *arrayClass;
         beacon_Behavior_t *byteArrayClass;
+        beacon_Behavior_t *uint16ArrayClass;
+        beacon_Behavior_t *uint32ArrayClass;
+        beacon_Behavior_t *float32ArrayClass;
+        beacon_Behavior_t *float64ArrayClass;
         beacon_Behavior_t *externalAddressClass;
         beacon_Behavior_t *stringClass;
         beacon_Behavior_t *symbolClass;
@@ -196,10 +200,15 @@ struct beacon_context_s
     } roots;
 
     beacon_MemoryHeap_t *heap;
+    
+    void *userContextExtension;
 };
 
 beacon_context_t *beacon_context_new(void);
 void beacon_context_destroy(beacon_context_t *context);
+
+beacon_Behavior_t *beacon_context_createClassAndMetaclass(beacon_context_t *context, beacon_Behavior_t *superclassBehavior, const char *name, size_t instanceSize, beacon_ObjectKind_t objectKind, ...);
+void beacon_context_registerGlobalClass(beacon_context_t *context, beacon_Behavior_t *class);
 
 uint32_t beacon_computeStringHash(size_t stringSize, const char *string);
 uint32_t beacon_computeIdentityHash(beacon_oop_t oop);

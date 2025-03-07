@@ -1,4 +1,9 @@
 Array ![
+asArray
+    ^ self
+].
+
+Array ![
 copyWith: extraElement
     | result |
     result := Array basicNew: self basicSize + 1.

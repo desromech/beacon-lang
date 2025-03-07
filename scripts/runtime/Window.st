@@ -57,6 +57,11 @@ renderWithBuilder: renderingBuilder
 ].
 
 Window ![
+render3DEnvironmentWith: rendererHandle
+
+].
+
+Window ![
 useAcceleratedRendering
     ^ useAcceleratedRendering
 ].
@@ -81,10 +86,12 @@ renderViaForm
     self displayForm: drawingForm.
 ].
 
-
 Window ![
 renderViaQuadCommands
     | formRenderingBuilder |
+    rendererHandle beginFrame.
+    self render3DEnvironmentWith: rendererHandle.
+
     formRenderingBuilder := FormRenderingElementBuilder new
         scaleFactorX: textureWidth // width;
         scaleFactorY: textureHeight // height;
@@ -92,7 +99,6 @@ renderViaQuadCommands
     self renderWithBuilder: formRenderingBuilder.
 
     rendererHandle
-        beginFrame;
         renderQuadList: formRenderingBuilder allQuads;
         endFrame
 ].
