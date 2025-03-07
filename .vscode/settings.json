@@ -24,6 +24,8 @@
         "memory.h": "c",
         "stdio.h": "c",
         "agpurendering.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "objectmodel.h": "c",
+        "agpu.h": "c"
     }
 }

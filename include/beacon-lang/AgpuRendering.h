@@ -148,7 +148,8 @@ typedef struct beacon_AGPU_s
     agpu_renderpass *mainRenderPass;
 
     agpu_sampler *linearSampler;
-    agpu_shader_resource_binding *linearSamplerBinding;
+    agpu_sampler *nearestSampler;
+    agpu_shader_resource_binding *samplerBinding;
     agpu_pipeline_state *guiPipelineState;
 
     agpu_texture *errorTexture;

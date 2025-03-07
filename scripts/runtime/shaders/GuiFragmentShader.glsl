@@ -28,7 +28,8 @@ layout(set=2, binding=11, std430) buffer GuiElementsBlock
 	GuiElement[] list;
 } GuiElementList;
 
-layout(set=0, binding=0) uniform sampler TextureSampler;
+layout(set=0, binding=0) uniform sampler LinearTextureSampler;
+layout(set=0, binding=1) uniform sampler NearestTextureSampler;
 layout(set=1, binding=0) uniform texture2D GuiTextures[1024];
 
 layout(location = 0) in vec2 inTexcoord;
@@ -61,7 +62,7 @@ void main()
     case GuiElementType_TextCharacter:
         if(thisElement.texture >= 0)
         {
-            float fontAlpha = texture(sampler2D(GuiTextures[thisElement.texture], TextureSampler), mappedTexcoord).r;
+            float fontAlpha = texture(sampler2D(GuiTextures[thisElement.texture], NearestTextureSampler), mappedTexcoord).r;
             backgroundColor = thisElement.firstColor*fontAlpha;
         }
         else

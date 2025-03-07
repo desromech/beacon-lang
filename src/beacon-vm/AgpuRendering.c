@@ -140,7 +140,8 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         agpu_shader_signature_builder *builder = agpuCreateShaderSignatureBuilder(agpu->device);
         
         agpuBeginShaderSignatureBindingBank(builder, 1); // Set 0
-        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_SAMPLER, 1);
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_SAMPLER, 1); // Linear
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_SAMPLER, 1); // Nearest
 
         agpuBeginShaderSignatureBindingBank(builder, 1); // Set 1
         agpuAddShaderSignatureBindingBankArray(builder, AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, BEACON_AGPU_TEXTURE_ARRAY_SIZE);
@@ -170,6 +171,7 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
     }
 
     // Sampler and its binding
+    agpu->samplerBinding = agpuCreateShaderResourceBinding(agpu->shaderSignature, 0);
     {
         agpu_sampler_description samplerDesc = {
             .address_u = AGPU_TEXTURE_ADDRESS_MODE_WRAP,
@@ -180,8 +182,20 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         };
 
         agpu->linearSampler = agpuCreateSampler(agpu->device, &samplerDesc);
-        agpu->linearSamplerBinding = agpuCreateShaderResourceBinding(agpu->shaderSignature, 0);
-        agpuBindSampler(agpu->linearSamplerBinding, 0, agpu->linearSampler);
+        agpuBindSampler(agpu->samplerBinding, 0, agpu->linearSampler);
+    }
+
+    {
+        agpu_sampler_description samplerDesc = {
+            .address_u = AGPU_TEXTURE_ADDRESS_MODE_WRAP,
+            .address_v = AGPU_TEXTURE_ADDRESS_MODE_WRAP,
+            .address_w = AGPU_TEXTURE_ADDRESS_MODE_WRAP,
+            .filter = AGPU_FILTER_MIN_NEAREST_MAG_NEAREST_MIPMAP_NEAREST,
+            .max_lod = 32
+        };
+
+        agpu->nearestSampler = agpuCreateSampler(agpu->device, &samplerDesc);
+        agpuBindSampler(agpu->samplerBinding, 1, agpu->nearestSampler);
     }
 
     // Uber GUI pipeline state
@@ -520,7 +534,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context
     beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->indexData);
 
     agpuSetShaderSignature(thisFrameState->commandList, context->roots.agpuCommon->shaderSignature);
-    agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->linearSamplerBinding);
+    agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->samplerBinding);
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->renderingDataBinding);
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->texturesArrayBinding);
 
