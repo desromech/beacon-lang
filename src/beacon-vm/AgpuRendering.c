@@ -360,7 +360,7 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
             .heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL,
             .usage_modes = AGPU_COPY_DESTINATION_BUFFER | AGPU_ELEMENT_ARRAY_BUFFER,
             .main_usage_mode = AGPU_ELEMENT_ARRAY_BUFFER,
-            .size = agpu->indexData.elementSize*agpu->indexData.capacity,
+            .size = agpu->indexData.byteCapacity,
             .stride = 4,
         };
 
@@ -406,7 +406,6 @@ beacon_AGPUWindowRenderer_t *beacon_agpu_createWindowRenderer(beacon_context_t *
             .usage_modes = AGPU_COPY_SOURCE_BUFFER,
             .main_usage_mode = AGPU_COPY_SOURCE_BUFFER,
             .size = frameRenderingDataSize * BEACON_AGPU_FRAMEBUFFERING_COUNT,
-            .stride = sizeof(beacon_GuiRenderingElement_t),
             .mapping_flags = AGPU_MAP_WRITE_BIT | AGPU_MAP_PERSISTENT_BIT
         };
         windowRenderer->renderingDataSubmissionBuffer = agpuCreateBuffer(device, &desc, NULL);
@@ -438,6 +437,35 @@ void beacon_agpu_destroyWindowRenderer(beacon_context_t *context, beacon_AGPUWin
     }
 }
 
+static void beacon_resetUpdateBufferPointer(beacon_AGPUUpdateBuffer_t *buffer, uint8_t *frameBasePointer)
+{
+    buffer->size = 0;
+    buffer->thisFrameBuffer = frameBasePointer + buffer->offset;
+}
+
+static void beacon_agpuWindowRenderer_resetPerFrameBuffers(beacon_context_t *context, beacon_AGPUWindowRenderer_t *renderer, beacon_AGPUWindowRendererPerFrameState_t *thisFrameState)
+{
+    uint8_t *renderingDataUploadBuffer = renderer->renderingDataUploadBuffer + renderer->frameRenderingDataUploadSize* renderer->currentFrameBufferingIndex;
+    
+    beacon_AGPU_t *agpu = context->roots.agpuCommon;
+    beacon_resetUpdateBufferPointer(&agpu->renderObjectAttributes, renderingDataUploadBuffer);
+    beacon_resetUpdateBufferPointer(&agpu->renderModelAttributes, renderingDataUploadBuffer);
+    beacon_resetUpdateBufferPointer(&agpu->renderMeshPrimitiveAttributes, renderingDataUploadBuffer);
+    beacon_resetUpdateBufferPointer(&agpu->renderMaterialsAttributes, renderingDataUploadBuffer);
+    beacon_resetUpdateBufferPointer(&agpu->renderLightSourceAttributes, renderingDataUploadBuffer);
+
+    beacon_resetUpdateBufferPointer(&agpu->vertexPositions, renderingDataUploadBuffer);
+    beacon_resetUpdateBufferPointer(&agpu->vertexNormals, renderingDataUploadBuffer);
+    beacon_resetUpdateBufferPointer(&agpu->vertexTexcoords, renderingDataUploadBuffer);
+    beacon_resetUpdateBufferPointer(&agpu->vertexTangent4, renderingDataUploadBuffer);
+    beacon_resetUpdateBufferPointer(&agpu->vertexBoneIndices, renderingDataUploadBuffer);
+    beacon_resetUpdateBufferPointer(&agpu->vertexBoneWeights, renderingDataUploadBuffer);
+
+    beacon_resetUpdateBufferPointer(&agpu->guiData, renderingDataUploadBuffer);
+
+    beacon_resetUpdateBufferPointer(&agpu->indexData, renderingDataUploadBuffer);
+}
+
 static beacon_oop_t beacon_agpuWindowRenderer_beginFrame(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t*)receiver;
@@ -453,10 +481,19 @@ static beacon_oop_t beacon_agpuWindowRenderer_beginFrame(beacon_context_t *conte
     agpuResetCommandList(thisFrameState->commandList, thisFrameState->commandAllocator, NULL);
 
     uint8_t *renderingDataUploadBuffer = renderer->renderingDataUploadBuffer + renderer->frameRenderingDataUploadSize* renderer->currentFrameBufferingIndex;
-    thisFrameState->guiRenderingDataUploadBuffer = (beacon_GuiRenderingElement_t*)(renderingDataUploadBuffer + context->roots.agpuCommon->guiData.offset);
-    thisFrameState->guiRenderingDataUploadSize = 0;
+    beacon_agpuWindowRenderer_resetPerFrameBuffers(context, renderer, thisFrameState);
 
     return receiver;
+}
+
+static void beacon_agpuWindowRenderer_uploadPerFrameBuffer(agpu_command_list *commandList, beacon_AGPU_t *agpu, beacon_AGPUWindowRenderer_t *renderer, beacon_AGPUUpdateBuffer_t *updateBuffer)
+{
+    if(updateBuffer->size == 0)
+        return;
+
+    agpuCopyBuffer(commandList,
+        renderer->renderingDataSubmissionBuffer, updateBuffer->offset + renderer->frameRenderingDataUploadSize*renderer->currentFrameBufferingIndex,
+        agpu->gpu3DRenderingDataBuffer, updateBuffer->offset, updateBuffer->size*updateBuffer->elementSize);
 }
 
 static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -465,10 +502,22 @@ static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context
     beacon_AGPUWindowRendererPerFrameState_t *thisFrameState = renderer->frameState + renderer->currentFrameBufferingIndex;
     beacon_AGPU_t *agpu = context->roots.agpuCommon;
 
-    agpuCopyBuffer(thisFrameState->commandList,
-                renderer->renderingDataSubmissionBuffer, agpu->guiData.offset + renderer->frameRenderingDataUploadSize*renderer->currentFrameBufferingIndex,
-                agpu->gpu3DRenderingDataBuffer, agpu->guiData.offset, thisFrameState->guiRenderingDataUploadSize*sizeof(beacon_GuiRenderingElement_t));
-            
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderObjectAttributes);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderModelAttributes);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderMeshPrimitiveAttributes);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderMaterialsAttributes);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderLightSourceAttributes);
+
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexPositions);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexNormals);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexTexcoords);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexTangent4);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexBoneIndices);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexBoneWeights);
+
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->guiData);
+
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->indexData);
 
     agpuSetShaderSignature(thisFrameState->commandList, context->roots.agpuCommon->shaderSignature);
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->linearSamplerBinding);
@@ -496,7 +545,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context
     }
 
     agpuUsePipelineState(thisFrameState->commandList, context->roots.agpuCommon->guiPipelineState);
-    agpuDrawArrays(thisFrameState->commandList, 4, thisFrameState->guiRenderingDataUploadSize, 0, 0);
+    agpuDrawArrays(thisFrameState->commandList, 4, context->roots.agpuCommon->guiData.size, 0, 0);
 
     // End the main buffer renderpass.
     agpuEndRenderPass(thisFrameState->commandList);
@@ -567,7 +616,7 @@ static void beacon_agpuWindowRenderer_renderText(beacon_context_t *context, beac
             },
         };
 
-        thisFrameState->guiRenderingDataUploadBuffer[thisFrameState->guiRenderingDataUploadSize++] = quad;
+        ((beacon_GuiRenderingElement_t*)context->roots.agpuCommon->guiData.thisFrameBuffer)[context->roots.agpuCommon->guiData.size++] = quad;
     }
 }
 
@@ -611,7 +660,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_renderQuadList(beacon_context_t *c
                 },
             };
 
-            thisFrameState->guiRenderingDataUploadBuffer[thisFrameState->guiRenderingDataUploadSize++] = quad;
+            ((beacon_GuiRenderingElement_t*)context->roots.agpuCommon->guiData.thisFrameBuffer)[context->roots.agpuCommon->guiData.size++] = quad;
 
         }
         else if(quadClass == context->classes.formTextRenderingElementClass)

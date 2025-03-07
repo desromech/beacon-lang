@@ -130,6 +130,7 @@ typedef struct beacon_AGPUUpdateBuffer_s
     size_t byteCapacity;
     size_t offset;
     size_t endOffset;
+    void *thisFrameBuffer;
 } beacon_AGPUUpdateBuffer_t;
 
 typedef struct beacon_AGPU_s
@@ -204,8 +205,6 @@ typedef struct beacon_AGPUWindowRendererPerFrameState_s
     agpu_command_allocator *commandAllocator;
     agpu_command_list *commandList;
     uint8_t *renderingDataUploadBuffer;
-    beacon_GuiRenderingElement_t *guiRenderingDataUploadBuffer;
-    size_t guiRenderingDataUploadSize;
     bool hasSubmittedToQueue;
 } beacon_AGPUWindowRendererPerFrameState_t;
 
