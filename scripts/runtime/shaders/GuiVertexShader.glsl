@@ -1,34 +1,5 @@
 
-#version 450
-
-layout( push_constant ) uniform constants
-{
-	bool hasTopLeftNDCOrigin;
-    uint reservedConstant;
-    vec2 framebufferReciprocalExtent;
-} PushConstants;
-
-struct GuiElement
-{
-    uint type;
-    int texture;
-    float borderRoundRadius;
-    float borderSize;
-
-    vec2 rectangleMin;
-    vec2 rectangleMax;
-    vec2 sourceImageRectangleMin;
-    vec2 sourceImageRectangleMax;
-
-    vec4 firstColor;
-    vec4 secondColor;
-    vec4 borderColor;
-};
-
-layout(set=2, binding=11, std430) buffer GuiElementsBlock
-{
-	GuiElement[] list;
-} GuiElementList;
+#line 2
 
 layout(location = 0) out vec2 outTexcoord;
 layout(location = 1) flat out int guiElementIndex;

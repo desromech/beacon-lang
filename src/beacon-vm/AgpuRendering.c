@@ -94,7 +94,7 @@ static agpu_shader *beacon_agpu_compileShaderWithSource(beacon_context_t *contex
     return shaderResult;
 }
 
-static agpu_shader *beacon_agpu_compileShaderWithSourceFileNamed(beacon_context_t *context, beacon_AGPU_t *agpu, const char *name, const char *sourceFileName, agpu_shader_type shaderType)
+static char *beacon_agpu_readShaderSourceFromFileNamed(const char *name, const char *sourceFileName)
 {
     FILE *f = fopen(sourceFileName, "rb");
     if(!f)
@@ -116,10 +116,83 @@ static agpu_shader *beacon_agpu_compileShaderWithSourceFileNamed(beacon_context_
     }
 
     fclose(f);
+    return shaderSource;
+}
 
-    agpu_shader *shader = beacon_agpu_compileShaderWithSource(context, agpu, name, shaderSource, shaderType);
-    free(shaderSource);
+static agpu_shader *beacon_agpu_compileShaderWithSourceFileNamed(beacon_context_t *context, beacon_AGPU_t *agpu, const char *name, const char *commonSourceFileName, const char *sourceFileName, agpu_shader_type shaderType)
+{
+    char *commonSource = NULL;
+    if(commonSourceFileName)
+        commonSource = beacon_agpu_readShaderSourceFromFileNamed("Common", commonSourceFileName);
+    
+    char *shaderSource = beacon_agpu_readShaderSourceFromFileNamed("Common", sourceFileName);
+    if(!shaderSource)
+    {
+        if(commonSource)
+            free(commonSource);
+        return NULL;
+    }
+
+    size_t commonSourceSize = commonSource ? strlen(commonSource) : 0;
+    size_t shaderSourceSourceSize = shaderSource ? strlen(shaderSource) : 0;
+    size_t combinedSourceSize = commonSourceSize + shaderSourceSourceSize;
+    char *combinedSource = calloc(1, combinedSourceSize + 1);
+    memcpy(combinedSource, commonSource, commonSourceSize);
+    memcpy(combinedSource + commonSourceSize, shaderSource, shaderSourceSourceSize);
+
+    printf("combinedSource:\n%s\n", combinedSource);
+    agpu_shader *shader = beacon_agpu_compileShaderWithSource(context, agpu, name, combinedSource, shaderType);
+
+    if(commonSource)
+        free(commonSource);
+    if(shaderSource)
+        free(shaderSource);
+    if(combinedSource)
+        free(combinedSource);
     return shader;
+}
+
+void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *agpu)
+{
+    agpu_device *device = agpu->device;
+    bool hasTextureInvertedProjectionY = agpuHasTopLeftNdcOrigin(device) == agpuHasBottomLeftTextureCoordinates(device);
+
+    agpu_shader *screenQuadShader;
+    if (hasTextureInvertedProjectionY)
+        screenQuadShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiVertex", NULL, "scripts/runtime/assets/shaders/ScreenQuadFlippedY.glsl", AGPU_VERTEX_SHADER);
+    else
+        screenQuadShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiVertex", NULL, "scripts/runtime/shaders/ScreenQuad.glsl", AGPU_VERTEX_SHADER);
+
+
+    // Uber GUI pipeline state
+    {
+        //printf("guiVertexShaderSource: %s\n", guiVertexShaderSource);
+        //printf("guiFragmentShaderSource: %s\n", guiFragmentShaderSource);
+
+        agpu_shader *vertexShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiVertex", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/GuiVertexShader.glsl", AGPU_VERTEX_SHADER);
+        agpu_shader *fragmentShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiFragment", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/ShaderCommon.glsl", AGPU_FRAGMENT_SHADER);
+
+        agpu_pipeline_builder *builder = agpuCreatePipelineBuilder(agpu->device);
+        agpuSetRenderTargetFormat(builder, 0, AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB);
+        agpuSetDepthStencilFormat(builder, AGPU_TEXTURE_FORMAT_UNKNOWN);
+        agpuSetPipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachShader(builder, vertexShader);
+        agpuAttachShader(builder, fragmentShader);
+        agpuSetPrimitiveType(builder, AGPU_TRIANGLE_STRIP);
+        agpuSetBlendState(builder, -1, true);
+        agpuSetBlendFunction(builder, -1, AGPU_BLENDING_ONE, AGPU_BLENDING_INVERTED_SRC_ALPHA, AGPU_BLENDING_OPERATION_ADD,
+            AGPU_BLENDING_ONE, AGPU_BLENDING_INVERTED_SRC_ALPHA, AGPU_BLENDING_OPERATION_ADD);
+        agpu->guiPipelineState = agpuBuildPipelineState(builder);
+        if(!agpu->guiPipelineState)
+        {
+            fprintf(stderr, "Failed to construct pipeline state.\n");
+        }
+
+        agpuReleaseShader(vertexShader);
+        agpuReleaseShader(fragmentShader);
+    }
+
+    agpuReleaseShader(screenQuadShader);
 }
 
 void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_t *agpu)
@@ -211,34 +284,6 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         agpuBindSampler(agpu->samplerBinding, 1, agpu->nearestSampler);
     }
 
-    // Uber GUI pipeline state
-    {
-        //printf("guiVertexShaderSource: %s\n", guiVertexShaderSource);
-        //printf("guiFragmentShaderSource: %s\n", guiFragmentShaderSource);
-
-        agpu_shader *vertexShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiVertex", "scripts/runtime/shaders/GuiVertexShader.glsl", AGPU_VERTEX_SHADER);
-        agpu_shader *fragmentShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiFragment", "scripts/runtime/shaders/GuiFragmentShader.glsl", AGPU_FRAGMENT_SHADER);
-
-        agpu_pipeline_builder *builder = agpuCreatePipelineBuilder(agpu->device);
-        agpuSetRenderTargetFormat(builder, 0, AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB);
-        agpuSetDepthStencilFormat(builder, AGPU_TEXTURE_FORMAT_UNKNOWN);
-        agpuSetPipelineShaderSignature(builder, agpu->shaderSignature);
-        agpuAttachShader(builder, vertexShader);
-        agpuAttachShader(builder, fragmentShader);
-        agpuSetPrimitiveType(builder, AGPU_TRIANGLE_STRIP);
-        agpuSetBlendState(builder, -1, true);
-        agpuSetBlendFunction(builder, -1, AGPU_BLENDING_ONE, AGPU_BLENDING_INVERTED_SRC_ALPHA, AGPU_BLENDING_OPERATION_ADD,
-            AGPU_BLENDING_ONE, AGPU_BLENDING_INVERTED_SRC_ALPHA, AGPU_BLENDING_OPERATION_ADD);
-        agpu->guiPipelineState = agpuBuildPipelineState(builder);
-        if(!agpu->guiPipelineState)
-        {
-            fprintf(stderr, "Failed to construct pipeline state.\n");
-        }
-
-        agpuReleaseShader(vertexShader);
-        agpuReleaseShader(fragmentShader);
-    }
-
     // Error texture
     {
         uint32_t m = 0xFF00FFFF;
@@ -294,6 +339,8 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         }
         agpu->textureArrayBindingCount = 1;
     }
+
+    beacon_agpu_loadPipelineStates(context, agpu);
 }
 
 beacon_AGPUTextureHandle_t *beacon_getValidTextureHandleForFontFaceForm(beacon_context_t *context, beacon_Form_t *form)
