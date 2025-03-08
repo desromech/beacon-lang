@@ -208,6 +208,7 @@ typedef struct beacon_AGPU_s
     agpu_pipeline_state *guiPipelineState;
 
     agpu_pipeline_state *opaqueDepthOnlyPipeline;
+    agpu_pipeline_state *daySkyPipeline;
 
     agpu_texture *errorTexture;
     agpu_texture *boundTextures[1024];

@@ -177,6 +177,23 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
         agpuReleaseShader(depthOnlyVertexShaders);
     }
 
+    {
+        agpu_shader *daySkyShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "DaySkyShader", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/DaySkyShader.glsl", AGPU_FRAGMENT_SHADER);
+        agpu_pipeline_builder *builder = agpuCreatePipelineBuilder(device);
+        agpuSetRenderTargetCount(builder, 3);
+        agpuSetRenderTargetFormat(builder, 0, BEACON_AGPU_COLOR_FORMAT);
+        agpuSetRenderTargetFormat(builder, 1, AGPU_TEXTURE_FORMAT_R16G16_FLOAT);
+        agpuSetRenderTargetFormat(builder, 2, AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM);
+        agpuSetDepthStencilFormat(builder, BEACON_AGPU_DEPTH_FORMAT);
+        agpuSetPipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachShader(builder, screenQuadShader);
+        agpuAttachShader(builder, daySkyShader);
+        agpuSetPrimitiveType(builder, AGPU_TRIANGLE_STRIP);
+        agpuSetDepthState(builder, true, true, AGPU_EQUAL);
+        agpuSetCullMode(builder, AGPU_CULL_MODE_BACK);
+        agpu->daySkyPipeline = agpuBuildPipelineState(builder);
+        agpuReleaseShader(daySkyShader);
+    }
     // Uber GUI pipeline state
     {
         //printf("guiVertexShaderSource: %s\n", guiVertexShaderSource);
@@ -944,6 +961,9 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     beacon_AGPU_t *agpu = context->roots.agpuCommon;
     agpu_command_list *commandList = thisFrameState->commandList;
 
+    int displayWidth = renderer->intermediateBufferWidth;
+    int displayHeight = renderer->intermediateBufferHeight;
+
     // Setup the shader resources.
     agpuSetShaderSignature(thisFrameState->commandList, context->roots.agpuCommon->shaderSignature);
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->samplerBinding);
@@ -955,16 +975,31 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
 
     // Depth only render pass
     agpuBeginRenderPass(commandList, renderer->mainDepthRenderPass, renderer->depthOnlyFramebuffer, false);
+    agpuSetViewport(commandList, 0, 0, displayWidth, displayHeight);
+    agpuSetScissor(commandList, 0, 0, displayWidth, displayHeight);
+
     beacon_agpuWindowRenderer_emitRenderPassCommands(context, renderer, true);
     agpuEndRenderPass(commandList);
 
     // Opaque color
     agpuBeginRenderPass(commandList, renderer->mainDepthColorOpaqueRenderPass, renderer->hdrOpaqueFramebuffer, false);
+    agpuSetViewport(commandList, 0, 0, displayWidth, displayHeight);
+    agpuSetScissor(commandList, 0, 0, displayWidth, displayHeight);
+
+    // Draw the sky and the background.
+    agpuUsePipelineState(commandList, agpu->daySkyPipeline);
+    agpuDrawArrays(commandList, 3, 1, 0, 0);
+
+    // Render the opaque objects with color.
     beacon_agpuWindowRenderer_emitRenderPassCommands(context, renderer, true);
+
     agpuEndRenderPass(commandList);
 
     // Non-opaque
     agpuBeginRenderPass(commandList, renderer->mainDepthColorRenderPass, renderer->hdrFramebuffer, false);
+    agpuSetViewport(commandList, 0, 0, displayWidth, displayHeight);
+    agpuSetScissor(commandList, 0, 0, displayWidth, displayHeight);
+
     beacon_agpuWindowRenderer_emitRenderPassCommands(context, renderer, false);
     agpuEndRenderPass(commandList);
     
