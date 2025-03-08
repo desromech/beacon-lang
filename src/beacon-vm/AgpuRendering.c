@@ -175,6 +175,7 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
         agpuSetCullMode(builder, AGPU_CULL_MODE_BACK);
         agpu->opaqueDepthOnlyPipeline = agpuBuildPipelineState(builder);
         agpuReleaseShader(depthOnlyVertexShaders);
+        agpuReleasePipelineBuilder(builder);
     }
 
     {
@@ -193,6 +194,7 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
         agpuSetCullMode(builder, AGPU_CULL_MODE_BACK);
         agpu->daySkyPipeline = agpuBuildPipelineState(builder);
         agpuReleaseShader(daySkyShader);
+        agpuReleasePipelineBuilder(builder);
     }
 
     {
@@ -206,7 +208,50 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
         agpuSetPrimitiveType(builder, AGPU_TRIANGLE_STRIP);
         agpuSetCullMode(builder, AGPU_CULL_MODE_BACK);
         agpu->toneMappingPipeline = agpuBuildPipelineState(builder);
+        agpuReleaseShader(toneMapping);
+        agpuReleasePipelineBuilder(builder);
     }
+
+    {
+        agpu_shader *cullOpaqueShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "CullOpaque", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/CullOpaqueObjects.glsl", AGPU_COMPUTE_SHADER);
+        agpu_compute_pipeline_builder *builder = agpuCreateComputePipelineBuilder(device);
+        agpuSetComputePipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachComputeShader(builder, cullOpaqueShader);
+        agpu->cullOpaqueObjects = agpuBuildComputePipelineState(builder);
+        agpuReleaseShader(cullOpaqueShader);
+        agpuReleaseComputePipelineBuilder(builder);
+    }
+
+    {
+        agpu_shader *cullOpaqueShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "CullOpaque", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/CullOpaqueObjects.glsl", AGPU_COMPUTE_SHADER);
+        agpu_compute_pipeline_builder *builder = agpuCreateComputePipelineBuilder(device);
+        agpuSetComputePipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachComputeShader(builder, cullOpaqueShader);
+        agpu->cullOpaqueObjects = agpuBuildComputePipelineState(builder);
+        agpuReleaseShader(cullOpaqueShader);
+        agpuReleaseComputePipelineBuilder(builder);
+    }
+
+    {
+        agpu_shader *clearRenderChunkDataShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "ClearRenderChunk", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/ClearRenderChunkData.glsl", AGPU_COMPUTE_SHADER);
+        agpu_compute_pipeline_builder *builder = agpuCreateComputePipelineBuilder(device);
+        agpuSetComputePipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachComputeShader(builder, clearRenderChunkDataShader);
+        agpu->clearRenderChunkData = agpuBuildComputePipelineState(builder);
+        agpuReleaseShader(clearRenderChunkDataShader);
+        agpuReleaseComputePipelineBuilder(builder);
+    }
+
+    {
+        agpu_shader *makeIndirectDraw = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "MakeDrawIndirect", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/MakeDrawIndirectCommands.glsl", AGPU_COMPUTE_SHADER);
+        agpu_compute_pipeline_builder *builder = agpuCreateComputePipelineBuilder(device);
+        agpuSetComputePipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachComputeShader(builder, makeIndirectDraw);
+        agpu->makeDrawIndirectPipeline = agpuBuildComputePipelineState(builder);
+        agpuReleaseShader(makeIndirectDraw);
+        agpuReleaseComputePipelineBuilder(builder);
+    }
+
     // Uber GUI pipeline state
     {
         //printf("guiVertexShaderSource: %s\n", guiVertexShaderSource);

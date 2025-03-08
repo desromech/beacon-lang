@@ -212,6 +212,10 @@ typedef struct beacon_AGPU_s
     agpu_pipeline_state *daySkyPipeline;
     agpu_pipeline_state *toneMappingPipeline;
 
+    agpu_pipeline_state *cullOpaqueObjects;
+    agpu_pipeline_state *clearRenderChunkData;
+    agpu_pipeline_state *makeDrawIndirectPipeline;
+
     agpu_texture *errorTexture;
     agpu_texture *boundTextures[1024];
     agpu_texture_view *boundTextureViews[1024];
