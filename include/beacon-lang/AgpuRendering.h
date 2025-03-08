@@ -66,6 +66,12 @@ typedef struct beacon_RenderModelAttributes_s
     int32_t firstSubmeshIndex;
 } beacon_RenderModelAttributes_t;
 
+typedef struct beacon_RenderMeshChunk_s
+{
+    uint32_t renderObjectIndex;
+    uint32_t renderMeshPrimitiveIndex;
+}beacon_RenderMeshChunk_t;
+
 typedef struct beacon_RenderMeshPrimitiveAttributes_s
 {
     int32_t materialIndex;
@@ -180,6 +186,8 @@ typedef struct beacon_AGPU_s
 
     agpu_buffer *gpu3DRenderingDataBuffer;
     agpu_buffer *gpu3DRenderingIndexBuffer;
+    agpu_buffer *renderDrawIndirectBuffer;
+    agpu_buffer *renderChunkDataBuffer;
 
     agpu_shader_resource_binding *renderingDataBinding;
 

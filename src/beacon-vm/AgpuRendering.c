@@ -5,6 +5,16 @@
 #include <stdlib.h>
 #include "stb_truetype.h"
 
+typedef struct VulkanDrawIndexedIndirectCommand {
+    uint32_t    indexCount;
+    uint32_t    instanceCount;
+    uint32_t    firstIndex;
+    int32_t     vertexOffset;
+    uint32_t    firstInstance;
+} VulkanDrawIndexedIndirectCommand;
+
+typedef VulkanDrawIndexedIndirectCommand DrawIndirectCommand;
+
 agpu_platform *beacon_agpu_getPlatform(beacon_context_t *context, beacon_AGPU_t *agpu)
 {
     if(agpu->platform)
@@ -161,6 +171,9 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 10: Vertex BoneWeights
 
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 11: Gui elements
+
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 12: Draw indirect
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 13: Mesh chunks
 
         agpuAddShaderSignatureBindingConstant(builder); // hasTopLeftNDCOrigin
         agpuAddShaderSignatureBindingConstant(builder); // reservedConstant
@@ -379,6 +392,25 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
         };
 
         agpu->gpu3DRenderingIndexBuffer = agpuCreateBuffer(device, &desc, NULL);
+    }
+
+    {
+        agpu_buffer_description desc = {};
+        desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+        desc.usage_modes = AGPU_STORAGE_BUFFER | AGPU_DRAW_INDIRECT_BUFFER;
+        desc.main_usage_mode = AGPU_DRAW_INDIRECT_BUFFER;
+        desc.size = sizeof(DrawIndirectCommand) * BEACON_AGPU_MAX_RENDER_OBJECTS;
+        desc.stride = sizeof(DrawIndirectCommand);
+        agpu->renderDrawIndirectBuffer = agpuCreateBuffer(device, &desc, NULL);
+    }
+
+    {
+        agpu_buffer_description desc = {};
+        desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+        desc.usage_modes = AGPU_STORAGE_BUFFER;
+        desc.main_usage_mode = AGPU_STORAGE_BUFFER;
+        desc.size = (sizeof(beacon_RenderMeshChunk_t) + 1) * BEACON_AGPU_MAX_RENDER_OBJECTS;
+        agpu->renderChunkDataBuffer = agpuCreateBuffer(device, &desc, NULL);
     }
 
     agpu->renderingDataBinding = agpuCreateShaderResourceBinding(context->roots.agpuCommon->shaderSignature, 2);
@@ -777,6 +809,9 @@ static void beacon_agpuWindowRenderer_emitRenderPassCommands(beacon_context_t *c
 {
     beacon_AGPUWindowRendererPerFrameState_t *thisFrameState = renderer->frameState + renderer->currentFrameBufferingIndex;
 
+    //agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 12: Draw indirect
+    //agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 13: Mesh chunks
+
 }
 
 static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -791,6 +826,9 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->samplerBinding);
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->renderingDataBinding);
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->texturesArrayBinding);
+
+    agpuUseIndexBuffer(commandList, context->roots.agpuCommon->gpu3DRenderingIndexBuffer);
+    agpuUseDrawIndirectBuffer(commandList, context->roots.agpuCommon->renderDrawIndirectBuffer);
 
     // Depth only render pass
     agpuBeginRenderPass(commandList, renderer->mainDepthRenderPass, renderer->depthOnlyFramebuffer, false);
