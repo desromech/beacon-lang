@@ -223,16 +223,6 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
     }
 
     {
-        agpu_shader *cullOpaqueShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "CullOpaque", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/CullOpaqueObjects.glsl", AGPU_COMPUTE_SHADER);
-        agpu_compute_pipeline_builder *builder = agpuCreateComputePipelineBuilder(device);
-        agpuSetComputePipelineShaderSignature(builder, agpu->shaderSignature);
-        agpuAttachComputeShader(builder, cullOpaqueShader);
-        agpu->cullOpaqueObjects = agpuBuildComputePipelineState(builder);
-        agpuReleaseShader(cullOpaqueShader);
-        agpuReleaseComputePipelineBuilder(builder);
-    }
-
-    {
         agpu_shader *clearRenderChunkDataShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "ClearRenderChunk", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/ClearRenderChunkData.glsl", AGPU_COMPUTE_SHADER);
         agpu_compute_pipeline_builder *builder = agpuCreateComputePipelineBuilder(device);
         agpuSetComputePipelineShaderSignature(builder, agpu->shaderSignature);
@@ -1136,6 +1126,18 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuPushConstants(commandList, 4, 4, &lightSourceCount);
     agpuPushConstants(commandList, 8, 4, &nullPushConstant);
     agpuPushConstants(commandList, 12, 4, &nullPushConstant);
+
+    agpuUsePipelineState(commandList, agpu->clearRenderChunkData);
+    agpuDispatchCompute(commandList, 1, 1, 1);
+    agpuMemoryBarrier(commandList, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, AGPU_ACCESS_SHADER_WRITE, AGPU_ACCESS_SHADER_READ);
+
+    agpuUsePipelineState(commandList, agpu->cullOpaqueObjects);
+    agpuDispatchCompute(commandList, (agpu->renderObjectAttributes.size + 127) / 128, 1, 1);
+    agpuMemoryBarrier(commandList, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, AGPU_ACCESS_SHADER_WRITE, AGPU_ACCESS_SHADER_READ);
+
+    agpuUsePipelineState(commandList, agpu->makeDrawIndirectPipeline);
+    agpuDispatchCompute(commandList, (agpu->renderObjectAttributes.size + 127) / 128, 1, 1);
+    agpuMemoryBarrier(commandList, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, AGPU_PIPELINE_STAGE_VERTEX_SHADER | AGPU_PIPELINE_STAGE_FRAGMENT_SHADER | AGPU_PIPELINE_STAGE_DRAW_INDIRECT, AGPU_ACCESS_SHADER_WRITE, AGPU_ACCESS_SHADER_READ);
     
     // Depth only render pass
     agpuBeginRenderPass(commandList, renderer->mainDepthRenderPass, renderer->depthOnlyFramebuffer, false);
@@ -1143,8 +1145,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuSetScissor(commandList, 0, 0, displayWidth, displayHeight);
     
     agpuUsePipelineState(commandList, agpu->opaqueDepthOnlyPipeline);
-    
-    // TODO: Render the opaque objects with color.
+    agpuDrawElementsIndirect(commandList, 0, agpu->renderObjectAttributes.size);
 
     agpuEndRenderPass(commandList);
 
