@@ -7,6 +7,7 @@
 #include "Math.h"
 
 #define BEACON_AGPU_FRAMEBUFFERING_COUNT 3
+
 #define BEACON_AGPU_MAX_NUMBER_OF_QUADS 1024
 #define BEACON_AGPU_TEXTURE_ARRAY_SIZE 1024
 
@@ -21,9 +22,53 @@
 #define BEACON_AGPU_MAX_LIGHT_CLUSTER_CAPACITY 100
 #define BEACON_AGPU_SHADOW_MAP_ATLAS_SIZE 4096
 
+#define BEACON_AGPU_LIGHT_GRID_WIDTH 16
+#define BEACON_AGPU_LIGHT_GRID_HEIGHT 9
+#define BEACON_AGPU_LIGHT_GRID_DEPTH 24
+
+#define BEACON_AGPU_LIGHT_GRID_CELL_COUNT (BEACON_AGPU_LIGHT_GRID_WIDTH*BEACON_AGPU_LIGHT_GRID_HEIGHT*BEACON_AGPU_LIGHT_GRID_DEPTH)
+
+#define BEACON_AGPU_MAX_LIGHT_CLUSTER_CAPACITY 100
+#define BEACON_AGPU_SHADOW_MAP_ATLAS_SIZE 4096
+
+#define BEACON_AGPU_MAX_CAMERA_STATES 16
+
 #define BEACON_AGPU_SWAP_CHAIN_COLOR_FORMAT AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB
 #define BEACON_AGPU_COLOR_FORMAT AGPU_TEXTURE_FORMAT_R16G16B16A16_FLOAT
 #define BEACON_AGPU_DEPTH_FORMAT AGPU_TEXTURE_FORMAT_D32_FLOAT
+
+typedef struct beacon_RenderCameraState_s
+{
+    beacon_RenderVector2_t framebufferExtent;
+    beacon_RenderVector2_t framebufferReciprocalExtent;
+
+    uint32_t flipVertically;
+    float nearDistance;
+    float farDistance;
+
+    float timeOfSimulation;
+    float timeOfDay;
+    float exposure;
+
+    beacon_RenderVector3_t ambientLightSource;
+    float padding;
+
+    beacon_RenderVector2_t lightGridDepthSliceScaleOffset;
+	int hasTopLeftNDCOrigin;
+	int hasBottomLeftTextureCoordinates;
+
+    uint32_t lightGridExtentX;
+    uint32_t lightGridExtentY;
+    uint32_t lightGridExtentZ;
+
+    beacon_RenderMatrix4x4_t projectionMatrix;
+    beacon_RenderMatrix4x4_t inverseProjectionMatrix;
+    beacon_RenderMatrix4x4_t viewMatrix;
+    beacon_RenderMatrix4x4_t inverseViewMatrix;
+
+    beacon_Frustum_t worldFrustum;
+
+}beacon_RenderCameraState_t;
 
 typedef enum beacon_GuiElementType_e
 {
@@ -72,6 +117,34 @@ typedef struct beacon_RenderMeshChunk_s
     uint32_t renderMeshPrimitiveIndex;
 }beacon_RenderMeshChunk_t;
 
+typedef struct beacon_RenderLightSource_s
+{
+	beacon_RenderVector4_t positionOrDirection;
+
+	beacon_RenderPackedVector3_t intensity;
+	float influenceRadius;
+
+	beacon_RenderPackedVector3_t spotDirection;
+	float innerSpotCosCutoff;
+
+	float outerSpotCosCutoff;
+	bool castShadows;
+	beacon_RenderVector2_t shadowMapViewportScale;
+	
+	float shadowMapNormalBiasFactor;
+
+	beacon_RenderVector4_t shadowMapCascadeDistanceWorldTransform;
+	beacon_RenderVector4_t shadowMapCascadeOffsets;
+	
+	beacon_RenderMatrix4x4_t modelMatrix[6];
+	beacon_RenderMatrix4x4_t inverseModelMatrix[6];
+
+	beacon_RenderMatrix4x4_t projectionMatrix[6];
+	beacon_RenderMatrix4x4_t inverseProjectionMatrix[6];
+
+	beacon_RenderVector2_t shadowMapViewportOffsets[6];
+}beacon_RenderLightSource_t;
+
 typedef struct beacon_RenderMeshPrimitiveAttributes_s
 {
     int32_t materialIndex;
@@ -103,34 +176,6 @@ typedef struct beacon_RenderMaterialAttributes_s
     uint32_t roughnessMetallicTextureIndex;
     uint32_t occlusionTextureIndex;
 } beacon_RenderMaterialAttributes_t;
-
-typedef struct beacon_RenderLightSource_s
-{
-	beacon_RenderVector4_t positionOrDirection;
-
-	beacon_RenderVector3_t intensity;
-	float influenceRadius;
-
-	beacon_RenderVector3_t spotDirection;
-	float innerSpotCosCutoff;
-
-	float outerSpotCosCutoff;
-	bool castShadows;
-	beacon_RenderVector2_t shadowMapViewportScale;
-	
-	float shadowMapNormalBiasFactor;
-
-	beacon_RenderVector4_t shadowMapCascadeDistanceWorldTransform;
-	beacon_RenderVector4_t shadowMapCascadeOffsets;
-	
-	beacon_RenderMatrix4x4_t modelMatrix;
-	beacon_RenderMatrix4x4_t inverseModelMatrix;
-
-	beacon_RenderMatrix4x4_t projectionMatrix;
-	beacon_RenderMatrix4x4_t inverseProjectionMatrix;
-
-	beacon_RenderVector2_t shadowMapViewportOffsets;
-}beacon_RenderLightSource_t;
 
 typedef struct beacon_AGPUUpdateBuffer_s
 {
@@ -180,14 +225,21 @@ typedef struct beacon_AGPU_s
     beacon_AGPUUpdateBuffer_t vertexBoneIndices;
     beacon_AGPUUpdateBuffer_t vertexBoneWeights;
 
+    beacon_AGPUUpdateBuffer_t cameraState;
     beacon_AGPUUpdateBuffer_t guiData;
 
     beacon_AGPUUpdateBuffer_t indexData;
 
     agpu_buffer *gpu3DRenderingDataBuffer;
     agpu_buffer *gpu3DRenderingIndexBuffer;
+
     agpu_buffer *renderDrawIndirectBuffer;
     agpu_buffer *renderChunkDataBuffer;
+
+    agpu_buffer *viewLightSourceBuffer;
+    agpu_buffer *lightClusterBuffer;
+    agpu_buffer *tileLightIndexListBuffer;
+    agpu_buffer *lightGridBuffer;
 
     agpu_shader_resource_binding *renderingDataBinding;
 

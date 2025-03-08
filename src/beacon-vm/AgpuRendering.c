@@ -140,7 +140,6 @@ static agpu_shader *beacon_agpu_compileShaderWithSourceFileNamed(beacon_context_
     memcpy(combinedSource, commonSource, commonSourceSize);
     memcpy(combinedSource + commonSourceSize, shaderSource, shaderSourceSourceSize);
 
-    printf("combinedSource:\n%s\n", combinedSource);
     agpu_shader *shader = beacon_agpu_compileShaderWithSource(context, agpu, name, combinedSource, shaderType);
 
     if(commonSource)
@@ -170,7 +169,7 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
         //printf("guiFragmentShaderSource: %s\n", guiFragmentShaderSource);
 
         agpu_shader *vertexShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiVertex", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/GuiVertexShader.glsl", AGPU_VERTEX_SHADER);
-        agpu_shader *fragmentShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiFragment", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/ShaderCommon.glsl", AGPU_FRAGMENT_SHADER);
+        agpu_shader *fragmentShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiFragment", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/GuiFragmentShader.glsl", AGPU_FRAGMENT_SHADER);
 
         agpu_pipeline_builder *builder = agpuCreatePipelineBuilder(agpu->device);
         agpuSetRenderTargetFormat(builder, 0, AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB);
@@ -230,6 +229,7 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         agpuAddShaderSignatureBindingBankArray(builder, AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, BEACON_AGPU_TEXTURE_ARRAY_SIZE);
 
         agpuBeginShaderSignatureBindingBank(builder, 1); // Set 2
+
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 0: Render object
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 1: Render model
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 2: Render submesh
@@ -243,10 +243,18 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 9: Vertex BoneIndices
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 10: Vertex BoneWeights
 
-        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 11: Gui elements
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 11: Draw indirect
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 12: Mesh chunks
 
-        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 12: Draw indirect
-        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 13: Mesh chunks
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 13: View space lights
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 14: LightClustersBlock
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 15: TileLightIndicesBlock
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 16: LightClusterListsBlock
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1);  // 17: Shadow map atlas
+
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 18: Gui elements
+
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 19: Camera state
 
         agpuAddShaderSignatureBindingConstant(builder); // hasTopLeftNDCOrigin
         agpuAddShaderSignatureBindingConstant(builder); // reservedConstant
@@ -415,6 +423,8 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
 
     initializeUpdateBuffer(&agpu->guiData, &agpu->vertexBoneWeights, sizeof(beacon_GuiRenderingElement_t), BEACON_AGPU_MAX_NUMBER_OF_QUADS);
 
+    initializeUpdateBuffer(&agpu->cameraState, &agpu->guiData, sizeof(beacon_RenderCameraState_t), BEACON_AGPU_MAX_CAMERA_STATES);
+
     initializeUpdateBuffer(&agpu->indexData, &agpu->guiData, sizeof(uint32_t), BEACON_AGPU_MAX_INDICES);
 
     agpu_device *device = agpu->device;
@@ -423,7 +433,7 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
             .heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL,
             .usage_modes = AGPU_COPY_DESTINATION_BUFFER | AGPU_STORAGE_BUFFER,
             .main_usage_mode = AGPU_STORAGE_BUFFER,
-            .size = agpu->guiData.endOffset,
+            .size = agpu->cameraState.endOffset,
         };
 
         agpu->gpu3DRenderingDataBuffer = agpuCreateBuffer(device, &desc, NULL);
@@ -460,6 +470,42 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
         agpu->renderChunkDataBuffer = agpuCreateBuffer(device, &desc, NULL);
     }
 
+    {
+        agpu_buffer_description desc = {};
+        desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+        desc.usage_modes = AGPU_STORAGE_BUFFER;
+        desc.main_usage_mode = AGPU_STORAGE_BUFFER;
+        desc.size = sizeof(beacon_RenderLightSource_t) * BEACON_AGPU_MAX_LIGHT_SOURCES;
+        agpu->viewLightSourceBuffer = agpuCreateBuffer(device, &desc, NULL);
+    }
+
+    {
+        agpu_buffer_description desc = {};
+        desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+        desc.usage_modes = AGPU_STORAGE_BUFFER;
+        desc.main_usage_mode = AGPU_STORAGE_BUFFER;
+        desc.size = 32 * BEACON_AGPU_LIGHT_GRID_CELL_COUNT;
+        agpu->lightClusterBuffer = agpuCreateBuffer(device, &desc, NULL);
+    }
+
+    {
+        agpu_buffer_description desc = {};
+        desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+        desc.usage_modes = AGPU_STORAGE_BUFFER;
+        desc.main_usage_mode = AGPU_STORAGE_BUFFER;
+        desc.size = 4 * BEACON_AGPU_MAX_LIGHT_CLUSTER_CAPACITY * BEACON_AGPU_LIGHT_GRID_CELL_COUNT;
+        agpu->tileLightIndexListBuffer = agpuCreateBuffer(device, &desc, NULL);
+    }
+
+    {
+        agpu_buffer_description desc = {};
+        desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+        desc.usage_modes = AGPU_STORAGE_BUFFER;
+        desc.main_usage_mode = AGPU_STORAGE_BUFFER;
+        desc.size = 8 + 8 * BEACON_AGPU_MAX_LIGHT_CLUSTER_CAPACITY * BEACON_AGPU_LIGHT_GRID_CELL_COUNT;
+        agpu->lightGridBuffer = agpuCreateBuffer(device, &desc, NULL);
+    }
+
     agpu->renderingDataBinding = agpuCreateShaderResourceBinding(context->roots.agpuCommon->shaderSignature, 2);
     agpuBindStorageBufferRange(agpu->renderingDataBinding, 0, agpu->gpu3DRenderingDataBuffer, agpu->renderObjectAttributes.offset,        agpu->renderObjectAttributes.byteCapacity);
     agpuBindStorageBufferRange(agpu->renderingDataBinding, 1, agpu->gpu3DRenderingDataBuffer, agpu->renderModelAttributes.offset,         agpu->renderModelAttributes.byteCapacity);
@@ -474,7 +520,16 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
     agpuBindStorageBufferRange(agpu->renderingDataBinding, 9,  agpu->gpu3DRenderingDataBuffer, agpu->vertexBoneIndices.offset, agpu->vertexBoneIndices.byteCapacity);
     agpuBindStorageBufferRange(agpu->renderingDataBinding, 10, agpu->gpu3DRenderingDataBuffer, agpu->vertexBoneWeights.offset, agpu->vertexBoneWeights.byteCapacity);
 
-    agpuBindStorageBufferRange(agpu->renderingDataBinding, 11, agpu->gpu3DRenderingDataBuffer, agpu->guiData.offset, agpu->guiData.byteCapacity);
+    agpuBindStorageBuffer(agpu->renderingDataBinding, 11, agpu->renderDrawIndirectBuffer);
+    agpuBindStorageBuffer(agpu->renderingDataBinding, 12, agpu->renderChunkDataBuffer);
+
+    agpuBindStorageBuffer(agpu->renderingDataBinding, 13, agpu->viewLightSourceBuffer);
+    agpuBindStorageBuffer(agpu->renderingDataBinding, 14, agpu->lightClusterBuffer);
+    agpuBindStorageBuffer(agpu->renderingDataBinding, 15, agpu->tileLightIndexListBuffer);
+    agpuBindStorageBuffer(agpu->renderingDataBinding, 16, agpu->lightGridBuffer);
+
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 18, agpu->gpu3DRenderingDataBuffer, agpu->guiData.offset, agpu->guiData.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 19, agpu->gpu3DRenderingDataBuffer, agpu->cameraState.offset, agpu->cameraState.byteCapacity);
 }
 
 beacon_AGPUWindowRenderer_t *beacon_agpu_createWindowRenderer(beacon_context_t *context)
@@ -555,6 +610,8 @@ static void beacon_agpuWindowRenderer_resetPerFrameBuffers(beacon_context_t *con
     beacon_resetUpdateBufferPointer(&agpu->vertexBoneWeights, renderingDataUploadBuffer);
 
     beacon_resetUpdateBufferPointer(&agpu->guiData, renderingDataUploadBuffer);
+
+    beacon_resetUpdateBufferPointer(&agpu->cameraState, renderingDataUploadBuffer);
 
     beacon_resetUpdateBufferPointer(&agpu->indexData, renderingDataUploadBuffer);
 }
@@ -925,6 +982,8 @@ static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context
     beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexBoneWeights);
 
     beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->guiData);
+
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->cameraState);
 
     beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->indexData);
 

@@ -9,7 +9,13 @@ typedef struct beacon_RenderVector2_s
 typedef struct beacon_RenderVector3_s
 {
     float x, y, z;
+    float padding;
 } beacon_RenderVector3_t;
+
+typedef struct beacon_RenderPackedVector3_s
+{
+    float x, y, z;
+} beacon_RenderPackedVector3_t;
 
 typedef struct beacon_RenderVector4_s
 {
@@ -24,4 +30,24 @@ typedef struct beacon_RenderMatrix4x4_s
     float m14; float m24; float m34; float m44;
 } beacon_RenderMatrix4x4_t;
 
+typedef struct beacon_AABox3_s
+{
+	beacon_RenderVector3_t min;
+	beacon_RenderVector3_t max;
+} beacon_AABox3_t;
+
+typedef struct beacon_Frustum_s
+{
+	beacon_RenderVector3_t leftBottomNear;
+	beacon_RenderVector3_t rightBottomNear;
+	beacon_RenderVector3_t leftTopNear;
+	beacon_RenderVector3_t rightTopNear;
+	beacon_RenderVector3_t leftBottomFar;
+	beacon_RenderVector3_t rightBottomFar;
+	beacon_RenderVector3_t leftTopFar;
+	beacon_RenderVector3_t rightTopFar;
+
+	beacon_AABox3_t boundingBox;
+    beacon_RenderVector4_t planes[6];
+} beacon_Frustum_t;
 #endif //BEACON_MATH_H
