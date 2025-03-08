@@ -1,5 +1,7 @@
 #line 2
 
+layout(set=3, binding=0) uniform texture2D SourceTexture;
+
 layout(location = 0) in vec2 inTexcoord;
 layout(location = 0) out vec4 outColor;
 
@@ -16,7 +18,7 @@ vec3 filmicCurve(vec3 x)
 
 void main()
 {
-	vec4 hdrTexel = textureLod(sampler2D(AllTextures[PushConstants.hdrTextureIndex], LinearTextureSampler), inTexcoord, 0.0);
+	vec4 hdrTexel = textureLod(sampler2D(SourceTexture, LinearTextureSampler), inTexcoord, 0.0);
 	vec3 hdrColor = hdrTexel.rgb;// * CameraState.exposure;
 	vec3 ldrColor = filmicCurve(hdrColor);
 	outColor = vec4(ldrColor, hdrTexel.a);

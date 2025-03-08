@@ -300,6 +300,9 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
 
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 19: Camera state
 
+        agpuBeginShaderSignatureBindingBank(builder, 1024); // Set 3 - Postprocessing
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, 1); // HdrColorBuffer
+
         agpuAddShaderSignatureBindingConstant(builder); // renderObjectsSize
         agpuAddShaderSignatureBindingConstant(builder); // lightSourceCount
         agpuAddShaderSignatureBindingConstant(builder); // shadowMapLightSourceIndex
@@ -309,8 +312,6 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         agpuAddShaderSignatureBindingConstant(builder); // reservedConstant
         agpuAddShaderSignatureBindingConstant(builder); // framebufferReciprocalExtentX
         agpuAddShaderSignatureBindingConstant(builder); // framebufferReciprocalExtentY
-
-        agpuAddShaderSignatureBindingConstant(builder); // hdrTextureIndex
 
         agpu->shaderSignature = agpuBuildShaderSignature(builder);
     }
@@ -982,18 +983,18 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
         }
 
         {   
-            if(renderer->hdrColorTextureIndex <= 0)
-                renderer->hdrColorTextureIndex = context->roots.agpuCommon->textureArrayBindingCount++;
-            agpu_texture_view *hdrColorTextureView = agpuGetOrCreateFullTextureView(renderer->hdrColorBuffer);
-            agpuBindArrayOfSampledTextureView(context->roots.agpuCommon->texturesArrayBinding, 0, renderer->hdrColorTextureIndex, 1, &hdrColorTextureView);            
-        }
-
-        {   
             if(renderer->outputTextureIndex <= 0)
                 renderer->outputTextureIndex = context->roots.agpuCommon->textureArrayBindingCount++;
             agpu_texture_view *outputTextureView = agpuGetOrCreateFullTextureView(renderer->outputTexture);
             agpuBindArrayOfSampledTextureView(context->roots.agpuCommon->texturesArrayBinding, 0, renderer->outputTextureIndex, 1, &outputTextureView);            
         }
+    }
+
+    if(!renderer->intermediateBindings)
+        renderer->intermediateBindings = agpuCreateShaderResourceBinding(context->roots.agpuCommon->shaderSignature, 3);
+    {
+        agpu_texture_view *textureView = agpuGetOrCreateFullTextureView(renderer->hdrColorBuffer);
+        agpuBindSampledTextureView(renderer->intermediateBindings, 0, textureView);
     }
 
     return receiver;
@@ -1049,6 +1050,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->samplerBinding);
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->renderingDataBinding);
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->texturesArrayBinding);
+    agpuUseShaderResources(thisFrameState->commandList, renderer->intermediateBindings);
 
     agpuUseIndexBuffer(commandList, context->roots.agpuCommon->gpu3DRenderingIndexBuffer);
     agpuUseDrawIndirectBuffer(commandList, context->roots.agpuCommon->renderDrawIndirectBuffer);
@@ -1090,8 +1092,6 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuSetViewport(commandList, 0, 0, displayWidth, displayHeight);
     agpuSetScissor(commandList, 0, 0, displayWidth, displayHeight);
 
-    uint32_t hdrColorBufferIndex = renderer->hdrColorTextureIndex;
-    agpuPushConstants(commandList, 32, 4, &hdrColorBufferIndex);
     agpuUsePipelineState(commandList, agpu->toneMappingPipeline);
     agpuDrawArrays(commandList, 3, 1, 0, 0);
 

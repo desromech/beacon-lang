@@ -293,7 +293,6 @@ typedef struct beacon_AGPUWindowRenderer_s
     bool hasIntermediateBuffers;
     int intermediateBufferWidth;
     int intermediateBufferHeight;
-    int32_t hdrColorTextureIndex;
     int32_t outputTextureIndex;
 
     agpu_texture *mainDepthBuffer;
@@ -312,6 +311,8 @@ typedef struct beacon_AGPUWindowRenderer_s
     agpu_renderpass *mainDepthColorRenderPass;
     agpu_renderpass *shadowMapAtlasRenderPass;
     agpu_renderpass *outputRenderPass;
+
+    agpu_shader_resource_binding *intermediateBindings;
 
 } beacon_AGPUWindowRenderer_t;
 
