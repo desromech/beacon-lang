@@ -26,7 +26,7 @@ void main()
     case GuiElementType_TextCharacter:
         if(thisElement.texture >= 0)
         {
-            float fontAlpha = texture(sampler2D(GuiTextures[thisElement.texture], NearestTextureSampler), mappedTexcoord).r;
+            float fontAlpha = texture(sampler2D(AllTextures[thisElement.texture], NearestTextureSampler), mappedTexcoord).r;
             backgroundColor = thisElement.firstColor*fontAlpha;
         }
         else

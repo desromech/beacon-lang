@@ -162,6 +162,20 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
     else
         screenQuadShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiVertex", NULL, "scripts/runtime/shaders/ScreenQuad.glsl", AGPU_VERTEX_SHADER);
 
+    // Depth only
+    {
+        agpu_shader *depthOnlyVertexShaders = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "DepthOnlyVertex", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/DepthOnlyVertex.glsl", AGPU_VERTEX_SHADER);
+        agpu_pipeline_builder *builder = agpuCreatePipelineBuilder(device);
+        agpuSetRenderTargetCount(builder, 0);
+        agpuSetDepthStencilFormat(builder, BEACON_AGPU_DEPTH_FORMAT);
+        agpuSetPipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachShader(builder, depthOnlyVertexShaders);
+        agpuSetPrimitiveType(builder, AGPU_TRIANGLES);
+        agpuSetDepthState(builder, true, true, AGPU_GREATER_EQUAL);
+        agpuSetCullMode(builder, AGPU_CULL_MODE_BACK);
+        agpu->opaqueDepthOnlyPipeline = agpuBuildPipelineState(builder);
+        agpuReleaseShader(depthOnlyVertexShaders);
+    }
 
     // Uber GUI pipeline state
     {
@@ -255,6 +269,11 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 18: Gui elements
 
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 19: Camera state
+
+        agpuAddShaderSignatureBindingConstant(builder); // renderObjectsSize
+        agpuAddShaderSignatureBindingConstant(builder); // lightSourceCount
+        agpuAddShaderSignatureBindingConstant(builder); // shadowMapLightSourceIndex
+        agpuAddShaderSignatureBindingConstant(builder); // shadowMapComponent
 
         agpuAddShaderSignatureBindingConstant(builder); // hasTopLeftNDCOrigin
         agpuAddShaderSignatureBindingConstant(builder); // reservedConstant
@@ -1004,12 +1023,12 @@ static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context
     // Push the constants.
     {
         int hasTopLeftNDCOriginValue = agpuHasTopLeftNdcOrigin(context->roots.agpuCommon->device);
-        agpuPushConstants(thisFrameState->commandList, 0, 4, &hasTopLeftNDCOriginValue);
+        agpuPushConstants(thisFrameState->commandList, 16, 4, &hasTopLeftNDCOriginValue);
 
         float framebufferReciprocalExtentX = 1.0f / screenWidth;
         float framebufferReciprocalExtentY = 1.0f / screenHeight;
-        agpuPushConstants(thisFrameState->commandList, 8, 4, &framebufferReciprocalExtentX);
-        agpuPushConstants(thisFrameState->commandList, 12, 4, &framebufferReciprocalExtentY);
+        agpuPushConstants(thisFrameState->commandList, 24, 4, &framebufferReciprocalExtentX);
+        agpuPushConstants(thisFrameState->commandList, 28, 4, &framebufferReciprocalExtentY);
     }
 
     agpuUsePipelineState(thisFrameState->commandList, context->roots.agpuCommon->guiPipelineState);

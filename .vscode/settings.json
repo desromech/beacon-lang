@@ -26,6 +26,7 @@
         "agpurendering.h": "c",
         "string.h": "c",
         "objectmodel.h": "c",
-        "agpu.h": "c"
+        "agpu.h": "c",
+        "math.h": "c"
     }
 }

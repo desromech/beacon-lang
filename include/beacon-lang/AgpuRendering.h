@@ -207,6 +207,8 @@ typedef struct beacon_AGPU_s
     agpu_shader_resource_binding *samplerBinding;
     agpu_pipeline_state *guiPipelineState;
 
+    agpu_pipeline_state *opaqueDepthOnlyPipeline;
+
     agpu_texture *errorTexture;
     agpu_texture *boundTextures[1024];
     agpu_texture_view *boundTextureViews[1024];
