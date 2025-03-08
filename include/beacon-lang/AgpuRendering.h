@@ -209,6 +209,7 @@ typedef struct beacon_AGPU_s
 
     agpu_pipeline_state *opaqueDepthOnlyPipeline;
     agpu_pipeline_state *daySkyPipeline;
+    agpu_pipeline_state *toneMappingPipeline;
 
     agpu_texture *errorTexture;
     agpu_texture *boundTextures[1024];
@@ -292,15 +293,19 @@ typedef struct beacon_AGPUWindowRenderer_s
     bool hasIntermediateBuffers;
     int intermediateBufferWidth;
     int intermediateBufferHeight;
+    int32_t hdrColorTextureIndex;
+    int32_t outputTextureIndex;
 
     agpu_texture *mainDepthBuffer;
     agpu_texture *hdrColorBuffer;
     agpu_texture *normalGBuffer;
     agpu_texture *specularityGBuffer;
+    agpu_texture *outputTexture;
 
     agpu_framebuffer *depthOnlyFramebuffer;
     agpu_framebuffer *hdrOpaqueFramebuffer;
     agpu_framebuffer *hdrFramebuffer;
+    agpu_framebuffer *outputFramebuffer;
 
     agpu_renderpass *mainDepthRenderPass;
     agpu_renderpass *mainDepthColorOpaqueRenderPass;

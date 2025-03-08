@@ -10,6 +10,8 @@ layout( push_constant ) uniform constants
     bool hasTopLeftNDCOrigin;
     uint cameraStateIndex;
     vec2 framebufferReciprocalExtent;
+    
+    uint hdrTextureIndex;
 } PushConstants;
 
 struct Frustum

@@ -194,6 +194,19 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
         agpu->daySkyPipeline = agpuBuildPipelineState(builder);
         agpuReleaseShader(daySkyShader);
     }
+
+    {
+        agpu_shader *toneMapping = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "ToneMapping", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/FilmicTonemapping.glsl", AGPU_FRAGMENT_SHADER);
+        agpu_pipeline_builder *builder = agpuCreatePipelineBuilder(device);
+        agpuSetRenderTargetFormat(builder, 0, BEACON_AGPU_SWAP_CHAIN_COLOR_FORMAT);
+        agpuSetDepthStencilFormat(builder, AGPU_TEXTURE_FORMAT_UNKNOWN);
+        agpuSetPipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachShader(builder, screenQuadShader);
+        agpuAttachShader(builder, toneMapping);
+        agpuSetPrimitiveType(builder, AGPU_TRIANGLE_STRIP);
+        agpuSetCullMode(builder, AGPU_CULL_MODE_BACK);
+        agpu->toneMappingPipeline = agpuBuildPipelineState(builder);
+    }
     // Uber GUI pipeline state
     {
         //printf("guiVertexShaderSource: %s\n", guiVertexShaderSource);
@@ -296,6 +309,8 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         agpuAddShaderSignatureBindingConstant(builder); // reservedConstant
         agpuAddShaderSignatureBindingConstant(builder); // framebufferReciprocalExtentX
         agpuAddShaderSignatureBindingConstant(builder); // framebufferReciprocalExtentY
+
+        agpuAddShaderSignatureBindingConstant(builder); // hdrTextureIndex
 
         agpu->shaderSignature = agpuBuildShaderSignature(builder);
     }
@@ -815,10 +830,12 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
             agpuReleaseTexture(renderer->hdrColorBuffer);
             agpuReleaseTexture(renderer->normalGBuffer);
             agpuReleaseTexture(renderer->specularityGBuffer);
+            agpuReleaseTexture(renderer->outputTexture);
 
             agpuReleaseFramebuffer(renderer->depthOnlyFramebuffer);
             agpuReleaseFramebuffer(renderer->hdrOpaqueFramebuffer);
             agpuReleaseFramebuffer(renderer->hdrFramebuffer);
+            agpuReleaseFramebuffer(renderer->outputFramebuffer);
 
             renderer->mainDepthBuffer    = NULL;
             renderer->hdrColorBuffer     = NULL;
@@ -909,6 +926,23 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
         }
 
         {
+            agpu_texture_description desc = {};
+            desc.type = AGPU_TEXTURE_2D;
+            desc.width = displayWidth;
+            desc.height = displayHeight;
+            desc.depth = 1;
+            desc.layers = 1;
+            desc.miplevels = 1;
+            desc.format = BEACON_AGPU_SWAP_CHAIN_COLOR_FORMAT;
+            desc.usage_modes = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT | AGPU_TEXTURE_USAGE_SAMPLED;
+            desc.main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED;
+            desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+            desc.sample_count = 1;
+            desc.sample_quality = 0;
+
+            renderer->outputTexture = agpuCreateTexture(device, &desc);
+        }
+        {
             agpu_texture_view_description depthBufferViewDesc = {};
             agpuGetTextureFullViewDescription(renderer->mainDepthBuffer, &depthBufferViewDesc);
             depthBufferViewDesc.usage_mode = AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT;
@@ -929,6 +963,11 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
             specularityGBufferViewDesc.usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
             agpu_texture_view *specularityGBufferAttachmentView = agpuCreateTextureView(renderer->specularityGBuffer, &specularityGBufferViewDesc);
 
+            agpu_texture_view_description outputTextureViewDesc = {};
+            agpuGetTextureFullViewDescription(renderer->outputTexture, &outputTextureViewDesc);
+            outputTextureViewDesc.usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
+            agpu_texture_view *outputTextureAttachmentView = agpuCreateTextureView(renderer->outputTexture, &outputTextureViewDesc);
+
             agpu_texture_view* opaqueAttachments[] = {
                 hdrColorAttachmentView,
                 normalGBufferAttachmentView,
@@ -938,8 +977,23 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
 
             renderer->hdrFramebuffer = agpuCreateFrameBuffer(device, displayWidth, displayHeight, 1, &hdrColorAttachmentView, depthBufferAttachmentView);
             renderer->depthOnlyFramebuffer = agpuCreateFrameBuffer(device, displayWidth, displayHeight, 0, NULL, depthBufferAttachmentView);
+
+            renderer->outputFramebuffer = agpuCreateFrameBuffer(device, displayWidth, displayHeight, 1, &outputTextureAttachmentView, NULL);
         }
 
+        {   
+            if(renderer->hdrColorTextureIndex <= 0)
+                renderer->hdrColorTextureIndex = context->roots.agpuCommon->textureArrayBindingCount++;
+            agpu_texture_view *hdrColorTextureView = agpuGetOrCreateFullTextureView(renderer->hdrColorBuffer);
+            agpuBindArrayOfSampledTextureView(context->roots.agpuCommon->texturesArrayBinding, 0, renderer->hdrColorTextureIndex, 1, &hdrColorTextureView);            
+        }
+
+        {   
+            if(renderer->outputTextureIndex <= 0)
+                renderer->outputTextureIndex = context->roots.agpuCommon->textureArrayBindingCount++;
+            agpu_texture_view *outputTextureView = agpuGetOrCreateFullTextureView(renderer->outputTexture);
+            agpuBindArrayOfSampledTextureView(context->roots.agpuCommon->texturesArrayBinding, 0, renderer->outputTextureIndex, 1, &outputTextureView);            
+        }
     }
 
     return receiver;
@@ -954,6 +1008,16 @@ static void beacon_agpuWindowRenderer_emitRenderPassCommands(beacon_context_t *c
 
 }
 
+static void beacon_agpuWindowRenderer_uploadPerFrameBuffer(agpu_command_list *commandList, beacon_AGPU_t *agpu, beacon_AGPUWindowRenderer_t *renderer, beacon_AGPUUpdateBuffer_t *updateBuffer)
+{
+    if(updateBuffer->size == 0)
+        return;
+
+    agpuCopyBuffer(commandList,
+        renderer->renderingDataSubmissionBuffer, updateBuffer->offset + renderer->frameRenderingDataUploadSize*renderer->currentFrameBufferingIndex,
+        agpu->gpu3DRenderingDataBuffer, updateBuffer->offset, updateBuffer->size*updateBuffer->elementSize);
+}
+
 static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t*)receiver;
@@ -963,6 +1027,22 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
 
     int displayWidth = renderer->intermediateBufferWidth;
     int displayHeight = renderer->intermediateBufferHeight;
+
+    // Upload the shader resources
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderObjectAttributes);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderModelAttributes);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderMeshPrimitiveAttributes);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderMaterialsAttributes);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderLightSourceAttributes);
+
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexPositions);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexNormals);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexTexcoords);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexTangent4);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexBoneIndices);
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexBoneWeights);
+
+    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->cameraState);
 
     // Setup the shader resources.
     agpuSetShaderSignature(thisFrameState->commandList, context->roots.agpuCommon->shaderSignature);
@@ -977,8 +1057,10 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuBeginRenderPass(commandList, renderer->mainDepthRenderPass, renderer->depthOnlyFramebuffer, false);
     agpuSetViewport(commandList, 0, 0, displayWidth, displayHeight);
     agpuSetScissor(commandList, 0, 0, displayWidth, displayHeight);
-
+    
+    agpuUsePipelineState(commandList, agpu->opaqueDepthOnlyPipeline);
     beacon_agpuWindowRenderer_emitRenderPassCommands(context, renderer, true);
+
     agpuEndRenderPass(commandList);
 
     // Opaque color
@@ -1002,18 +1084,20 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
 
     beacon_agpuWindowRenderer_emitRenderPassCommands(context, renderer, false);
     agpuEndRenderPass(commandList);
+
+    // Output frame
+    agpuBeginRenderPass(commandList, renderer->outputRenderPass, renderer->outputFramebuffer, false);
+    agpuSetViewport(commandList, 0, 0, displayWidth, displayHeight);
+    agpuSetScissor(commandList, 0, 0, displayWidth, displayHeight);
+
+    uint32_t hdrColorBufferIndex = renderer->hdrColorTextureIndex;
+    agpuPushConstants(commandList, 32, 4, &hdrColorBufferIndex);
+    agpuUsePipelineState(commandList, agpu->toneMappingPipeline);
+    agpuDrawArrays(commandList, 3, 1, 0, 0);
+
+    agpuEndRenderPass(commandList);
     
     return receiver;
-}
-
-static void beacon_agpuWindowRenderer_uploadPerFrameBuffer(agpu_command_list *commandList, beacon_AGPU_t *agpu, beacon_AGPUWindowRenderer_t *renderer, beacon_AGPUUpdateBuffer_t *updateBuffer)
-{
-    if(updateBuffer->size == 0)
-        return;
-
-    agpuCopyBuffer(commandList,
-        renderer->renderingDataSubmissionBuffer, updateBuffer->offset + renderer->frameRenderingDataUploadSize*renderer->currentFrameBufferingIndex,
-        agpu->gpu3DRenderingDataBuffer, updateBuffer->offset, updateBuffer->size*updateBuffer->elementSize);
 }
 
 static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -1022,24 +1106,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context
     beacon_AGPUWindowRendererPerFrameState_t *thisFrameState = renderer->frameState + renderer->currentFrameBufferingIndex;
     beacon_AGPU_t *agpu = context->roots.agpuCommon;
 
-    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderObjectAttributes);
-    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderModelAttributes);
-    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderMeshPrimitiveAttributes);
-    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderMaterialsAttributes);
-    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->renderLightSourceAttributes);
-
-    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexPositions);
-    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexNormals);
-    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexTexcoords);
-    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexTangent4);
-    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexBoneIndices);
-    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexBoneWeights);
-
     beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->guiData);
-
-    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->cameraState);
-
-    beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->indexData);
 
     agpuSetShaderSignature(thisFrameState->commandList, context->roots.agpuCommon->shaderSignature);
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->samplerBinding);
