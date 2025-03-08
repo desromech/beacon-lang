@@ -247,6 +247,7 @@ typedef struct beacon_AGPU_s
     agpu_buffer *lightGridBuffer;
 
     agpu_texture *shadowMapAtlas;
+    agpu_framebuffer *shadowMapFramebuffer;
 
     agpu_shader_resource_binding *renderingDataBinding;
 

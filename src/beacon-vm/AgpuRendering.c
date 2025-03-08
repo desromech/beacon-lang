@@ -404,8 +404,8 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
     {
         agpu_texture_description desc = {
             .type = AGPU_TEXTURE_2D,
-            .width = 8,
-            .height = 8,
+            .width = BEACON_AGPU_SHADOW_MAP_ATLAS_SIZE,
+            .height = BEACON_AGPU_SHADOW_MAP_ATLAS_SIZE,
             .depth = 1,
             .layers = 1,
             .miplevels = 1,
@@ -418,6 +418,7 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         };
 
         agpu->shadowMapAtlas = agpuCreateTexture(agpu->device, &desc);
+        agpu->shadowMapFramebuffer = agpuCreateFrameBuffer(agpu->device, BEACON_AGPU_SHADOW_MAP_ATLAS_SIZE, BEACON_AGPU_SHADOW_MAP_ATLAS_SIZE,0, NULL, agpuGetOrCreateFullTextureView(agpu->shadowMapAtlas));
     }
 
     beacon_agpu_loadPipelineStates(context, agpu);
