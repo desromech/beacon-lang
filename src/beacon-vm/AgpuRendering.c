@@ -1075,15 +1075,6 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
     return receiver;
 }
 
-static void beacon_agpuWindowRenderer_emitRenderPassCommands(beacon_context_t *context, beacon_AGPUWindowRenderer_t *renderer, bool opaque)
-{
-    beacon_AGPUWindowRendererPerFrameState_t *thisFrameState = renderer->frameState + renderer->currentFrameBufferingIndex;
-
-    //agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 12: Draw indirect
-    //agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1); // 13: Mesh chunks
-
-}
-
 static void beacon_agpuWindowRenderer_uploadPerFrameBuffer(agpu_command_list *commandList, beacon_AGPU_t *agpu, beacon_AGPUWindowRenderer_t *renderer, beacon_AGPUUpdateBuffer_t *updateBuffer)
 {
     if(updateBuffer->size == 0)
@@ -1130,13 +1121,30 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuUseIndexBuffer(commandList, context->roots.agpuCommon->gpu3DRenderingIndexBuffer);
     agpuUseDrawIndirectBuffer(commandList, context->roots.agpuCommon->renderDrawIndirectBuffer);
 
+    // Perform the main geometry culling.
+    agpuUseComputeShaderResources(thisFrameState->commandList, context->roots.agpuCommon->samplerBinding);
+    agpuUseComputeShaderResources(thisFrameState->commandList, context->roots.agpuCommon->renderingDataBinding);
+    agpuUseComputeShaderResources(thisFrameState->commandList, context->roots.agpuCommon->texturesArrayBinding);
+    agpuUseComputeShaderResources(thisFrameState->commandList, renderer->intermediateBindings);
+
+    // Perform the main geometry culling
+    uint32_t renderObjectsSize = agpu->renderObjectAttributes.size;
+    uint32_t lightSourceCount = agpu->renderLightSourceAttributes.size;
+    uint32_t nullPushConstant = 0;
+    
+    agpuPushConstants(commandList, 0, 4, &renderObjectsSize);
+    agpuPushConstants(commandList, 4, 4, &lightSourceCount);
+    agpuPushConstants(commandList, 8, 4, &nullPushConstant);
+    agpuPushConstants(commandList, 12, 4, &nullPushConstant);
+    
     // Depth only render pass
     agpuBeginRenderPass(commandList, renderer->mainDepthRenderPass, renderer->depthOnlyFramebuffer, false);
     agpuSetViewport(commandList, 0, 0, displayWidth, displayHeight);
     agpuSetScissor(commandList, 0, 0, displayWidth, displayHeight);
     
     agpuUsePipelineState(commandList, agpu->opaqueDepthOnlyPipeline);
-    beacon_agpuWindowRenderer_emitRenderPassCommands(context, renderer, true);
+    
+    // TODO: Render the opaque objects with color.
 
     agpuEndRenderPass(commandList);
 
@@ -1149,8 +1157,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuUsePipelineState(commandList, agpu->daySkyPipeline);
     agpuDrawArrays(commandList, 3, 1, 0, 0);
 
-    // Render the opaque objects with color.
-    beacon_agpuWindowRenderer_emitRenderPassCommands(context, renderer, true);
+    // TODO: Render the opaque objects with color.
 
     agpuEndRenderPass(commandList);
 
@@ -1159,7 +1166,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuSetViewport(commandList, 0, 0, displayWidth, displayHeight);
     agpuSetScissor(commandList, 0, 0, displayWidth, displayHeight);
 
-    beacon_agpuWindowRenderer_emitRenderPassCommands(context, renderer, false);
+    // TODO: Render the translucent objects with color.
     agpuEndRenderPass(commandList);
 
     // Output frame
