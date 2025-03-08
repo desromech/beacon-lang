@@ -520,7 +520,7 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
     initializeUpdateBuffer(&agpu->renderModelAttributes, &agpu->renderObjectAttributes, sizeof(beacon_RenderObjectAttributes_t), BEACON_AGPU_MAX_MODELS);
     initializeUpdateBuffer(&agpu->renderMeshPrimitiveAttributes, &agpu->renderModelAttributes, sizeof(beacon_RenderMeshPrimitiveAttributes_t), BEACON_AGPU_MAX_MESHES);
     initializeUpdateBuffer(&agpu->renderMaterialsAttributes, &agpu->renderMeshPrimitiveAttributes, sizeof(beacon_RenderMaterialAttributes_t), BEACON_AGPU_MAX_MATERIALS);
-    initializeUpdateBuffer(&agpu->renderLightSourceAttributes, &agpu->renderMaterialsAttributes, sizeof(beacon_RenderMaterialAttributes_t), BEACON_AGPU_MAX_MATERIALS);
+    initializeUpdateBuffer(&agpu->renderLightSourceAttributes, &agpu->renderMaterialsAttributes, sizeof(beacon_RenderLightSource_t), BEACON_AGPU_MAX_MATERIALS);
 
     initializeUpdateBuffer(&agpu->vertexPositions,   &agpu->renderLightSourceAttributes, 3*sizeof(float), BEACON_AGPU_MAX_VERTICES);
     initializeUpdateBuffer(&agpu->vertexNormals,     &agpu->vertexPositions,             3*sizeof(float), BEACON_AGPU_MAX_VERTICES);
@@ -1399,6 +1399,155 @@ static beacon_oop_t beacon_AGPU_uniqueInstance(beacon_context_t *context, beacon
     return (beacon_oop_t)context->roots.agpuCommon;
 }
 
+static size_t beacon_agpu_pushVertexPosition(beacon_AGPU_t *agpu, float x, float y, float z)
+{
+    size_t index = agpu->vertexPositions.size;
+    beacon_RenderPackedVector3_t position = {x, y, z};
+    beacon_RenderPackedVector3_t *positionBuffer = agpu->vertexPositions.thisFrameBuffer;
+    positionBuffer[agpu->vertexPositions.size++] = position;
+    return index;
+}
+
+static size_t beacon_agpu_pushVertexNormal(beacon_AGPU_t *agpu, float x, float y, float z)
+{
+    size_t index = agpu->vertexNormals.size;
+    beacon_RenderPackedVector3_t normal = {x, y, z};
+    beacon_RenderPackedVector3_t *normalBuffer = agpu->vertexNormals.thisFrameBuffer;
+    normalBuffer[agpu->vertexNormals.size++] = normal;
+    return index;
+}
+
+static size_t beacon_agpu_pushIndex(beacon_AGPU_t *agpu, uint32_t indexValue)
+{
+    size_t oldIndex = agpu->indexData.size;
+    uint32_t *indexBuffer = agpu->indexData.thisFrameBuffer;
+    indexBuffer[agpu->indexData.size++] = indexValue;
+    return oldIndex;
+}
+
+static size_t beacon_agpu_pushTriangle(beacon_AGPU_t *agpu, uint32_t firstIndex, uint32_t secondIndex, uint32_t thirdIndex)
+{
+    size_t oldIndex = beacon_agpu_pushIndex(agpu, firstIndex);
+    beacon_agpu_pushIndex(agpu, secondIndex);
+    beacon_agpu_pushIndex(agpu, thirdIndex);
+    return oldIndex;
+}
+
+static size_t beacon_agpu_pushMeshPrimitiveAttributes(beacon_AGPU_t *agpu, beacon_RenderMeshPrimitiveAttributes_t meshPrimitive)
+{
+    size_t index = agpu->renderMeshPrimitiveAttributes.size;
+    beacon_RenderMeshPrimitiveAttributes_t *buffer = agpu->renderMeshPrimitiveAttributes.thisFrameBuffer;
+    buffer[agpu->renderMeshPrimitiveAttributes.size++] = meshPrimitive;
+    return index;
+}
+
+static size_t beacon_agpu_pushModelAttributes(beacon_AGPU_t *agpu, beacon_RenderModelAttributes_t modelAttributes)
+{
+    size_t index = agpu->renderModelAttributes.size;
+    beacon_RenderModelAttributes_t *buffer = agpu->renderModelAttributes.thisFrameBuffer;
+    buffer[agpu->renderModelAttributes.size++] = modelAttributes;
+    return index;
+}
+
+static size_t beacon_agpu_pushRenderObjectAttributes(beacon_AGPU_t *agpu, beacon_RenderObjectAttributes_t objectAttributes)
+{
+    size_t index = agpu->renderObjectAttributes.size;
+    beacon_RenderObjectAttributes_t *buffer = agpu->renderObjectAttributes.thisFrameBuffer;
+    buffer[agpu->renderObjectAttributes.size++] = objectAttributes;
+    return index;
+}
+
+static beacon_oop_t beacon_agpuWindowRenderer_addTestCube(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
+    beacon_AGPU_t *agpu = context->roots.agpuCommon;
+
+    size_t positionBufferIndex = agpu->vertexPositions.size;
+    size_t normalBufferIndex = agpu->vertexNormals.size;
+    size_t indexBufferIndex = agpu->indexData.size;
+
+    float minX = -1;
+    float minY = -1;
+    float minZ = -1;
+    float maxX = 1;
+    float maxY = 1;
+    float maxZ = 1;
+
+    // Left.
+    beacon_agpu_pushVertexPosition(agpu, minX, minY, minZ); beacon_agpu_pushVertexNormal(agpu, -1, 0, 0);
+    beacon_agpu_pushVertexPosition(agpu, minX, maxY, minZ); beacon_agpu_pushVertexNormal(agpu, -1, 0, 0);
+    beacon_agpu_pushVertexPosition(agpu, minX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, -1, 0, 0);
+    beacon_agpu_pushVertexPosition(agpu, minX, minY, maxZ); beacon_agpu_pushVertexNormal(agpu, -1, 0, 0);
+    beacon_agpu_pushTriangle(agpu, 1, 0, 2);
+    beacon_agpu_pushTriangle(agpu, 3, 2, 0);
+
+    // Right.
+    beacon_agpu_pushVertexPosition(agpu, maxX, minY, minZ); beacon_agpu_pushVertexNormal(agpu, 1, 0, 0);
+    beacon_agpu_pushVertexPosition(agpu, maxX, maxY, minZ); beacon_agpu_pushVertexNormal(agpu, 1, 0, 0);
+    beacon_agpu_pushVertexPosition(agpu, maxX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, 1, 0, 0);
+    beacon_agpu_pushVertexPosition(agpu, maxX, minY, maxZ); beacon_agpu_pushVertexNormal(agpu, 1, 0, 0);
+    beacon_agpu_pushTriangle(agpu, 4+0, 4+1, 4+2);
+    beacon_agpu_pushTriangle(agpu, 4+2, 4+3, 4+0);
+
+    // Top.
+    beacon_agpu_pushVertexPosition(agpu, minX, maxY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, 1, 0);
+    beacon_agpu_pushVertexPosition(agpu, maxX, maxY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, 1, 0);
+    beacon_agpu_pushVertexPosition(agpu, maxX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 1, 0);
+    beacon_agpu_pushVertexPosition(agpu, minX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 1, 0);
+    beacon_agpu_pushTriangle(agpu, 8+1, 8+0, 8+2);
+    beacon_agpu_pushTriangle(agpu, 8+3, 8+2, 8+0);
+
+    // Bottom.
+    beacon_agpu_pushVertexPosition(agpu, minX, minY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, -1, 0);
+    beacon_agpu_pushVertexPosition(agpu, maxX, minY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, -1, 0);
+    beacon_agpu_pushVertexPosition(agpu, maxX, minY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, -1, 0);
+    beacon_agpu_pushVertexPosition(agpu, minX, minY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, -1, 0);
+    beacon_agpu_pushTriangle(agpu, 12+0, 12+1, 12+2);
+    beacon_agpu_pushTriangle(agpu, 12+2, 12+3, 12+0);
+
+    // Back.
+    beacon_agpu_pushVertexPosition(agpu, minX, minY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, -1);
+    beacon_agpu_pushVertexPosition(agpu, maxX, minY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, -1);
+    beacon_agpu_pushVertexPosition(agpu, maxX, maxY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, -1);
+    beacon_agpu_pushVertexPosition(agpu, minX, maxY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, -1);
+    beacon_agpu_pushTriangle(agpu, 16+1, 16+0, 16+2);
+    beacon_agpu_pushTriangle(agpu, 16+3, 16+2, 16+0);
+
+    // Front.
+    beacon_agpu_pushVertexPosition(agpu, minX, minY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, 1);
+    beacon_agpu_pushVertexPosition(agpu, maxX, minY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, 1);
+    beacon_agpu_pushVertexPosition(agpu, maxX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, 1);
+    beacon_agpu_pushVertexPosition(agpu, minX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, 1);
+    beacon_agpu_pushTriangle(agpu, 20+1, 20+0, 20+2);
+    beacon_agpu_pushTriangle(agpu, 20+3, 20+2, 20+0);
+    
+    beacon_RenderMeshPrimitiveAttributes_t meshPrimitive = {
+        .vertexCount = 24,
+        .firstPositionIndex = positionBufferIndex,
+        .firstNormalIndex = normalBufferIndex,
+        .firstTangents4Index = -1,
+        .firstTexcoordIndex = -1,
+
+        .indexCount = agpu->indexData.size - indexBufferIndex,
+        .firstIndexPosition = indexBufferIndex,
+    };
+    size_t meshPrimitiveIndex = beacon_agpu_pushMeshPrimitiveAttributes(agpu, meshPrimitive);
+
+    beacon_RenderModelAttributes_t modelAttributes = {
+        .submeshCount = 1,
+        .firstSubmeshIndex = meshPrimitiveIndex
+    };
+    size_t modelIndex = beacon_agpu_pushModelAttributes(agpu, modelAttributes);
+
+    beacon_RenderObjectAttributes_t objectAttributes = {
+        .modelMatrix = beacon_RenderMatrix4x4_identity(),
+        .inverseModelMatrix = beacon_RenderMatrix4x4_identity(),
+        .modelIndex = modelIndex
+    };
+    beacon_agpu_pushRenderObjectAttributes(agpu, objectAttributes);
+    return receiver;
+}
+
 void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
 {
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.agpuClass), "uniqueInstance", 1, beacon_AGPU_uniqueInstance);
@@ -1413,6 +1562,7 @@ void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "begin3DFrameRenderingWithWidth:height:", 2, beacon_agpuWindowRenderer_begin3DFrameRendering);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "end3DFrameRendering", 0, beacon_agpuWindowRenderer_end3DFrameRendering);
 
+    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestCube", 0, beacon_agpuWindowRenderer_addTestCube);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "get3DOutputTextureHandle", 0, beacon_agpuWindowRenderer_get3DOutputTextureHandle);
     
 

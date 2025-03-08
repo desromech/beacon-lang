@@ -50,4 +50,7 @@ typedef struct beacon_Frustum_s
 	beacon_AABox3_t boundingBox;
     beacon_RenderVector4_t planes[6];
 } beacon_Frustum_t;
+
+beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_identity(void);
+
 #endif //BEACON_MATH_H

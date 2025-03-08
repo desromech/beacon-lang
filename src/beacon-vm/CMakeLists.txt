@@ -5,6 +5,7 @@ set(BeaconVM_Sources
     Font.c
     FormRendering.c
     LinearAlgebra.c
+    Math.c
     Memory.c
     ArrayList.c
     ArrayPrimitives.c
