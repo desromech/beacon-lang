@@ -76,6 +76,7 @@ typedef enum beacon_GuiElementType_e
     BeaconGuiHorizontalGradient,
     BeaconGuiVerticalGradient,
     BeaconGuiTextCharacter,
+    BeaconGuiTexturedRectangle,
 }beacon_GuiElementType_t;
 
 typedef struct beacon_GuiRenderingElement_s
@@ -245,6 +246,8 @@ typedef struct beacon_AGPU_s
     agpu_buffer *tileLightIndexListBuffer;
     agpu_buffer *lightGridBuffer;
 
+    agpu_texture *shadowMapAtlas;
+
     agpu_shader_resource_binding *renderingDataBinding;
 
     int textureArrayBindingCount;
@@ -294,6 +297,7 @@ typedef struct beacon_AGPUWindowRenderer_s
     int intermediateBufferWidth;
     int intermediateBufferHeight;
     int32_t outputTextureIndex;
+    beacon_AGPUTextureHandle_t *outputTextureHandle;
 
     agpu_texture *mainDepthBuffer;
     agpu_texture *hdrColorBuffer;

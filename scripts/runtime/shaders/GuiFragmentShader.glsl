@@ -35,6 +35,16 @@ void main()
         }
 
         break;
+    case GuiElementType_TexturedRectangle:
+        if(thisElement.texture >= 0)
+        {
+            backgroundColor = texture(sampler2D(AllTextures[thisElement.texture], LinearTextureSampler), mappedTexcoord);
+        }
+        else
+        {
+            backgroundColor = vec4(mappedTexcoord, 0.0, 1.0);
+        }
+        break;
     default:
         backgroundColor = vec4(inTexcoord, 0.0, 1.0);
         break;

@@ -1,4 +1,4 @@
-Morph subclass: #CubeMorph instanceVariables: #(outputTexture).
+Morph subclass: #CubeMorph instanceVariables: #(outputTextureHandle).
 
 CubeMorph class ![
 defaultExtent
@@ -7,6 +7,9 @@ defaultExtent
 
 CubeMorph ![
 renderWithBuilder: renderingBuilder
+    outputTextureHandle == nil ifTrue: [ ^ self].
+
+    renderingBuilder texture: outputTextureHandle rectangle: self localBounds.
 ].
 
 CubeMorph ![
@@ -16,4 +19,5 @@ render3DEnvironmentWith: rendererHandle
     rendererHandle begin3DFrameRenderingWithWidth: extent x height: extent y.
 
     rendererHandle end3DFrameRendering.
+    outputTextureHandle := rendererHandle get3DOutputTextureHandle.
 ].

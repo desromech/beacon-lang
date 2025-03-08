@@ -274,4 +274,6 @@ const uint GuiElementType_SolidRectangle = 0;
 const uint GuiElementType_HorizontalGradient = 1;
 const uint GuiElementType_VerticalGradient = 2;
 const uint GuiElementType_TextCharacter = 3;
+const uint GuiElementType_TexturedRectangle = 4;
+
 

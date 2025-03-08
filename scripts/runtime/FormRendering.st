@@ -131,6 +131,16 @@ fontFace: aFontFace
     fontFace := aFontFace
 ].
 
+FormTextureHandleRenderingElement ![
+textureHandle
+    ^ textureHandle
+].
+
+FormTextureHandleRenderingElement ![
+textureHandle: aTextureHandle
+    textureHandle := aTextureHandle
+].
+
 FormRenderingElementBuilder ![
 allQuads
     ^ renderingElements asArray
@@ -164,6 +174,17 @@ solidRectangle: rectangle color: color borderSize: borderSize borderColor: borde
 FormRenderingElementBuilder ![
 solidRectangle: rectangle color: color
     ^ self solidRectangle: rectangle color: color borderSize: 0 borderColor: Color black
+].
+
+FormRenderingElementBuilder ![
+texture: textureHandle rectangle: rectangle
+    | texturedRectangle |
+    texturedRectangle := FormTextureHandleRenderingElement new
+        textureHandle: textureHandle;
+        rectangle: rectangle;
+        yourself.
+    renderingElements add: texturedRectangle.
+    texturedRectangle
 ].
 
 FormRenderingElementBuilder ![

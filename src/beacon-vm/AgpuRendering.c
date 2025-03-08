@@ -400,6 +400,26 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         agpu->textureArrayBindingCount = 1;
     }
 
+    // Shadow map atlas
+    {
+        agpu_texture_description desc = {
+            .type = AGPU_TEXTURE_2D,
+            .width = 8,
+            .height = 8,
+            .depth = 1,
+            .layers = 1,
+            .miplevels = 1,
+            .format = AGPU_TEXTURE_FORMAT_D32_FLOAT,
+            .usage_modes = AGPU_TEXTURE_USAGE_COPY_DESTINATION | AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_SAMPLED,
+            .main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED,
+            .heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL,
+            .sample_count = 1,
+            .sample_quality = 0,
+        };
+
+        agpu->shadowMapAtlas = agpuCreateTexture(agpu->device, &desc);
+    }
+
     beacon_agpu_loadPipelineStates(context, agpu);
 }
 
@@ -579,6 +599,8 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
     agpuBindStorageBuffer(agpu->renderingDataBinding, 14, agpu->lightClusterBuffer);
     agpuBindStorageBuffer(agpu->renderingDataBinding, 15, agpu->tileLightIndexListBuffer);
     agpuBindStorageBuffer(agpu->renderingDataBinding, 16, agpu->lightGridBuffer);
+
+    agpuBindSampledTextureView(agpu->renderingDataBinding, 17, agpuGetOrCreateFullTextureView(agpu->shadowMapAtlas));
 
     agpuBindStorageBufferRange(agpu->renderingDataBinding, 18, agpu->gpu3DRenderingDataBuffer, agpu->guiData.offset, agpu->guiData.byteCapacity);
     agpuBindStorageBufferRange(agpu->renderingDataBinding, 19, agpu->gpu3DRenderingDataBuffer, agpu->cameraState.offset, agpu->cameraState.byteCapacity);
@@ -987,6 +1009,13 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
                 renderer->outputTextureIndex = context->roots.agpuCommon->textureArrayBindingCount++;
             agpu_texture_view *outputTextureView = agpuGetOrCreateFullTextureView(renderer->outputTexture);
             agpuBindArrayOfSampledTextureView(context->roots.agpuCommon->texturesArrayBinding, 0, renderer->outputTextureIndex, 1, &outputTextureView);            
+
+            if(!renderer->outputTextureHandle)
+                renderer->outputTextureHandle = beacon_allocateObjectWithBehavior(context->heap, context->classes.agpuTextureHandleClass, sizeof(beacon_AGPUTextureHandle_t), BeaconObjectKindBytes);
+            
+            renderer->outputTextureHandle->texture = renderer->outputTexture;
+            renderer->outputTextureHandle->textureView = outputTextureView;
+            renderer->outputTextureHandle->textureArrayBindingIndex = renderer->outputTextureIndex;
         }
     }
 
@@ -1098,6 +1127,12 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuEndRenderPass(commandList);
     
     return receiver;
+}
+
+static beacon_oop_t beacon_agpuWindowRenderer_get3DOutputTextureHandle(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
+    return (beacon_oop_t)renderer->outputTextureHandle;
 }
 
 static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -1257,6 +1292,33 @@ static beacon_oop_t beacon_agpuWindowRenderer_renderQuadList(beacon_context_t *c
             beacon_FormTextRenderingElement_t *textElement = (beacon_FormTextRenderingElement_t*)quadOop;
             beacon_agpuWindowRenderer_renderText(context, renderer, textElement);
         }
+        else if(quadClass == context->classes.formTextureHandleRenderingElementClass)
+        {
+            beacon_FormTextureHandleRenderingElement_t *textureElement = (beacon_FormTextureHandleRenderingElement_t*)quadOop;
+            if(!textureElement->textureHandle)
+                continue;
+
+            beacon_AGPUTextureHandle_t *textureHandle = (beacon_AGPUTextureHandle_t *)textureElement->textureHandle;
+
+            beacon_GuiRenderingElement_t quad = {
+                .type = BeaconGuiTexturedRectangle,
+                .texture = textureHandle->textureArrayBindingIndex,
+                .borderSize = beacon_decodeSmallNumber(textureElement->super.borderSize),
+                .borderRoundRadius = beacon_decodeSmallNumber(textureElement->super.borderRoundRadius),
+
+                .rectangleMinX = beacon_decodeSmallNumber(textureElement->super.rectangle->origin->x),
+                .rectangleMinY = beacon_decodeSmallNumber(textureElement->super.rectangle->origin->y),
+                .rectangleMaxX = beacon_decodeSmallNumber(textureElement->super.rectangle->corner->x),
+                .rectangleMaxY = beacon_decodeSmallNumber(textureElement->super.rectangle->corner->y),
+
+                .imageRectangleMinX = 0,
+                .imageRectangleMinY = 0,
+                .imageRectangleMaxX = 1,
+                .imageRectangleMaxY = 1,    
+            };
+
+            ((beacon_GuiRenderingElement_t*)context->roots.agpuCommon->guiData.thisFrameBuffer)[context->roots.agpuCommon->guiData.size++] = quad;
+        }
     }
 
     return receiver;
@@ -1294,8 +1356,11 @@ void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "renderQuadList:", 0, beacon_agpuWindowRenderer_renderQuadList);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "endFrame", 0, beacon_agpuWindowRenderer_endFrame);
 
-
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "begin3DFrameRenderingWithWidth:height:", 2, beacon_agpuWindowRenderer_begin3DFrameRendering);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "end3DFrameRendering", 0, beacon_agpuWindowRenderer_end3DFrameRendering);
+
+    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "get3DOutputTextureHandle", 0, beacon_agpuWindowRenderer_get3DOutputTextureHandle);
+    
+
 }
 

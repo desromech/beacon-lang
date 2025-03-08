@@ -752,6 +752,12 @@ typedef struct beacon_FormVerticalGradientRenderingElement_s
     beacon_Color_t *borderColor;
 } beacon_FormVerticalGradientRenderingElement_t;
 
+typedef struct beacon_FormTextureHandleRenderingElement_s
+{
+    beacon_FormRenderingElement_t super;
+    beacon_oop_t textureHandle;
+} beacon_FormTextureHandleRenderingElement_t;
+
 typedef struct beacon_Form_s
 {
     beacon_Object_t super;
