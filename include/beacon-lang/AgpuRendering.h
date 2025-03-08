@@ -21,6 +21,10 @@
 #define BEACON_AGPU_MAX_LIGHT_CLUSTER_CAPACITY 100
 #define BEACON_AGPU_SHADOW_MAP_ATLAS_SIZE 4096
 
+#define BEACON_AGPU_SWAP_CHAIN_COLOR_FORMAT AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB
+#define BEACON_AGPU_COLOR_FORMAT AGPU_TEXTURE_FORMAT_R16G16B16A16_FLOAT
+#define BEACON_AGPU_DEPTH_FORMAT AGPU_TEXTURE_FORMAT_D32_FLOAT
+
 typedef enum beacon_GuiElementType_e
 {
     BeaconGuiSolidRectangle,
@@ -221,6 +225,26 @@ typedef struct beacon_AGPUWindowRenderer_s
     agpu_command_queue *commandQueue;
     beacon_AGPUSwapChain_t *swapChain;
     beacon_AGPUWindowRendererPerFrameState_t frameState[BEACON_AGPU_FRAMEBUFFERING_COUNT];
+
+    bool hasIntermediateBuffers;
+    int intermediateBufferWidth;
+    int intermediateBufferHeight;
+
+    agpu_texture *mainDepthBuffer;
+    agpu_texture *hdrColorBuffer;
+    agpu_texture *normalGBuffer;
+    agpu_texture *specularityGBuffer;
+
+    agpu_framebuffer *depthOnlyFramebuffer;
+    agpu_framebuffer *hdrOpaqueFramebuffer;
+    agpu_framebuffer *hdrFramebuffer;
+
+    agpu_renderpass *mainDepthRenderPass;
+    agpu_renderpass *mainDepthColorOpaqueRenderPass;
+    agpu_renderpass *mainDepthColorRenderPass;
+    agpu_renderpass *shadowMapAtlasRenderPass;
+    agpu_renderpass *outputRenderPass;
+
 } beacon_AGPUWindowRenderer_t;
 
 agpu_platform *beacon_agpu_getPlatform(beacon_context_t *context, beacon_AGPU_t *agpu);

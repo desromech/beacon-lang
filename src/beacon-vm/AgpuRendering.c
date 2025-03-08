@@ -500,6 +500,316 @@ static beacon_oop_t beacon_agpuWindowRenderer_beginFrame(beacon_context_t *conte
     return receiver;
 }
 
+static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 2);
+    int displayWidth = beacon_decodeSmallInteger(arguments[0]);
+    int displayHeight = beacon_decodeSmallInteger(arguments[1]);
+    beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t*)receiver;
+    agpu_device *device = context->roots.agpuCommon->device;
+
+    // Create the render pass
+    if(!renderer->mainDepthRenderPass)
+    {
+        agpu_renderpass_depth_stencil_description depthAttachment = {};
+        depthAttachment.format = BEACON_AGPU_DEPTH_FORMAT;
+        depthAttachment.begin_action = AGPU_ATTACHMENT_CLEAR;
+        depthAttachment.end_action = AGPU_ATTACHMENT_KEEP;
+        depthAttachment.clear_value.depth = 0.0;
+        depthAttachment.sample_count = 1;
+
+        agpu_renderpass_description description = {};
+        description.depth_stencil_attachment = &depthAttachment;
+
+        renderer->mainDepthRenderPass = agpuCreateRenderPass(device, &description);
+    }
+
+    if(!renderer->shadowMapAtlasRenderPass)
+    {
+        agpu_renderpass_depth_stencil_description depthAttachment = {};
+        depthAttachment.format = BEACON_AGPU_DEPTH_FORMAT;
+        depthAttachment.begin_action = AGPU_ATTACHMENT_KEEP;
+        depthAttachment.end_action = AGPU_ATTACHMENT_KEEP;
+        depthAttachment.clear_value.depth = 0.0;
+        depthAttachment.sample_count = 1;
+
+        agpu_renderpass_description description = {};
+        description.depth_stencil_attachment = &depthAttachment;
+
+        renderer->shadowMapAtlasRenderPass = agpuCreateRenderPass(device, &description);
+    }
+
+    if(!renderer->mainDepthColorOpaqueRenderPass)
+    {
+        agpu_renderpass_color_attachment_description colorAttachments[3] = {};
+
+        colorAttachments[0].format = BEACON_AGPU_COLOR_FORMAT;
+        colorAttachments[0].begin_action = AGPU_ATTACHMENT_CLEAR;
+        colorAttachments[0].end_action = AGPU_ATTACHMENT_KEEP;
+        colorAttachments[0].clear_value.r = 0.0;
+        colorAttachments[0].clear_value.g = 0.0;
+        colorAttachments[0].clear_value.b = 0.0;
+        colorAttachments[0].clear_value.a = 0;
+        colorAttachments[0].sample_count = 1;
+
+        // NormalG buffer BufferAttachment
+        colorAttachments[1].format = AGPU_TEXTURE_FORMAT_R16G16_FLOAT;
+        colorAttachments[1].begin_action = AGPU_ATTACHMENT_CLEAR;
+        colorAttachments[1].end_action = AGPU_ATTACHMENT_KEEP;
+        colorAttachments[1].clear_value.r = 0.0;
+        colorAttachments[1].clear_value.g = 0.0;
+        colorAttachments[1].clear_value.b = 0.0;
+        colorAttachments[1].clear_value.a = 0;
+        colorAttachments[1].sample_count = 1;
+
+        // SpecularityBufferAttachment
+        colorAttachments[2].format = AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM;
+        colorAttachments[2].begin_action = AGPU_ATTACHMENT_CLEAR;
+        colorAttachments[2].end_action = AGPU_ATTACHMENT_KEEP;
+        colorAttachments[2].clear_value.r = 0.0;
+        colorAttachments[2].clear_value.g = 0.0;
+        colorAttachments[2].clear_value.b = 0.0;
+        colorAttachments[2].clear_value.a = 0;
+        colorAttachments[2].sample_count = 1;
+
+        agpu_renderpass_depth_stencil_description depthAttachment = {};
+        depthAttachment.format = BEACON_AGPU_DEPTH_FORMAT;
+        depthAttachment.begin_action = AGPU_ATTACHMENT_KEEP;
+        depthAttachment.end_action = AGPU_ATTACHMENT_KEEP;
+        depthAttachment.clear_value.depth = 0.0;
+        depthAttachment.sample_count = 1;
+
+        agpu_renderpass_description description = {};
+        description.color_attachment_count = 3;
+        description.color_attachments = colorAttachments;
+        description.depth_stencil_attachment = &depthAttachment;
+
+        renderer->mainDepthColorOpaqueRenderPass = agpuCreateRenderPass(device, &description);
+    }
+
+    if(!renderer->mainDepthColorRenderPass)
+    {
+        agpu_renderpass_color_attachment_description colorAttachment = {};
+        colorAttachment.format = BEACON_AGPU_COLOR_FORMAT;
+        colorAttachment.begin_action = AGPU_ATTACHMENT_KEEP;
+        colorAttachment.end_action = AGPU_ATTACHMENT_KEEP;
+        colorAttachment.clear_value.r = 0.0;
+        colorAttachment.clear_value.g = 0.0;
+        colorAttachment.clear_value.b = 0.0;
+        colorAttachment.clear_value.a = 0;
+        colorAttachment.sample_count = 1;
+
+        agpu_renderpass_depth_stencil_description depthAttachment = {};
+        depthAttachment.format = BEACON_AGPU_DEPTH_FORMAT;
+        depthAttachment.begin_action = AGPU_ATTACHMENT_KEEP;
+        depthAttachment.end_action = AGPU_ATTACHMENT_KEEP;
+        depthAttachment.clear_value.depth = 0.0;
+        depthAttachment.sample_count = 1;
+
+        agpu_renderpass_description description = {};
+        description.color_attachment_count = 1;
+        description.color_attachments = &colorAttachment;
+        description.depth_stencil_attachment = &depthAttachment;
+
+        renderer->mainDepthColorRenderPass = agpuCreateRenderPass(device, &description);
+    }
+
+    // Create the output render pass
+    if(!renderer->outputRenderPass)
+    {
+        agpu_renderpass_color_attachment_description colorAttachment = {};
+        colorAttachment.format = BEACON_AGPU_SWAP_CHAIN_COLOR_FORMAT;
+        colorAttachment.begin_action = AGPU_ATTACHMENT_CLEAR;
+        colorAttachment.end_action = AGPU_ATTACHMENT_KEEP;
+        colorAttachment.clear_value.r = 0.0;
+        colorAttachment.clear_value.g = 0.0;
+        colorAttachment.clear_value.b = 0.0;
+        colorAttachment.clear_value.a = 0;
+        colorAttachment.sample_count = 1;
+
+        agpu_renderpass_description description = {};
+        description.color_attachment_count = 1;
+        description.color_attachments = &colorAttachment;
+
+        renderer->outputRenderPass = agpuCreateRenderPass(device, &description);
+    }
+
+    if(!renderer->hasIntermediateBuffers || renderer->intermediateBufferWidth != displayWidth || renderer->intermediateBufferHeight != displayHeight)
+    {
+        if(renderer->hasIntermediateBuffers)
+        {
+            agpuFinishDeviceExecution(device);
+            agpuReleaseTexture(renderer->mainDepthBuffer);
+            agpuReleaseTexture(renderer->hdrColorBuffer);
+            agpuReleaseTexture(renderer->normalGBuffer);
+            agpuReleaseTexture(renderer->specularityGBuffer);
+
+            agpuReleaseFramebuffer(renderer->depthOnlyFramebuffer);
+            agpuReleaseFramebuffer(renderer->hdrOpaqueFramebuffer);
+            agpuReleaseFramebuffer(renderer->hdrFramebuffer);
+
+            renderer->mainDepthBuffer    = NULL;
+            renderer->hdrColorBuffer     = NULL;
+            renderer->normalGBuffer      = NULL;
+            renderer->specularityGBuffer = NULL;
+
+            renderer->depthOnlyFramebuffer = NULL;
+            renderer->hdrOpaqueFramebuffer = NULL;
+            renderer->hdrFramebuffer       = NULL;
+
+            renderer->hasIntermediateBuffers = false;
+        }
+
+        renderer->intermediateBufferWidth = displayWidth;
+        renderer->intermediateBufferHeight = displayHeight;
+
+        {
+            agpu_texture_description desc = {};
+            desc.type = AGPU_TEXTURE_2D;
+            desc.width = displayWidth;
+            desc.height = displayHeight;
+            desc.depth = 1;
+            desc.layers = 1;
+            desc.miplevels = 1;
+            desc.format = BEACON_AGPU_DEPTH_FORMAT;
+            desc.usage_modes = AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT | AGPU_TEXTURE_USAGE_SAMPLED;
+            desc.main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED;
+            desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+            desc.sample_count = 1;
+            desc.sample_quality = 0;
+            desc.clear_value.depth_stencil.depth = 0.0;
+
+            renderer->mainDepthBuffer = agpuCreateTexture(device, &desc);
+        }
+
+        {
+            agpu_texture_description desc = {};
+            desc.type = AGPU_TEXTURE_2D;
+            desc.width = displayWidth;
+            desc.height = displayHeight;
+            desc.depth = 1;
+            desc.layers = 1;
+            desc.miplevels = 1;
+            desc.format = BEACON_AGPU_COLOR_FORMAT;
+            desc.usage_modes = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT | AGPU_TEXTURE_USAGE_SAMPLED;
+            desc.main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED;
+            desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+            desc.sample_count = 1;
+            desc.sample_quality = 0;
+
+            renderer->hdrColorBuffer = agpuCreateTexture(device, &desc);
+        }
+
+        {
+            agpu_texture_description desc = {};
+            desc.type = AGPU_TEXTURE_2D;
+            desc.width = displayWidth;
+            desc.height = displayHeight;
+            desc.depth = 1;
+            desc.layers = 1;
+            desc.miplevels = 1;
+            desc.format = AGPU_TEXTURE_FORMAT_R16G16_FLOAT;
+            desc.usage_modes = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT | AGPU_TEXTURE_USAGE_SAMPLED;
+            desc.main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED;
+            desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+            desc.sample_count = 1;
+            desc.sample_quality = 0;
+
+            renderer->normalGBuffer = agpuCreateTexture(device, &desc);
+        }
+
+        {
+            agpu_texture_description desc = {};
+            desc.type = AGPU_TEXTURE_2D;
+            desc.width = displayWidth;
+            desc.height = displayHeight;
+            desc.depth = 1;
+            desc.layers = 1;
+            desc.miplevels = 1;
+            desc.format = AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM;
+            desc.usage_modes = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT | AGPU_TEXTURE_USAGE_SAMPLED;
+            desc.main_usage_mode = AGPU_TEXTURE_USAGE_SAMPLED;
+            desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
+            desc.sample_count = 1;
+            desc.sample_quality = 0;
+
+            renderer->specularityGBuffer = agpuCreateTexture(device, &desc);
+        }
+
+        {
+            agpu_texture_view_description depthBufferViewDesc = {};
+            agpuGetTextureFullViewDescription(renderer->mainDepthBuffer, &depthBufferViewDesc);
+            depthBufferViewDesc.usage_mode = AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT;
+            agpu_texture_view *depthBufferAttachmentView = agpuCreateTextureView(renderer->mainDepthBuffer, &depthBufferViewDesc);
+
+            agpu_texture_view_description colorBufferViewDesc = {};
+            agpuGetTextureFullViewDescription(renderer->hdrColorBuffer, &colorBufferViewDesc);
+            colorBufferViewDesc.usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
+            agpu_texture_view *hdrColorAttachmentView = agpuCreateTextureView(renderer->hdrColorBuffer, &colorBufferViewDesc);
+
+            agpu_texture_view_description normalBufferViewDesc = {};
+            agpuGetTextureFullViewDescription(renderer->normalGBuffer, &normalBufferViewDesc);
+            normalBufferViewDesc.usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
+            agpu_texture_view *normalGBufferAttachmentView = agpuCreateTextureView(renderer->normalGBuffer, &normalBufferViewDesc);
+
+            agpu_texture_view_description specularityGBufferViewDesc = {};
+            agpuGetTextureFullViewDescription(renderer->specularityGBuffer, &specularityGBufferViewDesc);
+            specularityGBufferViewDesc.usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
+            agpu_texture_view *specularityGBufferAttachmentView = agpuCreateTextureView(renderer->specularityGBuffer, &specularityGBufferViewDesc);
+
+            agpu_texture_view* opaqueAttachments[] = {
+                hdrColorAttachmentView,
+                normalGBufferAttachmentView,
+                specularityGBufferAttachmentView
+            };
+            renderer->hdrOpaqueFramebuffer = agpuCreateFrameBuffer(device, displayWidth, displayHeight, 3, opaqueAttachments, depthBufferAttachmentView);
+
+            renderer->hdrFramebuffer = agpuCreateFrameBuffer(device, displayWidth, displayHeight, 1, &hdrColorAttachmentView, depthBufferAttachmentView);
+            renderer->depthOnlyFramebuffer = agpuCreateFrameBuffer(device, displayWidth, displayHeight, 0, NULL, depthBufferAttachmentView);
+        }
+
+    }
+
+    return receiver;
+}
+
+static void beacon_agpuWindowRenderer_emitRenderPassCommands(beacon_context_t *context, beacon_AGPUWindowRenderer_t *renderer, bool opaque)
+{
+    beacon_AGPUWindowRendererPerFrameState_t *thisFrameState = renderer->frameState + renderer->currentFrameBufferingIndex;
+
+}
+
+static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t*)receiver;
+    beacon_AGPUWindowRendererPerFrameState_t *thisFrameState = renderer->frameState + renderer->currentFrameBufferingIndex;
+    beacon_AGPU_t *agpu = context->roots.agpuCommon;
+    agpu_command_list *commandList = thisFrameState->commandList;
+
+    // Setup the shader resources.
+    agpuSetShaderSignature(thisFrameState->commandList, context->roots.agpuCommon->shaderSignature);
+    agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->samplerBinding);
+    agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->renderingDataBinding);
+    agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->texturesArrayBinding);
+
+    // Depth only render pass
+    agpuBeginRenderPass(commandList, renderer->mainDepthRenderPass, renderer->depthOnlyFramebuffer, false);
+    beacon_agpuWindowRenderer_emitRenderPassCommands(context, renderer, true);
+    agpuEndRenderPass(commandList);
+
+    // Opaque color
+    agpuBeginRenderPass(commandList, renderer->mainDepthColorOpaqueRenderPass, renderer->hdrOpaqueFramebuffer, false);
+    beacon_agpuWindowRenderer_emitRenderPassCommands(context, renderer, true);
+    agpuEndRenderPass(commandList);
+
+    // Non-opaque
+    agpuBeginRenderPass(commandList, renderer->mainDepthColorRenderPass, renderer->hdrFramebuffer, false);
+    beacon_agpuWindowRenderer_emitRenderPassCommands(context, renderer, false);
+    agpuEndRenderPass(commandList);
+    
+    return receiver;
+}
+
 static void beacon_agpuWindowRenderer_uploadPerFrameBuffer(agpu_command_list *commandList, beacon_AGPU_t *agpu, beacon_AGPUWindowRenderer_t *renderer, beacon_AGPUUpdateBuffer_t *updateBuffer)
 {
     if(updateBuffer->size == 0)
@@ -718,5 +1028,9 @@ void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "beginFrame", 0, beacon_agpuWindowRenderer_beginFrame);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "renderQuadList:", 0, beacon_agpuWindowRenderer_renderQuadList);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "endFrame", 0, beacon_agpuWindowRenderer_endFrame);
+
+
+    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "begin3DFrameRenderingWithWidth:height:", 2, beacon_agpuWindowRenderer_begin3DFrameRendering);
+    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "end3DFrameRendering", 0, beacon_agpuWindowRenderer_end3DFrameRendering);
 }
 
