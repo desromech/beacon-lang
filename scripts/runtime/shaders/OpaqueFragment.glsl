@@ -26,8 +26,8 @@ void main()
     {
         materialAttributes.emissiveColor = vec3(0.0);
         materialAttributes.baseColor = vec4(1.0, 1.0, 1.0, 1.0);
-        materialAttributes.metallicFactor = 1.0;
-        materialAttributes.roughnessFactor = 1.0;
+        materialAttributes.metallicFactor = 0.0;
+        materialAttributes.roughnessFactor = 0.8;
         materialAttributes.occlusionFactor = 1.0;
         materialAttributes.isTranslucent = 0;
 

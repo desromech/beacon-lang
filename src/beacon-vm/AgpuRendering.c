@@ -410,6 +410,7 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
         agpuBeginShaderSignatureBindingBank(builder, 1); // Set 0
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_SAMPLER, 1); // Linear
         agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_SAMPLER, 1); // Nearest
+        agpuAddShaderSignatureBindingBankElement(builder, AGPU_SHADER_BINDING_TYPE_SAMPLER, 1); // ShadowMap
 
         agpuBeginShaderSignatureBindingBank(builder, 1); // Set 1
         agpuAddShaderSignatureBindingBankArray(builder, AGPU_SHADER_BINDING_TYPE_SAMPLED_IMAGE, BEACON_AGPU_TEXTURE_ARRAY_SIZE);
@@ -484,6 +485,22 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
 
         agpu->nearestSampler = agpuCreateSampler(agpu->device, &samplerDesc);
         agpuBindSampler(agpu->samplerBinding, 1, agpu->nearestSampler);
+    }
+
+    {
+        agpu_sampler_description samplerDesc = {
+            .address_u = AGPU_TEXTURE_ADDRESS_MODE_CLAMP,
+            .address_v = AGPU_TEXTURE_ADDRESS_MODE_CLAMP,
+            .address_w = AGPU_TEXTURE_ADDRESS_MODE_CLAMP,
+            .comparison_enabled = true,
+            .comparison_function = AGPU_GREATER_EQUAL,
+            .max_lod = 0.0,
+
+            .filter = AGPU_FILTER_MIN_LINEAR_MAG_LINEAR_MIPMAP_NEAREST,
+        };
+
+        agpu->shadowSampler = agpuCreateSampler(agpu->device, &samplerDesc);
+        agpuBindSampler(agpu->samplerBinding, 2, agpu->shadowSampler);
     }
 
     // Error texture
@@ -729,7 +746,7 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
     agpuBindStorageBufferRange(agpu->renderingDataBinding, 4, agpu->gpu3DRenderingDataBuffer, agpu->renderLightSourceAttributes.offset,   agpu->renderLightSourceAttributes.byteCapacity);
 
     agpuBindStorageBufferRange(agpu->renderingDataBinding, 5,  agpu->gpu3DRenderingDataBuffer, agpu->vertexPositions.offset, agpu->vertexPositions.byteCapacity);
-    agpuBindStorageBufferRange(agpu->renderingDataBinding, 3,  agpu->gpu3DRenderingDataBuffer, agpu->vertexNormals.offset, agpu->vertexNormals.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 6,  agpu->gpu3DRenderingDataBuffer, agpu->vertexNormals.offset, agpu->vertexNormals.byteCapacity);
     agpuBindStorageBufferRange(agpu->renderingDataBinding, 7,  agpu->gpu3DRenderingDataBuffer, agpu->vertexTexcoords.offset, agpu->vertexTexcoords.byteCapacity);
     agpuBindStorageBufferRange(agpu->renderingDataBinding, 8,  agpu->gpu3DRenderingDataBuffer, agpu->vertexTangent4.offset, agpu->vertexTangent4.byteCapacity);
     agpuBindStorageBufferRange(agpu->renderingDataBinding, 9,  agpu->gpu3DRenderingDataBuffer, agpu->vertexBoneIndices.offset, agpu->vertexBoneIndices.byteCapacity);
@@ -1314,7 +1331,9 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuUsePipelineState(commandList, agpu->daySkyPipeline);
     agpuDrawArrays(commandList, 3, 1, 0, 0);
 
-    // TODO: Render the opaque objects with color.
+    // Draw the opaque elements.
+    agpuUsePipelineState(commandList, agpu->opaqueColorPipeline);
+    agpuDrawElementsIndirect(commandList, 0, agpu->renderObjectAttributes.size);
 
     agpuEndRenderPass(commandList);
 
@@ -1762,6 +1781,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_addTestCube(beacon_context_t *cont
     beacon_agpu_pushTriangle(agpu, 20+2, 20+3, 20+0);
     
     beacon_RenderMeshPrimitiveAttributes_t meshPrimitive = {
+        .materialIndex = -1,
         .vertexCount = 24,
         .firstPositionIndex = positionBufferIndex,
         .firstNormalIndex = normalBufferIndex,
@@ -1795,8 +1815,8 @@ static beacon_oop_t beacon_agpuWindowRenderer_addTestLight(beacon_context_t *con
 
     beacon_RenderLightSource_t lightSource = {
         .positionOrDirection = {0, 2, 0, 1},
-        .intensity = {10, 10, 10},
-        .influenceRadius = 10,
+        .intensity = {20, 20, 20},
+        .influenceRadius = 20,
         .innerSpotCosCutoff = -1,
         .outerSpotCosCutoff = -1,
         .castShadows = false,
