@@ -18,7 +18,9 @@ render3DEnvironmentWith: rendererHandle
     extent := self extent.
     rendererHandle begin3DFrameRenderingWithWidth: extent x height: extent y.
 
-    rendererHandle addTestCube.
+    rendererHandle 
+        addDefaultTestCamera;
+        addTestCube.
 
     rendererHandle end3DFrameRendering.
     outputTextureHandle := rendererHandle get3DOutputTextureHandle.

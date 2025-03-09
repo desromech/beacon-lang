@@ -1,16 +1,19 @@
 #ifndef BEACON_MATH_H
 #define BEACON_MATH_H
 
+#ifdef _MSC_VER
+#else
+#define GCC_ALIGNED(x) __attribute__((aligned(x)))
+#endif
 typedef struct beacon_RenderVector2_s
 {
     float x, y;
-} beacon_RenderVector2_t;
+} beacon_RenderVector2_t GCC_ALIGNED(8);
 
 typedef struct beacon_RenderVector3_s
 {
     float x, y, z;
-    float padding;
-} beacon_RenderVector3_t;
+} beacon_RenderVector3_t GCC_ALIGNED(16);
 
 typedef struct beacon_RenderPackedVector3_s
 {
@@ -20,7 +23,7 @@ typedef struct beacon_RenderPackedVector3_s
 typedef struct beacon_RenderVector4_s
 {
     float x, y, z, w;
-} beacon_RenderVector4_t;
+} beacon_RenderVector4_t GCC_ALIGNED(16);
 
 typedef struct beacon_RenderMatrix4x4_s
 {
@@ -28,7 +31,7 @@ typedef struct beacon_RenderMatrix4x4_s
     float m12; float m22; float m32; float m42;
     float m13; float m23; float m33; float m43;
     float m14; float m24; float m34; float m44;
-} beacon_RenderMatrix4x4_t;
+} beacon_RenderMatrix4x4_t GCC_ALIGNED(16);
 
 typedef struct beacon_AABox3_s
 {

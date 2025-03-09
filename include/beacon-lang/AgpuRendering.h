@@ -51,7 +51,6 @@ typedef struct beacon_RenderCameraState_s
     float exposure;
 
     beacon_RenderVector3_t ambientLightSource;
-    float padding;
 
     beacon_RenderVector2_t lightGridDepthSliceScaleOffset;
 	int hasTopLeftNDCOrigin;
@@ -68,7 +67,7 @@ typedef struct beacon_RenderCameraState_s
 
     beacon_Frustum_t worldFrustum;
 
-}beacon_RenderCameraState_t;
+} beacon_RenderCameraState_t;
 
 typedef enum beacon_GuiElementType_e
 {

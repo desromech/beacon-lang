@@ -533,7 +533,7 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
 
     initializeUpdateBuffer(&agpu->cameraState, &agpu->guiData, sizeof(beacon_RenderCameraState_t), BEACON_AGPU_MAX_CAMERA_STATES);
 
-    initializeUpdateBuffer(&agpu->indexData, &agpu->guiData, sizeof(uint32_t), BEACON_AGPU_MAX_INDICES);
+    initializeUpdateBuffer(&agpu->indexData, &agpu->cameraState, sizeof(uint32_t), BEACON_AGPU_MAX_INDICES);
 
     agpu_device *device = agpu->device;
     {
@@ -655,7 +655,7 @@ beacon_AGPUWindowRenderer_t *beacon_agpu_createWindowRenderer(beacon_context_t *
 
     beacon_AGPUWindowRenderer_t *windowRenderer = beacon_allocateObjectWithBehavior(context->heap, context->classes.agpuWindowRendererClass, sizeof(beacon_AGPUWindowRenderer_t), BeaconObjectKindBytes);
     windowRenderer->commandQueue = agpuGetDefaultCommandQueue(device);
-    size_t frameRenderingDataSize = context->roots.agpuCommon->guiData.endOffset;
+    size_t frameRenderingDataSize = context->roots.agpuCommon->indexData.endOffset;
     windowRenderer->frameRenderingDataUploadSize = frameRenderingDataSize;
     
     {
@@ -1117,15 +1117,25 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuUseComputeShaderResources(thisFrameState->commandList, context->roots.agpuCommon->texturesArrayBinding);
     agpuUseComputeShaderResources(thisFrameState->commandList, renderer->intermediateBindings);
 
-    // Perform the main geometry culling
-    uint32_t renderObjectsSize = agpu->renderObjectAttributes.size;
-    uint32_t lightSourceCount = agpu->renderLightSourceAttributes.size;
-    uint32_t nullPushConstant = 0;
+    // Push the constants.
+    {
+        uint32_t renderObjectsSize = agpu->renderObjectAttributes.size;
+        uint32_t lightSourceCount = agpu->renderLightSourceAttributes.size;
+        uint32_t nullPushConstant = 0;
     
-    agpuPushConstants(commandList, 0, 4, &renderObjectsSize);
-    agpuPushConstants(commandList, 4, 4, &lightSourceCount);
-    agpuPushConstants(commandList, 8, 4, &nullPushConstant);
-    agpuPushConstants(commandList, 12, 4, &nullPushConstant);
+        agpuPushConstants(commandList, 0, 4, &renderObjectsSize);
+        agpuPushConstants(commandList, 4, 4, &lightSourceCount);
+        agpuPushConstants(commandList, 8, 4, &nullPushConstant);
+        agpuPushConstants(commandList, 12, 4, &nullPushConstant);
+    
+        int hasTopLeftNDCOriginValue = agpuHasTopLeftNdcOrigin(context->roots.agpuCommon->device);
+        agpuPushConstants(thisFrameState->commandList, 16, 4, &hasTopLeftNDCOriginValue);
+
+        float framebufferReciprocalExtentX = 1.0f / displayWidth;
+        float framebufferReciprocalExtentY = 1.0f / displayHeight;
+        agpuPushConstants(thisFrameState->commandList, 24, 4, &framebufferReciprocalExtentX);
+        agpuPushConstants(thisFrameState->commandList, 28, 4, &framebufferReciprocalExtentY);
+    }
 
     agpuUsePipelineState(commandList, agpu->clearRenderChunkData);
     agpuDispatchCompute(commandList, 1, 1, 1);
@@ -1457,6 +1467,56 @@ static size_t beacon_agpu_pushRenderObjectAttributes(beacon_AGPU_t *agpu, beacon
     return index;
 }
 
+static size_t beacon_agpu_pushRenderCameraState(beacon_AGPU_t *agpu, beacon_RenderCameraState_t cameraState)
+{
+    size_t index = agpu->cameraState.size;
+    beacon_RenderCameraState_t *buffer = agpu->cameraState.thisFrameBuffer;
+    buffer[agpu->cameraState.size++] = cameraState;
+    return index;
+}
+
+static beacon_oop_t beacon_agpuWindowRenderer_addDefaultTestCamera(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
+    beacon_AGPU_t *agpu = context->roots.agpuCommon;
+    agpu_device *device = agpu->device;
+
+    bool flipVertically = agpuHasTopLeftNdcOrigin(device);
+    float nearDistance = 0.01f;
+    float farDistance = 1000.0f;
+
+    beacon_RenderCameraState_t defaultCameraState = {
+        .framebufferExtent = {renderer->intermediateBufferWidth, renderer->intermediateBufferHeight},
+        .framebufferReciprocalExtent = {1.0/renderer->intermediateBufferWidth, 1.0/renderer->intermediateBufferHeight},
+
+        .flipVertically = flipVertically,
+        .nearDistance = 0.01f,
+        .farDistance = 1000.0f,
+    
+        .timeOfSimulation = 0.0f,
+        .timeOfDay = 0.0f,
+        .exposure = 1.0f,
+    
+        .ambientLightSource = {0.2, 0.2, 0.2},
+            
+        .hasTopLeftNDCOrigin = agpuHasTopLeftNdcOrigin(device),
+        .hasBottomLeftTextureCoordinates = agpuHasBottomLeftTextureCoordinates(device),
+
+        .lightGridExtentX = BEACON_AGPU_LIGHT_GRID_WIDTH,
+        .lightGridExtentY = BEACON_AGPU_LIGHT_GRID_HEIGHT,
+        .lightGridExtentZ = BEACON_AGPU_LIGHT_GRID_DEPTH,
+
+        .projectionMatrix = beacon_RenderMatrix4x4_identity(),
+        .inverseProjectionMatrix = beacon_RenderMatrix4x4_identity(),
+        .viewMatrix = beacon_RenderMatrix4x4_identity(),
+        .inverseViewMatrix = beacon_RenderMatrix4x4_identity(),
+
+    };
+    
+    beacon_agpu_pushRenderCameraState(agpu, defaultCameraState);
+    return receiver;
+}
+
 static beacon_oop_t beacon_agpuWindowRenderer_addTestCube(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
@@ -1562,6 +1622,7 @@ void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "begin3DFrameRenderingWithWidth:height:", 2, beacon_agpuWindowRenderer_begin3DFrameRendering);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "end3DFrameRendering", 0, beacon_agpuWindowRenderer_end3DFrameRendering);
 
+    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addDefaultTestCamera", 0, beacon_agpuWindowRenderer_addDefaultTestCamera);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestCube", 0, beacon_agpuWindowRenderer_addTestCube);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "get3DOutputTextureHandle", 0, beacon_agpuWindowRenderer_get3DOutputTextureHandle);
     
