@@ -7,7 +7,7 @@ void main()
     RenderMeshPrimitiveAttributes meshPrimitive = RenderSubmeshData[renderChunk.renderMeshPrimitiveIndex];
 
     int vertexIndex = gl_VertexIndex;
-    vec3 vertexPosition = PositionsData[meshPrimitive.firstPositionIndex + vertexIndex];
+    vec3 vertexPosition = unpackVec3(PositionsData[meshPrimitive.firstPositionIndex + vertexIndex]);
     vec4 worldPosition = renderObject.modelMatrix * vec4(vertexPosition, 1.0);
     vec4 viewPosition = cameraStates[PushConstants.cameraStateIndex].viewMatrix * worldPosition;
 

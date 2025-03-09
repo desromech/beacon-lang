@@ -522,12 +522,12 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
     initializeUpdateBuffer(&agpu->renderMaterialsAttributes, &agpu->renderMeshPrimitiveAttributes, sizeof(beacon_RenderMaterialAttributes_t), BEACON_AGPU_MAX_MATERIALS);
     initializeUpdateBuffer(&agpu->renderLightSourceAttributes, &agpu->renderMaterialsAttributes, sizeof(beacon_RenderLightSource_t), BEACON_AGPU_MAX_MATERIALS);
 
-    initializeUpdateBuffer(&agpu->vertexPositions,   &agpu->renderLightSourceAttributes, 3*sizeof(float), BEACON_AGPU_MAX_VERTICES);
-    initializeUpdateBuffer(&agpu->vertexNormals,     &agpu->vertexPositions,             3*sizeof(float), BEACON_AGPU_MAX_VERTICES);
-    initializeUpdateBuffer(&agpu->vertexTexcoords,   &agpu->vertexNormals,               2*sizeof(float), BEACON_AGPU_MAX_VERTICES);
-    initializeUpdateBuffer(&agpu->vertexTangent4,    &agpu->vertexTexcoords,             4*sizeof(float), BEACON_AGPU_MAX_VERTICES);
+    initializeUpdateBuffer(&agpu->vertexPositions,   &agpu->renderLightSourceAttributes, sizeof(beacon_RenderPackedVector3_t), BEACON_AGPU_MAX_VERTICES);
+    initializeUpdateBuffer(&agpu->vertexNormals,     &agpu->vertexPositions,             sizeof(beacon_RenderPackedVector3_t), BEACON_AGPU_MAX_VERTICES);
+    initializeUpdateBuffer(&agpu->vertexTexcoords,   &agpu->vertexNormals,               sizeof(beacon_RenderVector2_t), BEACON_AGPU_MAX_VERTICES);
+    initializeUpdateBuffer(&agpu->vertexTangent4,    &agpu->vertexTexcoords,             sizeof(beacon_RenderVector4_t), BEACON_AGPU_MAX_VERTICES);
     initializeUpdateBuffer(&agpu->vertexBoneIndices, &agpu->vertexTangent4,              4*sizeof(uint16_t), BEACON_AGPU_MAX_VERTICES);
-    initializeUpdateBuffer(&agpu->vertexBoneWeights, &agpu->vertexBoneIndices,           4*sizeof(float), BEACON_AGPU_MAX_VERTICES);
+    initializeUpdateBuffer(&agpu->vertexBoneWeights, &agpu->vertexBoneIndices,           sizeof(beacon_RenderVector4_t), BEACON_AGPU_MAX_VERTICES);
 
     initializeUpdateBuffer(&agpu->guiData, &agpu->vertexBoneWeights, sizeof(beacon_GuiRenderingElement_t), BEACON_AGPU_MAX_NUMBER_OF_QUADS);
 
@@ -1075,6 +1075,16 @@ static void beacon_agpuWindowRenderer_uploadPerFrameBuffer(agpu_command_list *co
         agpu->gpu3DRenderingDataBuffer, updateBuffer->offset, updateBuffer->size*updateBuffer->elementSize);
 }
 
+static void beacon_agpuWindowRenderer_uploadIndicesPerFrameBuffer(agpu_command_list *commandList, beacon_AGPU_t *agpu, beacon_AGPUWindowRenderer_t *renderer, beacon_AGPUUpdateBuffer_t *updateBuffer)
+{
+    if(updateBuffer->size == 0)
+        return;
+
+    agpuCopyBuffer(commandList,
+        renderer->renderingDataSubmissionBuffer, updateBuffer->offset + renderer->frameRenderingDataUploadSize*renderer->currentFrameBufferingIndex,
+        agpu->gpu3DRenderingIndexBuffer, 0, updateBuffer->size*updateBuffer->elementSize);
+}
+
 static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t*)receiver;
@@ -1100,6 +1110,8 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->vertexBoneWeights);
 
     beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->cameraState);
+
+    beacon_agpuWindowRenderer_uploadIndicesPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->indexData);
 
     // Setup the shader resources.
     agpuSetShaderSignature(thisFrameState->commandList, context->roots.agpuCommon->shaderSignature);
@@ -1485,6 +1497,11 @@ static beacon_oop_t beacon_agpuWindowRenderer_addDefaultTestCamera(beacon_contex
     float nearDistance = 0.01f;
     float farDistance = 1000.0f;
 
+    beacon_RenderVector3_t translation = {0, 1, 3};
+    beacon_RenderVector3_t inverseTranslation = {0, -1, -1};
+
+    beacon_RenderMatrix4x4_t projection = beacon_RenderMatrix4x4_reverseDepthPerspective(60.0f, (float)renderer->intermediateBufferWidth / renderer->intermediateBufferHeight, nearDistance, farDistance, flipVertically);
+
     beacon_RenderCameraState_t defaultCameraState = {
         .framebufferExtent = {renderer->intermediateBufferWidth, renderer->intermediateBufferHeight},
         .framebufferReciprocalExtent = {1.0/renderer->intermediateBufferWidth, 1.0/renderer->intermediateBufferHeight},
@@ -1506,10 +1523,11 @@ static beacon_oop_t beacon_agpuWindowRenderer_addDefaultTestCamera(beacon_contex
         .lightGridExtentY = BEACON_AGPU_LIGHT_GRID_HEIGHT,
         .lightGridExtentZ = BEACON_AGPU_LIGHT_GRID_DEPTH,
 
-        .projectionMatrix = beacon_RenderMatrix4x4_identity(),
+        .projectionMatrix = projection,
         .inverseProjectionMatrix = beacon_RenderMatrix4x4_identity(),
-        .viewMatrix = beacon_RenderMatrix4x4_identity(),
-        .inverseViewMatrix = beacon_RenderMatrix4x4_identity(),
+
+        .viewMatrix = beacon_RenderMatrix4x4_translation(inverseTranslation),
+        .inverseViewMatrix = beacon_RenderMatrix4x4_translation(translation),
 
     };
     
@@ -1526,12 +1544,12 @@ static beacon_oop_t beacon_agpuWindowRenderer_addTestCube(beacon_context_t *cont
     size_t normalBufferIndex = agpu->vertexNormals.size;
     size_t indexBufferIndex = agpu->indexData.size;
 
-    float minX = -1;
-    float minY = -1;
-    float minZ = -1;
-    float maxX = 1;
-    float maxY = 1;
-    float maxZ = 1;
+    float minX = -0.5;
+    float minY = -0.5;
+    float minZ = -0.5;
+    float maxX = 0.5;
+    float maxY = 0.5;
+    float maxZ = 0.5;
 
     // Left.
     beacon_agpu_pushVertexPosition(agpu, minX, minY, minZ); beacon_agpu_pushVertexNormal(agpu, -1, 0, 0);

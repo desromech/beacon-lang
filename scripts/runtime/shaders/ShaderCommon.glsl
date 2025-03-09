@@ -140,6 +140,17 @@ struct DrawIndexedIndirectCommand {
     uint    firstInstance;
 };
 
+struct PackedVec3 {
+    float x;
+    float y;
+    float z;
+};
+
+vec3 unpackVec3(PackedVec3 packed)
+{
+    return vec3(packed.x, packed.y, packed.z);
+}
+
 layout(std430, set=2, binding = 0) buffer RenderObject
 {
     RenderObjectAttributes RenderObjectData[];
@@ -167,12 +178,12 @@ layout(std430, set=2, binding = 4) buffer WorldRenderLights
 
 layout(std430, set=2, binding = 5) buffer Positions
 {
-    vec3 PositionsData[];
+    PackedVec3 PositionsData[];
 };
 
 layout(std430, set=2, binding = 6) buffer Normals
 {
-    vec3 NormalsData[];
+    PackedVec3 NormalsData[];
 };
 
 layout(std430, set=2, binding = 7) buffer Texcoords
