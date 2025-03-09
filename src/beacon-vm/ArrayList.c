@@ -120,6 +120,21 @@ void beacon_ArrayList_atPut(beacon_context_t *context, beacon_ArrayList_t *colle
     collection->array->elements[index - 1] = element;
 }
 
+void beacon_ArrayList_remove(beacon_ArrayList_t *collection, beacon_oop_t elementToRemove)
+{
+    intptr_t destIndex = 0;
+    intptr_t size = beacon_decodeSmallInteger(collection->size);
+    for(intptr_t i = 0; i < size; ++i)
+    {
+        beacon_oop_t element = collection->array->elements[i];
+        if(element != elementToRemove)
+            collection->array->elements[destIndex++] = element;
+    }
+
+    collection->size = beacon_encodeSmallInteger(destIndex);
+
+}
+
 // ByteArrayList
 beacon_ByteArrayList_t *beacon_ByteArrayList_new(beacon_context_t *context)
 {

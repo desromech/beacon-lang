@@ -196,7 +196,10 @@ struct beacon_context_s
         beacon_oop_t plusSelector;
         beacon_oop_t lessOrEqualsSelector;
 
+        beacon_oop_t animateAndRenderSelector;
+
         beacon_MethodDictionary_t *windowHandleMap;
+        beacon_ArrayList_t *openWindowList;
         struct beacon_AGPU_s *agpuCommon;
     } roots;
 

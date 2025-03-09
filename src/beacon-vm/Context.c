@@ -436,7 +436,11 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
         context->roots.lessOrEqualsSelector = (beacon_oop_t)beacon_internCString(context, "<=");
     }
 
+    context->roots.animateAndRenderSelector = (beacon_oop_t)beacon_internCString(context, "animateAndRender");
+
     context->roots.windowHandleMap = beacon_MethodDictionary_new(context);
+    context->roots.openWindowList = beacon_ArrayList_new(context);
+
     context->roots.agpuCommon = beacon_allocateObjectWithBehavior(context->heap, context->classes.agpuClass, sizeof(beacon_AGPU_t), BeaconObjectKindBytes);
     context->roots.agpuCommon->debugLayerEnabled = true;
 }

@@ -113,6 +113,11 @@ render
 ].
 
 Window ![
+animateAndRender
+    self render
+].
+
+Window ![
 onExpose: event
     self render.
 ].

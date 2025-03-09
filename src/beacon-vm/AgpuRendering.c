@@ -1497,8 +1497,8 @@ static beacon_oop_t beacon_agpuWindowRenderer_addDefaultTestCamera(beacon_contex
     float nearDistance = 0.01f;
     float farDistance = 1000.0f;
 
-    beacon_RenderVector3_t translation = {0, 1, 3};
-    beacon_RenderVector3_t inverseTranslation = {0, -1, -1};
+    beacon_RenderVector3_t translation = {1, 1, 1};
+    beacon_RenderVector3_t inverseTranslation = {-1, -1, -1};
 
     beacon_RenderMatrix4x4_t projection = beacon_RenderMatrix4x4_reverseDepthPerspective(60.0f, (float)renderer->intermediateBufferWidth / renderer->intermediateBufferHeight, nearDistance, farDistance, flipVertically);
 
@@ -1528,7 +1528,6 @@ static beacon_oop_t beacon_agpuWindowRenderer_addDefaultTestCamera(beacon_contex
 
         .viewMatrix = beacon_RenderMatrix4x4_translation(inverseTranslation),
         .inverseViewMatrix = beacon_RenderMatrix4x4_translation(translation),
-
     };
     
     beacon_agpu_pushRenderCameraState(agpu, defaultCameraState);
@@ -1596,8 +1595,8 @@ static beacon_oop_t beacon_agpuWindowRenderer_addTestCube(beacon_context_t *cont
     beacon_agpu_pushVertexPosition(agpu, maxX, minY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, 1);
     beacon_agpu_pushVertexPosition(agpu, maxX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, 1);
     beacon_agpu_pushVertexPosition(agpu, minX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, 1);
-    beacon_agpu_pushTriangle(agpu, 20+1, 20+0, 20+2);
-    beacon_agpu_pushTriangle(agpu, 20+3, 20+2, 20+0);
+    beacon_agpu_pushTriangle(agpu, 20+0, 20+1, 20+2);
+    beacon_agpu_pushTriangle(agpu, 20+2, 20+3, 20+0);
     
     beacon_RenderMeshPrimitiveAttributes_t meshPrimitive = {
         .vertexCount = 24,

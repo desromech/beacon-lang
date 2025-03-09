@@ -48,6 +48,11 @@ beacon_oop_t beacon_ArrayList_at(beacon_context_t *context, beacon_ArrayList_t *
 void beacon_ArrayList_atPut(beacon_context_t *context, beacon_ArrayList_t *collection, intptr_t index, beacon_oop_t element);
 
 /**
+ * Removes the specified element
+ */
+void beacon_ArrayList_remove(beacon_ArrayList_t *collection, beacon_oop_t elementToRemove);
+
+/**
  * Constructs a new array list.
  */
 beacon_ByteArrayList_t *beacon_ByteArrayList_new(beacon_context_t *context);

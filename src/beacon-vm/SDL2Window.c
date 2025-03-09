@@ -6,6 +6,7 @@
 #include "Exceptions.h"
 #include "Window.h"
 #include "Dictionary.h"
+#include "ArrayList.h"
 #include "AgpuRendering.h"
 #include <stdlib.h>
 
@@ -137,6 +138,7 @@ static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t r
     uint32_t sdlWindowID = SDL_GetWindowID(sdlWindow);
     beaconWindow->handle = beacon_encodeSmallInteger(sdlWindowID);
     beacon_MethodDictionary_atPut(context, context->roots.windowHandleMap, (beacon_Symbol_t*)beaconWindow->handle, (beacon_oop_t)beaconWindow);
+    beacon_ArrayList_add(context, context->roots.openWindowList, (beacon_oop_t)beaconWindow);
 
     if(beaconWindow->useAcceleratedRendering != context->roots.trueValue)
     {
@@ -164,9 +166,10 @@ static beacon_oop_t beacon_Window_close(beacon_context_t *context, beacon_oop_t 
 
     SDL_Window *sdlWindow = SDL_GetWindowFromID(beacon_decodeCharacter(beaconWindow->handle));
 
-    uint32_t sdlWindowID = SDL_GetWindowID(sdlWindow);
-    beaconWindow->handle = beacon_encodeSmallInteger(sdlWindowID);
-    beacon_MethodDictionary_atPut(context, context->roots.windowHandleMap, (beacon_Symbol_t*)beaconWindow->handle, (beacon_oop_t)beaconWindow);
+    //uint32_t sdlWindowID = SDL_GetWindowID(sdlWindow);
+    //beaconWindow->handle = beacon_encodeSmallInteger(sdlWindowID);
+    //beacon_MethodDictionary_atPut(context, context->roots.windowHandleMap, (beacon_Symbol_t*)beaconWindow->handle, (beacon_oop_t)beaconWindow);
+    beacon_ArrayList_remove(context->roots.openWindowList, (beacon_oop_t)beaconWindow);
 
     if(beaconWindow->useAcceleratedRendering == context->roots.trueValue)
     {
@@ -192,10 +195,10 @@ static beacon_oop_t beacon_Window_close(beacon_context_t *context, beacon_oop_t 
     
         SDL_Renderer *renderer = beacon_unboxExternalAddress(context, beaconWindow->rendererHandle);
         if(texture)
-            SDL_DestroyRenderer(renderer);
-        
-        SDL_DestroyWindow(sdlWindow);    
+            SDL_DestroyRenderer(renderer); 
     }
+
+    SDL_DestroyWindow(sdlWindow);
     return receiver;
 }
 
@@ -417,6 +420,15 @@ static void beacon_sdl2_fetchAndDispatchEvents(beacon_context_t *context)
     }
 }
 
+static void beacon_sdl2_animateAndRender(beacon_context_t *context)
+{
+    intptr_t size = beacon_ArrayList_size(context->roots.openWindowList);
+    for(intptr_t i = 1; i <= size; ++i)
+    {
+        beacon_perform(context, beacon_ArrayList_at(context, context->roots.openWindowList, i), context->roots.animateAndRenderSelector);
+    }
+}
+
 static beacon_oop_t beacon_WindowClass_enterMainLoop(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)context;
@@ -427,6 +439,8 @@ static beacon_oop_t beacon_WindowClass_enterMainLoop(beacon_context_t *context, 
     while(!isQuitting)
     {
         beacon_sdl2_fetchAndDispatchEvents(context);
+
+        beacon_sdl2_animateAndRender(context);
     }
 
     return receiver;
