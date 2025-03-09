@@ -242,6 +242,46 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
         agpuReleaseComputePipelineBuilder(builder);
     }
 
+    {
+        agpu_shader *transformLightsToShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "TransformLightsToView", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/TransformLightsToView.glsl", AGPU_COMPUTE_SHADER);
+        agpu_compute_pipeline_builder *builder = agpuCreateComputePipelineBuilder(device);
+        agpuSetComputePipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachComputeShader(builder, transformLightsToShader);
+        agpu->transformLightsToViewPipeline = agpuBuildComputePipelineState(builder);
+        agpuReleaseShader(transformLightsToShader);
+        agpuReleaseComputePipelineBuilder(builder);
+    }
+    
+    {
+        agpu_shader *lightGridComputationShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "LightGridComputation", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/LightGridComputation.glsl", AGPU_COMPUTE_SHADER);
+        agpu_compute_pipeline_builder *builder = agpuCreateComputePipelineBuilder(device);
+        agpuSetComputePipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachComputeShader(builder, lightGridComputationShader);
+        agpu->lightGridComputationPipeline = agpuBuildComputePipelineState(builder);
+        agpuReleaseShader(lightGridComputationShader);
+        agpuReleaseComputePipelineBuilder(builder);
+    }
+
+    {
+        agpu_shader *lightClusterBeginShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "LightClusterBeginComputation", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/LightClusterBeginComputation.glsl", AGPU_COMPUTE_SHADER);
+        agpu_compute_pipeline_builder *builder = agpuCreateComputePipelineBuilder(device);
+        agpuSetComputePipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachComputeShader(builder, lightClusterBeginShader);
+        agpu->lightClusterBeginComputationPipeline = agpuBuildComputePipelineState(builder);
+        agpuReleaseShader(lightClusterBeginShader);
+        agpuReleaseComputePipelineBuilder(builder);
+    }
+
+    {
+        agpu_shader *lightClusterListComputationShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "LightClusterListComputation", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/LightClusterListComputation.glsl", AGPU_COMPUTE_SHADER);
+        agpu_compute_pipeline_builder *builder = agpuCreateComputePipelineBuilder(device);
+        agpuSetComputePipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachComputeShader(builder, lightClusterListComputationShader);
+        agpu->lightClusterListComputationPipeline = agpuBuildComputePipelineState(builder);
+        agpuReleaseShader(lightClusterListComputationShader);
+        agpuReleaseComputePipelineBuilder(builder);
+    }
+
     // Uber GUI pipeline state
     {
         //printf("guiVertexShaderSource: %s\n", guiVertexShaderSource);
@@ -1161,6 +1201,33 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuDispatchCompute(commandList, (agpu->renderObjectAttributes.size + 127) / 128, 1, 1);
     agpuMemoryBarrier(commandList, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, AGPU_PIPELINE_STAGE_VERTEX_SHADER | AGPU_PIPELINE_STAGE_FRAGMENT_SHADER | AGPU_PIPELINE_STAGE_DRAW_INDIRECT, AGPU_ACCESS_SHADER_WRITE, AGPU_ACCESS_SHADER_READ);
     
+    // Compute the lighting grid.
+    {
+        // Transform light sources to view space.
+        agpuUsePipelineState(commandList, agpu->transformLightsToViewPipeline);
+        agpuDispatchCompute(commandList, (agpu->renderLightSourceAttributes.size + 127) / 128, 1, 1);
+        agpuMemoryBarrier(commandList, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, (AGPU_PIPELINE_STAGE_COMPUTE_SHADER | AGPU_PIPELINE_STAGE_FRAGMENT_SHADER), AGPU_ACCESS_SHADER_WRITE, AGPU_ACCESS_SHADER_READ);
+
+        // See: recordLightGridComputationCommands.
+        uint32_t workgroupCountX = (BEACON_AGPU_LIGHT_GRID_WIDTH + 3) / 4;
+        uint32_t workgroupCountY = (BEACON_AGPU_LIGHT_GRID_HEIGHT + 3) / 4;
+        uint32_t workgroupCountZ = (BEACON_AGPU_LIGHT_GRID_DEPTH + 3) / 4;
+        
+        uint32_t workgroupCount = (BEACON_AGPU_LIGHT_GRID_CELL_COUNT + 63) / 64;
+
+        agpuUsePipelineState(commandList, agpu->lightGridComputationPipeline);
+        agpuDispatchCompute(commandList, workgroupCountX, workgroupCountY, workgroupCountZ);
+        agpuMemoryBarrier(commandList, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, AGPU_ACCESS_SHADER_WRITE, AGPU_ACCESS_SHADER_READ);
+
+        agpuUsePipelineState(commandList, agpu->lightClusterBeginComputationPipeline);
+        agpuDispatchCompute(commandList, 1, 1, 1);
+        agpuMemoryBarrier(commandList, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, AGPU_ACCESS_SHADER_WRITE, AGPU_ACCESS_SHADER_READ);
+
+        agpuUsePipelineState(commandList, agpu->lightClusterListComputationPipeline);
+        agpuDispatchCompute(commandList, workgroupCount, 1, 1);
+        agpuMemoryBarrier(commandList, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, AGPU_PIPELINE_STAGE_COMPUTE_SHADER | AGPU_PIPELINE_STAGE_FRAGMENT_SHADER, AGPU_ACCESS_SHADER_WRITE, AGPU_ACCESS_SHADER_READ);
+    }
+
     // Depth only render pass
     agpuBeginRenderPass(commandList, renderer->mainDepthRenderPass, renderer->depthOnlyFramebuffer, false);
     agpuSetViewport(commandList, 0, 0, displayWidth, displayHeight);
