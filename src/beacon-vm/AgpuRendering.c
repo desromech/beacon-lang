@@ -152,6 +152,48 @@ static agpu_shader *beacon_agpu_compileShaderWithSourceFileNamed(beacon_context_
     return shader;
 }
 
+static agpu_shader *beacon_agpu_compileShaderWithTwoCommonSources(beacon_context_t *context, beacon_AGPU_t *agpu, const char *name, const char *commonSourceFileName, const char *secondSourceFileName, const char *sourceFileName, agpu_shader_type shaderType)
+{
+    char *commonSource = NULL;
+    if(commonSourceFileName)
+        commonSource = beacon_agpu_readShaderSourceFromFileNamed("Common", commonSourceFileName);
+
+    char *secondCommonSource = NULL;
+    if(secondSourceFileName)
+        secondCommonSource = beacon_agpu_readShaderSourceFromFileNamed("Common", secondSourceFileName);
+    
+    char *shaderSource = beacon_agpu_readShaderSourceFromFileNamed("Common", sourceFileName);
+    if(!shaderSource)
+    {
+        if(commonSource)
+            free(commonSource);
+        if(secondCommonSource)
+            free(secondCommonSource);
+        return NULL;
+    }
+
+    size_t commonSourceSize = commonSource ? strlen(commonSource) : 0;
+    size_t secondCommonSourceSize = secondCommonSource ? strlen(secondCommonSource) : 0;
+    size_t shaderSourceSourceSize = shaderSource ? strlen(shaderSource) : 0;
+    size_t combinedSourceSize = commonSourceSize + secondCommonSourceSize + shaderSourceSourceSize;
+    char *combinedSource = calloc(1, combinedSourceSize + 1);
+    memcpy(combinedSource, commonSource, commonSourceSize);
+    memcpy(combinedSource + commonSourceSize, secondCommonSource, secondCommonSourceSize);
+    memcpy(combinedSource + commonSourceSize + secondCommonSourceSize, shaderSource, shaderSourceSourceSize);
+
+    agpu_shader *shader = beacon_agpu_compileShaderWithSource(context, agpu, name, combinedSource, shaderType);
+
+    if(commonSource)
+        free(commonSource);
+    if(secondCommonSource)
+        free(secondCommonSource);
+    if(shaderSource)
+        free(shaderSource);
+    if(combinedSource)
+        free(combinedSource);
+    return shader;
+}
+
 void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *agpu)
 {
     agpu_device *device = agpu->device;
@@ -283,6 +325,30 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
         agpuReleaseComputePipelineBuilder(builder);
     }
 
+    //beacon_agpu_readShaderSourceFromFileNamed
+    {
+        
+        agpu_shader *opaqueVertexShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "OpaqueColorVertex", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/GenericVertex.glsl", AGPU_VERTEX_SHADER);
+        agpu_shader *opaqueFragmentShader = beacon_agpu_compileShaderWithTwoCommonSources(context, agpu, "OpaqueColorFragment", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/ShaderFragmentCommon.glsl", "scripts/runtime/shaders/OpaqueFragment.glsl", AGPU_FRAGMENT_SHADER);
+    
+        agpu_pipeline_builder *builder = agpuCreatePipelineBuilder(device);
+        agpuSetRenderTargetCount(builder, 3);
+        agpuSetRenderTargetFormat(builder, 0, BEACON_AGPU_COLOR_FORMAT);
+        agpuSetRenderTargetFormat(builder, 1, AGPU_TEXTURE_FORMAT_R16G16_FLOAT);
+        agpuSetRenderTargetFormat(builder, 2, AGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM);
+        agpuSetDepthStencilFormat(builder, BEACON_AGPU_DEPTH_FORMAT);
+        agpuSetPipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachShader(builder, opaqueVertexShader);
+        agpuAttachShader(builder, opaqueFragmentShader);
+        agpuSetPrimitiveType(builder, AGPU_TRIANGLES);
+        agpuSetDepthState(builder, true, true, AGPU_EQUAL);
+        agpuSetCullMode(builder, AGPU_CULL_MODE_BACK);
+        agpu->opaqueColorPipeline = agpuBuildPipelineState(builder);
+        
+        agpuReleaseShader(opaqueVertexShader);
+        agpuReleaseShader(opaqueFragmentShader);
+        agpuReleasePipelineBuilder(builder);
+    }
     // Uber GUI pipeline state
     {
         //printf("guiVertexShaderSource: %s\n", guiVertexShaderSource);

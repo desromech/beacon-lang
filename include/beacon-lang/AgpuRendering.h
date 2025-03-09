@@ -220,6 +220,8 @@ typedef struct beacon_AGPU_s
     agpu_pipeline_state *lightClusterBeginComputationPipeline;
     agpu_pipeline_state *lightClusterListComputationPipeline;
 
+    agpu_pipeline_state *opaqueColorPipeline;
+
     agpu_texture *errorTexture;
     agpu_texture *boundTextures[1024];
     agpu_texture_view *boundTextureViews[1024];
