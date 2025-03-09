@@ -3,6 +3,7 @@
 #include "Exceptions.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "stb_truetype.h"
 
 typedef struct VulkanDrawIndexedIndirectCommand {
@@ -1554,6 +1555,34 @@ static size_t beacon_agpu_pushRenderCameraState(beacon_AGPU_t *agpu, beacon_Rend
     return index;
 }
 
+static size_t beacon_agpu_pushRenderLightSource(beacon_AGPU_t *agpu, beacon_RenderLightSource_t lightSourceAttributes)
+{
+    size_t index = agpu->renderLightSourceAttributes.size;
+    beacon_RenderLightSource_t *buffer = agpu->renderLightSourceAttributes.thisFrameBuffer;
+    buffer[agpu->renderLightSourceAttributes.size++] = lightSourceAttributes;
+    return index;
+}
+
+static double beacon_agpu_computeLightGridDepthSliceScale(double lightGridDepth, double nearDistance, double farDistance)
+{
+    return lightGridDepth / log(farDistance / nearDistance);
+}
+
+static double beacon_agpu_computeLightGridDepthSliceOffset(double lightGridDepth, double nearDistance, double farDistance)
+{
+    return -lightGridDepth * log(nearDistance) / log(farDistance / nearDistance);
+}
+
+static beacon_RenderVector2_t beacon_agpu_computeLightGridDepthSliceScaleOffset(double lightGridDepth, double nearDistance, double farDistance)
+{
+    double scale = beacon_agpu_computeLightGridDepthSliceScale(lightGridDepth, nearDistance, farDistance);
+    double offset = beacon_agpu_computeLightGridDepthSliceOffset(lightGridDepth, nearDistance, farDistance);
+    
+    //Formula from: http://www.aortiz.me/2018/12/21/CG.html#building-a-cluster-grid [January 2025]
+    beacon_RenderVector2_t vector = {scale, offset};
+    return vector;
+}
+
 static beacon_oop_t beacon_agpuWindowRenderer_addDefaultTestCamera(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
@@ -1564,8 +1593,8 @@ static beacon_oop_t beacon_agpuWindowRenderer_addDefaultTestCamera(beacon_contex
     float nearDistance = 0.01f;
     float farDistance = 1000.0f;
 
-    beacon_RenderVector3_t translation = {1, 1, 1};
-    beacon_RenderVector3_t inverseTranslation = {-1, -1, -1};
+    beacon_RenderVector3_t translation = {1, 1, 3};
+    beacon_RenderVector3_t inverseTranslation = {-1, -1, -3};
 
     beacon_RenderMatrix4x4_t projection = beacon_RenderMatrix4x4_reverseDepthPerspective(60.0f, (float)renderer->intermediateBufferWidth / renderer->intermediateBufferHeight, nearDistance, farDistance, flipVertically);
 
@@ -1589,6 +1618,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_addDefaultTestCamera(beacon_contex
         .lightGridExtentX = BEACON_AGPU_LIGHT_GRID_WIDTH,
         .lightGridExtentY = BEACON_AGPU_LIGHT_GRID_HEIGHT,
         .lightGridExtentZ = BEACON_AGPU_LIGHT_GRID_DEPTH,
+        .lightGridDepthSliceScaleOffset = beacon_agpu_computeLightGridDepthSliceScaleOffset(BEACON_AGPU_LIGHT_GRID_DEPTH, nearDistance, farDistance),
 
         .projectionMatrix = projection,
         .inverseProjectionMatrix = beacon_RenderMatrix4x4_identity(),
@@ -1692,6 +1722,24 @@ static beacon_oop_t beacon_agpuWindowRenderer_addTestCube(beacon_context_t *cont
     return receiver;
 }
 
+static beacon_oop_t beacon_agpuWindowRenderer_addTestLight(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
+    beacon_AGPU_t *agpu = context->roots.agpuCommon;
+
+    beacon_RenderLightSource_t lightSource = {
+        .positionOrDirection = {0, 2, 0, 1},
+        .intensity = {10, 10, 10},
+        .influenceRadius = 10,
+        .innerSpotCosCutoff = -1,
+        .outerSpotCosCutoff = -1,
+        .castShadows = false,
+    };
+
+    beacon_agpu_pushRenderLightSource(agpu, lightSource);
+    return receiver;
+}
+
 void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
 {
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.agpuClass), "uniqueInstance", 1, beacon_AGPU_uniqueInstance);
@@ -1708,6 +1756,7 @@ void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
 
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addDefaultTestCamera", 0, beacon_agpuWindowRenderer_addDefaultTestCamera);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestCube", 0, beacon_agpuWindowRenderer_addTestCube);
+    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestLight", 0, beacon_agpuWindowRenderer_addTestLight);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "get3DOutputTextureHandle", 0, beacon_agpuWindowRenderer_get3DOutputTextureHandle);
     
 

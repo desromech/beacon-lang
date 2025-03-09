@@ -37,7 +37,7 @@ beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_reverseDepthFrustum(float left, 
 
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_reverseDepthPerspective(float fovY, float aspectRatio, float near, float far, bool flipVertically)
 {
-	float fovyRad = fovY *M_PI / 180.0;
+	float fovyRad = fovY *(M_PI / 180.0) / 2;
     float top = near*tan(fovyRad);
     float right = top * aspectRatio;
 	

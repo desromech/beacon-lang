@@ -20,6 +20,7 @@ render3DEnvironmentWith: rendererHandle
 
     rendererHandle 
         addDefaultTestCamera;
+        addTestLight;
         addTestCube.
 
     rendererHandle end3DFrameRendering.
