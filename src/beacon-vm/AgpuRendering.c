@@ -1681,7 +1681,13 @@ static beacon_oop_t beacon_agpuWindowRenderer_addDefaultTestCamera(beacon_contex
     beacon_RenderVector3_t translation = {1, 1, 3};
     beacon_RenderVector3_t inverseTranslation = {-1, -1, -3};
 
+    beacon_RenderMatrix4x4_t viewMatrix = beacon_RenderMatrix4x4_translation(inverseTranslation);
+    beacon_RenderMatrix4x4_t inverseViewMatrix = beacon_RenderMatrix4x4_translation(translation);
+    beacon_RenderMatrix4x4_t viewMatrixIdentity = beacon_RenderMatrix4x4_multiply(viewMatrix, inverseViewMatrix);
+
     beacon_RenderMatrix4x4_t projection = beacon_RenderMatrix4x4_reverseDepthPerspective(60.0f, (float)renderer->intermediateBufferWidth / renderer->intermediateBufferHeight, nearDistance, farDistance, flipVertically);
+    beacon_RenderMatrix4x4_t inverseProjection = beacon_RenderMatrix4x4_inverse(projection);
+    beacon_RenderMatrix4x4_t projectionIdentity = beacon_RenderMatrix4x4_multiply(projection, inverseProjection);
 
     beacon_RenderCameraState_t defaultCameraState = {
         .framebufferExtent = {renderer->intermediateBufferWidth, renderer->intermediateBufferHeight},
@@ -1706,7 +1712,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_addDefaultTestCamera(beacon_contex
         .lightGridDepthSliceScaleOffset = beacon_agpu_computeLightGridDepthSliceScaleOffset(BEACON_AGPU_LIGHT_GRID_DEPTH, nearDistance, farDistance),
 
         .projectionMatrix = projection,
-        .inverseProjectionMatrix = beacon_RenderMatrix4x4_identity(),
+        .inverseProjectionMatrix = inverseProjection,
 
         .viewMatrix = beacon_RenderMatrix4x4_translation(inverseTranslation),
         .inverseViewMatrix = beacon_RenderMatrix4x4_translation(translation),
@@ -1814,7 +1820,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_addTestLight(beacon_context_t *con
     beacon_AGPU_t *agpu = context->roots.agpuCommon;
 
     beacon_RenderLightSource_t lightSource = {
-        .positionOrDirection = {0, 2, 0, 1},
+        .positionOrDirection = {1, 2, 1, 1},
         .intensity = {20, 20, 20},
         .influenceRadius = 20,
         .innerSpotCosCutoff = -1,

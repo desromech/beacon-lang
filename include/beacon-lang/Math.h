@@ -14,18 +14,48 @@ typedef struct beacon_RenderVector2_s
 
 typedef struct beacon_RenderVector3_s
 {
-    float x, y, z;
+    float x, y, z, padding;
 } beacon_RenderVector3_t GCC_ALIGNED(16);
+
+static inline beacon_RenderVector3_t beacon_RenderVector3_make(float x, float y, float z)
+{
+	beacon_RenderVector3_t result = {x, y, z, 0};
+	return result;
+}
 
 typedef struct beacon_RenderPackedVector3_s
 {
     float x, y, z;
 } beacon_RenderPackedVector3_t;
 
-typedef struct beacon_RenderVector4_s
+typedef union beacon_RenderVector4_s
 {
-    float x, y, z, w;
+    struct
+	{
+		float x, y, z, w;
+	};
+
 } beacon_RenderVector4_t GCC_ALIGNED(16);
+
+typedef union beacon_RenderMatrix3x3_s
+{
+	struct {
+		float m11; float m21; float m31; float _pading;
+		float m12; float m22; float m32; float _pading1;
+		float m13; float m23; float m33; float _pading2;
+		float m14; float m24; float m34; float _pading3;		
+	};
+
+	beacon_RenderVector3_t columns[3];
+} beacon_RenderMatrix3x3_t GCC_ALIGNED(16);
+
+static inline beacon_RenderMatrix3x3_t beacon_RenderMatrix3x3_makeWithColumns(beacon_RenderVector3_t first, beacon_RenderVector3_t second, beacon_RenderVector3_t third)
+{
+	beacon_RenderMatrix3x3_t result = {
+		.columns = {first, second, third}
+	};
+	return result;
+}
 
 typedef union beacon_RenderMatrix4x4_s
 {
@@ -60,8 +90,14 @@ typedef struct beacon_Frustum_s
     beacon_RenderVector4_t planes[6];
 } beacon_Frustum_t;
 
+float beacon_RenderMatrix3x3_determinant(beacon_RenderMatrix3x3_t mat);
+
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_translation(beacon_RenderVector3_t translation);
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_identity(void);
+
+beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_multiply(beacon_RenderMatrix4x4_t left, beacon_RenderMatrix4x4_t right);
+float beacon_RenderMatrix4x4_determinant(beacon_RenderMatrix4x4_t mat);
+beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_inverse(beacon_RenderMatrix4x4_t mat);
 
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_reverseDepthFrustum(float left, float right, float bottom, float top, float near, float far, bool flipVertically);
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_reverseDepthPerspective(float fovY, float aspectRatio, float near, float far, bool flipVertically);
