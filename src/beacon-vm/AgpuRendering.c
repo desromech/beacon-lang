@@ -1006,9 +1006,10 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
 
     if(!renderer->hasIntermediateBuffers || renderer->intermediateBufferWidth != displayWidth || renderer->intermediateBufferHeight != displayHeight)
     {
+        agpuFinishDeviceExecution(device);
+
         if(renderer->hasIntermediateBuffers)
         {
-            agpuFinishDeviceExecution(device);
             agpuReleaseTexture(renderer->mainDepthBuffer);
             agpuReleaseTexture(renderer->hdrColorBuffer);
             agpuReleaseTexture(renderer->normalGBuffer);
@@ -1177,14 +1178,17 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
             renderer->outputTextureHandle->textureView = outputTextureView;
             renderer->outputTextureHandle->textureArrayBindingIndex = renderer->outputTextureIndex;
         }
+
+        if(!renderer->intermediateBindings)
+            renderer->intermediateBindings = agpuCreateShaderResourceBinding(context->roots.agpuCommon->shaderSignature, 3);
+        {
+            agpu_texture_view *textureView = agpuGetOrCreateFullTextureView(renderer->hdrColorBuffer);
+            agpuBindSampledTextureView(renderer->intermediateBindings, 0, textureView);
+        }
+
+        renderer->hasIntermediateBuffers = true;
     }
 
-    if(!renderer->intermediateBindings)
-        renderer->intermediateBindings = agpuCreateShaderResourceBinding(context->roots.agpuCommon->shaderSignature, 3);
-    {
-        agpu_texture_view *textureView = agpuGetOrCreateFullTextureView(renderer->hdrColorBuffer);
-        agpuBindSampledTextureView(renderer->intermediateBindings, 0, textureView);
-    }
 
     return receiver;
 }
