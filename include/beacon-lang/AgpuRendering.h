@@ -4,7 +4,7 @@
 #include "AGPU/agpu.h"
 #include "Context.h"
 #include "ObjectModel.h"
-#include "Math.h"
+#include "BeaconMath.h"
 
 #define BEACON_AGPU_FRAMEBUFFERING_COUNT 3
 
