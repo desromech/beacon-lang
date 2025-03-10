@@ -367,6 +367,21 @@ buttons: anInteger
 ].
 
 MorphMouseMotionEvent ![
+hasLeftButtonPressed
+    ^ buttons anyMask: 1
+].
+
+MorphMouseMotionEvent ![
+hasMiddleButtonPressed
+    ^ buttons anyMask: 2
+].
+
+MorphMouseMotionEvent ![
+hasRightButtonPressed
+    ^ buttons anyMask: 4
+].
+
+MorphMouseMotionEvent ![
 deltaPosition
     ^ deltaPosition
 ].

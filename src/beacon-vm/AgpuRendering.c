@@ -1672,8 +1672,12 @@ static beacon_RenderVector2_t beacon_agpu_computeLightGridDepthSliceScaleOffset(
     return vector;
 }
 
-static beacon_oop_t beacon_agpuWindowRenderer_addDefaultTestCamera(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+static beacon_oop_t beacon_agpuWindowRenderer_addTestCameraWithLocationAndOrientation(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
+    BeaconAssert(context, argumentCount == 2);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
+    BeaconAssert(context, beacon_getClass(context, arguments[1]) == context->classes.matrix3x3Class);
+
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
     beacon_AGPU_t *agpu = context->roots.agpuCommon;
     agpu_device *device = agpu->device;
@@ -1682,16 +1686,21 @@ static beacon_oop_t beacon_agpuWindowRenderer_addDefaultTestCamera(beacon_contex
     float nearDistance = 0.01f;
     float farDistance = 1000.0f;
 
-    beacon_RenderVector3_t translation = {1, 1, 3};
-    beacon_RenderVector3_t inverseTranslation = {-1, -1, -3};
+    beacon_Vector3_t *translationArgument = (beacon_Vector3_t*)(arguments[0]);
+    beacon_Matrix3x3_t *orientation = (beacon_Matrix3x3_t*)(arguments[1]);
 
-    beacon_RenderMatrix4x4_t viewMatrix = beacon_RenderMatrix4x4_translation(inverseTranslation);
-    beacon_RenderMatrix4x4_t inverseViewMatrix = beacon_RenderMatrix4x4_translation(translation);
-    beacon_RenderMatrix4x4_t viewMatrixIdentity = beacon_RenderMatrix4x4_multiply(viewMatrix, inverseViewMatrix);
+    beacon_RenderVector3_t translation = {translationArgument->x, translationArgument->y, translationArgument->z};
+    beacon_RenderMatrix3x3_t renderOrientationMatrix = {
+        .m11 = orientation->m11, .m12 = orientation->m12, .m13 = orientation->m13,
+        .m21 = orientation->m21, .m22 = orientation->m22, .m23 = orientation->m23,
+        .m31 = orientation->m31, .m32 = orientation->m32, .m33 = orientation->m33,
+    };
+
+    beacon_RenderMatrix4x4_t inverseViewMatrix = beacon_RenderMatrix4x4_withMatrix3x3AndTranslation(renderOrientationMatrix, translation);
+    beacon_RenderMatrix4x4_t viewMatrix = beacon_RenderMatrix4x4_inverse(inverseViewMatrix);
 
     beacon_RenderMatrix4x4_t projection = beacon_RenderMatrix4x4_reverseDepthPerspective(60.0f, (float)renderer->intermediateBufferWidth / renderer->intermediateBufferHeight, nearDistance, farDistance, flipVertically);
     beacon_RenderMatrix4x4_t inverseProjection = beacon_RenderMatrix4x4_inverse(projection);
-    beacon_RenderMatrix4x4_t projectionIdentity = beacon_RenderMatrix4x4_multiply(projection, inverseProjection);
 
     beacon_RenderCameraState_t defaultCameraState = {
         .framebufferExtent = {renderer->intermediateBufferWidth, renderer->intermediateBufferHeight},
@@ -1718,18 +1727,22 @@ static beacon_oop_t beacon_agpuWindowRenderer_addDefaultTestCamera(beacon_contex
         .projectionMatrix = projection,
         .inverseProjectionMatrix = inverseProjection,
 
-        .viewMatrix = beacon_RenderMatrix4x4_translation(inverseTranslation),
-        .inverseViewMatrix = beacon_RenderMatrix4x4_translation(translation),
+        .viewMatrix = viewMatrix,
+        .inverseViewMatrix = inverseViewMatrix,
     };
     
     beacon_agpu_pushRenderCameraState(agpu, defaultCameraState);
     return receiver;
 }
 
-static beacon_oop_t beacon_agpuWindowRenderer_addTestCube(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+static beacon_oop_t beacon_agpuWindowRenderer_addTestCubeWithLocation(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
+    BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
+
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
     beacon_AGPU_t *agpu = context->roots.agpuCommon;
+    beacon_Vector3_t *translationArgument = (beacon_Vector3_t*)(arguments[0]);
 
     size_t positionBufferIndex = agpu->vertexPositions.size;
     size_t normalBufferIndex = agpu->vertexNormals.size;
@@ -1809,9 +1822,12 @@ static beacon_oop_t beacon_agpuWindowRenderer_addTestCube(beacon_context_t *cont
     };
     size_t modelIndex = beacon_agpu_pushModelAttributes(agpu, modelAttributes);
 
+    beacon_RenderVector3_t translation = {translationArgument->x, translationArgument->y, translationArgument->z};
+    beacon_RenderVector3_t inverseTranslation = {-translationArgument->x, -translationArgument->y, -translationArgument->z};
+
     beacon_RenderObjectAttributes_t objectAttributes = {
-        .modelMatrix = beacon_RenderMatrix4x4_identity(),
-        .inverseModelMatrix = beacon_RenderMatrix4x4_identity(),
+        .modelMatrix = beacon_RenderMatrix4x4_translation(translation),
+        .inverseModelMatrix = beacon_RenderMatrix4x4_translation(inverseTranslation),
         .modelIndex = modelIndex
     };
     beacon_agpu_pushRenderObjectAttributes(agpu, objectAttributes);
@@ -1850,8 +1866,8 @@ void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "begin3DFrameRenderingWithWidth:height:", 2, beacon_agpuWindowRenderer_begin3DFrameRendering);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "end3DFrameRendering", 0, beacon_agpuWindowRenderer_end3DFrameRendering);
 
-    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addDefaultTestCamera", 0, beacon_agpuWindowRenderer_addDefaultTestCamera);
-    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestCube", 0, beacon_agpuWindowRenderer_addTestCube);
+    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestCameraWithLocation:orientation:", 2, beacon_agpuWindowRenderer_addTestCameraWithLocationAndOrientation);
+    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestCubeWithLocation:", 1, beacon_agpuWindowRenderer_addTestCubeWithLocation);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestLight", 0, beacon_agpuWindowRenderer_addTestLight);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "get3DOutputTextureHandle", 0, beacon_agpuWindowRenderer_get3DOutputTextureHandle);
     

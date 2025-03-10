@@ -24,6 +24,17 @@ beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_identity(void)
     return matrix;
 }
 
+beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_withMatrix3x3AndTranslation(beacon_RenderMatrix3x3_t mat, beacon_RenderVector3_t translation)
+{
+    beacon_RenderMatrix4x4_t matrix = {
+        .m11 = mat.m11, .m12 = mat.m12, .m13 = mat.m13, .m14 = translation.x,
+        .m21 = mat.m21, .m22 = mat.m22, .m23 = mat.m23, .m24 = translation.y,
+        .m31 = mat.m31, .m32 = mat.m32, .m33 = mat.m33, .m34 = translation.z,
+        .m41 =       0, .m42 =       0, .m43 =       0, .m44 = 1.0f,
+    };
+    return matrix;
+}
+
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_translation(beacon_RenderVector3_t translation)
 {
     beacon_RenderMatrix4x4_t matrix = {

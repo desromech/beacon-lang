@@ -686,6 +686,48 @@ static beacon_oop_t beacon_Matrix3x3_scale(beacon_context_t *context, beacon_oop
     return (beacon_oop_t)matrix;
 }
 
+static beacon_oop_t beacon_Matrix3x3_xRotation(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+
+    double angle = beacon_decodeNumberAsDouble(context, arguments[0]);
+    double c = cos(angle);
+    double s = sin(angle);
+    beacon_Matrix3x3_t *result = beacon_allocateObjectWithBehavior(context->heap, context->classes.matrix3x3Class, sizeof(beacon_Matrix3x3_t), BeaconObjectKindBytes);
+    result->m11 = 1;
+    result->m22 = c; result->m23 = -s;
+    result->m32 = s; result->m33 = c;
+    return (beacon_oop_t)result;
+}
+
+static beacon_oop_t beacon_Matrix3x3_yRotation(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+
+    double angle = beacon_decodeNumberAsDouble(context, arguments[0]);
+    double c = cos(angle);
+    double s = sin(angle);
+    beacon_Matrix3x3_t *result = beacon_allocateObjectWithBehavior(context->heap, context->classes.matrix3x3Class, sizeof(beacon_Matrix3x3_t), BeaconObjectKindBytes);
+    result->m11 = c; result->m13 = s;
+    result->m22 = 1;
+    result->m31 = -s; result->m33 = c;
+    return (beacon_oop_t)result;
+}
+
+static beacon_oop_t beacon_Matrix3x3_zRotation(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+
+    double angle = beacon_decodeNumberAsDouble(context, arguments[0]);
+    double c = cos(angle);
+    double s = sin(angle);
+    beacon_Matrix3x3_t *result = beacon_allocateObjectWithBehavior(context->heap, context->classes.matrix3x3Class, sizeof(beacon_Matrix3x3_t), BeaconObjectKindBytes);
+    result->m11 = c; result->m12 = -s;
+    result->m21 = s; result->m22 = c;
+    result->m33 = 1;
+    return (beacon_oop_t)result;
+}
+
 static beacon_oop_t beacon_Matrix3x3_asMatrix3x3(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     return receiver;
@@ -1092,6 +1134,9 @@ void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context)
 
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.matrix3x3Class), "identity", 0, beacon_Matrix3x3_identity);
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.matrix3x3Class), "scale:", 1, beacon_Matrix3x3_scale);
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.matrix3x3Class), "xRotation:", 1, beacon_Matrix3x3_xRotation);
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.matrix3x3Class), "yRotation:", 1, beacon_Matrix3x3_yRotation);
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.matrix3x3Class), "zRotation:", 1, beacon_Matrix3x3_zRotation);
     beacon_addPrimitiveToClass(context, context->classes.matrix3x3Class, "asMatrix3x3",  0, beacon_Matrix3x3_asMatrix3x3);
     beacon_addPrimitiveToClass(context, context->classes.matrix3x3Class, "transpose",    0, beacon_Matrix3x3_transpose);
     beacon_addPrimitiveToClass(context, context->classes.matrix3x3Class, "firstColumn",  0, beacon_Matrix3x3_firstColumn);

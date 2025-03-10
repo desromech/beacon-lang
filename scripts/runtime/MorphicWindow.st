@@ -1,4 +1,14 @@
-Window subclass: #MorphicWindow instanceVariables: #(rootMorph).
+Window subclass: #MorphicWindow instanceVariables: #(isAnimated rootMorph).
+
+MorphicWindow ![
+isAnimated
+    ^ isAnimated
+].
+
+MorphicWindow ![
+isAnimated: aBoolean
+    isAnimated := isAnimated
+].
 
 MorphicWindow ![
 rootMorph: aRootMorph
@@ -28,6 +38,13 @@ childChanged: aChild
     self render
 ].
 
+MorphicWindow ![
+animateAndRender
+    isAnimated ifFalse: [^ self].
+
+    self render
+].
+
 Morph ![
 openInWindow
     | morphicWindow fillLayout |
@@ -36,6 +53,7 @@ openInWindow
 
     ^ morphicWindow
         extent: extent;
+        isAnimated: self isAnimated;
         rootMorph: (RootMorph new
             extent: extent;
             ownerWindow: morphicWindow;

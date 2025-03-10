@@ -92,6 +92,8 @@ typedef struct beacon_Frustum_s
 
 float beacon_RenderMatrix3x3_determinant(beacon_RenderMatrix3x3_t mat);
 
+beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_withMatrix3x3AndTranslation(beacon_RenderMatrix3x3_t mat, beacon_RenderVector3_t translation);
+
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_translation(beacon_RenderVector3_t translation);
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_identity(void);
 

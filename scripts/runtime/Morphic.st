@@ -18,6 +18,11 @@ defaultExtent
 ].
 
 Morph ![
+isAnimated
+    ^ false
+].
+
+Morph ![
 initialize
     super initialize.
     submorphs := #().

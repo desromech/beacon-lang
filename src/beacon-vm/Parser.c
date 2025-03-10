@@ -170,6 +170,7 @@ intptr_t parser_parseIntegerConstant(beacon_ScannerToken_t *token)
     intptr_t result = 0;
     intptr_t radix = 10;
     bool hasSeenRadix = false;
+    bool negative = false;
 
     for (size_t i = 0; i < constantStringSize; ++i)
     {
@@ -188,10 +189,12 @@ intptr_t parser_parseIntegerConstant(beacon_ScannerToken_t *token)
                 result = result * radix + (intptr_t)(c - 'A' + 10);
             else if ('a' <= c && c <= 'z')
                 result = result * radix + (intptr_t)(c - 'a' + 10);
+            else if (c == '-')
+                negative = true;
         }
     }
 
-    return beacon_encodeSmallInteger(result);
+    return beacon_encodeSmallInteger(negative ? -result : result);
 }
 
 beacon_ParseTreeNode_t *parser_parseLiteralInteger(beacon_parserState_t *state)
