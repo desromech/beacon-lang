@@ -977,7 +977,9 @@ typedef struct beacon_MeshMetallicRoughnessMaterial_s
     beacon_Form_t *baseColorTexture;
     beacon_oop_t metallicFactor;
     beacon_oop_t roughnessFactor;
+    beacon_oop_t occlusionFactor;
     beacon_Form_t *metallicRoughnessTexture;
+    beacon_Form_t *occlusionTexture;
     beacon_oop_t isUnlit;
 } beacon_MeshMetallicRoughnessMaterial_t;
 
