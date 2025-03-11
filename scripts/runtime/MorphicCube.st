@@ -1,4 +1,4 @@
-Morph subclass: #CubeMorph instanceVariables: #(cameraLocation cameraEulerAngles cameraOrientationMatrix cubeModel outputTextureHandle).
+Morph subclass: #CubeMorph instanceVariables: #(cameraLocation cameraEulerAngles cameraOrientationMatrix cubeModel floorModel outputTextureHandle).
 
 CubeMorph class ![
 defaultExtent
@@ -15,6 +15,10 @@ initialize
         addCubeWithMinX: -0.5 minY: -0.5 minZ: -0.5 maxX: 0.5 maxY: 0.5 maxZ: 0.5;
         finishPrimitive;
         finishModel.
+    floorModel := MeshBuilder new
+        addCubeWithMinX: -5 minY: -1.5 minZ: -5 maxX: 5 maxY: -0.5 maxZ: 5;
+        finishPrimitive;
+        finishModel.
 ].
 
 CubeMorph ![
@@ -26,11 +30,16 @@ renderWithBuilder: renderingBuilder
 
 CubeMorph ![
 render3DEnvironmentWith: rendererHandle
-    | extent leftObject middleObject rightObject |
+    | extent floorObject leftObject middleObject rightObject |
     extent := self extent.
     rendererHandle begin3DFrameRenderingWithWidth: extent x height: extent y.
 
     cameraOrientationMatrix := (Matrix3x3 yRotation: cameraEulerAngles y) * (Matrix3x3 xRotation: cameraEulerAngles x).
+
+    floorObject := RenderObject3D new
+        model: floorModel;
+        modelMatrix: Matrix4x4 identity;
+        yourself.
 
     leftObject := RenderObject3D new
         model: cubeModel;
@@ -49,12 +58,22 @@ render3DEnvironmentWith: rendererHandle
 
     rendererHandle 
         addTestCameraWithLocation: cameraLocation orientation: cameraOrientationMatrix;
-        "addTestLightWithLocation: (Vector3 x: 0 y: 1 z: 0) color: Color white intensity: 20 influenceRadius: 10;"
+        addLightSource: (LightSource new
+            position: (Vector3 x: -2 y: 1 z: 0);
+            color: Color green intensity: 20;
+            influenceRadius: 10;
+            yourself);
         addLightSource: (LightSource new
             position: (Vector3 x: 0 y: 1 z: 0);
             color: Color white intensity: 20;
             influenceRadius: 10;
             yourself);
+        addLightSource: (LightSource new
+            position: (Vector3 x: 2 y: 1 z: 0);
+            color: Color red intensity: 20;
+            influenceRadius: 10;
+            yourself);
+        addRenderObject: floorObject;
         addRenderObject: leftObject;
         addRenderObject: middleObject;
         addRenderObject: rightObject.
