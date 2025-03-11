@@ -2,6 +2,7 @@
 #define BEACON_MATH_H
 
 #include <stdbool.h>
+#include "ObjectModel.h"
 #ifdef _MSC_VER
 #else
 #define GCC_ALIGNED(x) __attribute__((aligned(x)))
@@ -94,6 +95,7 @@ float beacon_RenderMatrix3x3_determinant(beacon_RenderMatrix3x3_t mat);
 
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_withMatrix3x3AndTranslation(beacon_RenderMatrix3x3_t mat, beacon_RenderVector3_t translation);
 
+beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_fromMatrix4x4(beacon_Matrix4x4_t *mat);
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_translation(beacon_RenderVector3_t translation);
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_identity(void);
 

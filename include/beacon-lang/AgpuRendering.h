@@ -331,6 +331,7 @@ typedef struct beacon_AGPUWindowRenderer_s
 
     agpu_shader_resource_binding *intermediateBindings;
 
+    uint32_t renderingFrameIndex;
 } beacon_AGPUWindowRenderer_t;
 
 agpu_platform *beacon_agpu_getPlatform(beacon_context_t *context, beacon_AGPU_t *agpu);

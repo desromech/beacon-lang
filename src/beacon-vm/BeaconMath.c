@@ -35,6 +35,18 @@ beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_withMatrix3x3AndTranslation(beac
     return matrix;
 }
 
+beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_fromMatrix4x4(beacon_Matrix4x4_t *mat)
+{
+    beacon_RenderMatrix4x4_t matrix = {
+        .m11 = mat->m11, .m12 = mat->m12, .m13 = mat->m13, .m14 = mat->m14,
+        .m21 = mat->m21, .m22 = mat->m22, .m23 = mat->m23, .m24 = mat->m24,
+        .m31 = mat->m31, .m32 = mat->m32, .m33 = mat->m33, .m34 = mat->m34,
+        .m41 = mat->m41, .m42 = mat->m42, .m43 = mat->m43, .m44 = mat->m44,
+    };
+    return matrix;
+
+}
+
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_translation(beacon_RenderVector3_t translation)
 {
     beacon_RenderMatrix4x4_t matrix = {

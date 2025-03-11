@@ -913,6 +913,20 @@ static beacon_oop_t beacon_Matrix4x4_identity(beacon_context_t *context, beacon_
     return (beacon_oop_t)matrix;
 }
 
+static beacon_oop_t beacon_Matrix4x4_translation(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
+
+    beacon_Matrix4x4_t *matrix = beacon_allocateObjectWithBehavior(context->heap, context->classes.matrix4x4Class, sizeof(beacon_Matrix4x4_t), BeaconObjectKindBytes);
+    beacon_Vector3_t *vector = (beacon_Vector3_t*)arguments[0];
+    matrix->m11 = 1; matrix->m14 = vector->x;
+    matrix->m22 = 1; matrix->m24 = vector->y;
+    matrix->m33 = 1; matrix->m34 = vector->z;
+    matrix->m44 = 1;
+    return (beacon_oop_t)matrix;
+}
+
 static beacon_oop_t beacon_Matrix4x4_firstColumn(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 0);
@@ -1151,6 +1165,7 @@ void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context)
 
 
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.matrix4x4Class), "identity", 0, beacon_Matrix4x4_identity);
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.matrix4x4Class), "translation:", 1, beacon_Matrix4x4_translation);
     beacon_addPrimitiveToClass(context, context->classes.matrix4x4Class, "firstColumn",  0, beacon_Matrix4x4_firstColumn);
     beacon_addPrimitiveToClass(context, context->classes.matrix4x4Class, "secondColumn", 0, beacon_Matrix4x4_secondColumn);
     beacon_addPrimitiveToClass(context, context->classes.matrix4x4Class, "thirdColumn",  0, beacon_Matrix4x4_thirdColumn);

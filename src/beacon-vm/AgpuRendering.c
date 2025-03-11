@@ -854,6 +854,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_beginFrame(beacon_context_t *conte
 {
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t*)receiver;
     beacon_AGPUWindowRendererPerFrameState_t *thisFrameState = renderer->frameState + renderer->currentFrameBufferingIndex;
+    ++renderer->renderingFrameIndex;
 
     if(thisFrameState->hasSubmittedToQueue)
     {
@@ -1596,6 +1597,24 @@ static size_t beacon_agpu_pushVertexNormal(beacon_AGPU_t *agpu, float x, float y
     return index;
 }
 
+static size_t beacon_agpu_pushTangents4(beacon_AGPU_t *agpu, float x, float y, float z, float w)
+{
+    size_t index = agpu->vertexTangent4.size;
+    beacon_RenderVector4_t tangent = {x, y, z, w};
+    beacon_RenderVector4_t *tangents4Buffer = agpu->vertexTangent4.thisFrameBuffer;
+    tangents4Buffer[agpu->vertexTangent4.size++] = tangent;
+    return index;
+}
+
+static size_t beacon_agpu_pushVertexTexcoord(beacon_AGPU_t *agpu, float s, float t)
+{
+    size_t index = agpu->vertexTexcoords.size;
+    beacon_RenderVector2_t texcoord = {s, t};
+    beacon_RenderVector2_t *texcoordBuffer = agpu->vertexTexcoords.thisFrameBuffer;
+    texcoordBuffer[agpu->vertexTexcoords.size++] = texcoord;
+    return index;
+}
+
 static size_t beacon_agpu_pushIndex(beacon_AGPU_t *agpu, uint32_t indexValue)
 {
     size_t oldIndex = agpu->indexData.size;
@@ -1732,6 +1751,116 @@ static beacon_oop_t beacon_agpuWindowRenderer_addTestCameraWithLocationAndOrient
     };
     
     beacon_agpu_pushRenderCameraState(agpu, defaultCameraState);
+    return receiver;
+}
+
+static beacon_oop_t beacon_agpuWindowRenderer_addModel3D(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    return receiver;
+}
+
+static uint32_t beacon_agpuWindowRenderer_uploadPrimitive(beacon_context_t *context, beacon_AGPUWindowRenderer_t *renderer, beacon_MeshPrimitive_t *primitive)
+{
+    if(primitive->super.lastUploadedFrame == beacon_encodeSmallInteger(renderer->renderingFrameIndex))
+        return beacon_decodeSmallInteger(primitive->super.uploadedIndex);
+
+    beacon_AGPU_t *agpu = context->roots.agpuCommon;
+
+    size_t positionsCount = primitive->positions->super.super.super.super.super.header.slotCount;
+    size_t normalsCount = primitive->normals->super.super.super.super.super.header.slotCount;
+    size_t tangents4Count = primitive->tangents4->super.super.super.super.super.header.slotCount;
+    size_t texcoordsCount = primitive->texcoords->super.super.super.super.super.header.slotCount;
+    size_t indexCount = primitive->indices->super.super.super.super.super.header.slotCount;
+
+    size_t positionBufferIndex = agpu->vertexPositions.size;
+    size_t normalBufferIndex = agpu->vertexNormals.size;
+    size_t tangents4Index = agpu->vertexTangent4.size;
+    size_t texcoordsIndex = agpu->vertexTexcoords.size;
+    size_t indexBufferIndex = agpu->indexData.size;
+
+    for(size_t i = 0; i < positionsCount; ++i)
+    {
+        beacon_Vector3_t *v = (beacon_Vector3_t*)primitive->positions->elements[i];
+        beacon_agpu_pushVertexPosition(agpu, v->x, v->y, v->z);
+    }
+
+    for(size_t i = 0; i < normalsCount; ++i)
+    {
+        beacon_Vector3_t *v = (beacon_Vector3_t*)primitive->normals->elements[i];
+        beacon_agpu_pushVertexNormal(agpu, v->x, v->y, v->z);
+    }
+
+    for(size_t i = 0; i < indexCount; ++i)
+    {
+        intptr_t index = beacon_decodeSmallInteger(primitive->indices->elements[i]);
+        beacon_agpu_pushIndex(agpu, index);
+    }
+
+    beacon_RenderMeshPrimitiveAttributes_t meshPrimitive = {
+        .materialIndex = -1,
+        .vertexCount = positionsCount,
+        .firstPositionIndex = positionsCount > 0 ? positionBufferIndex : -1,
+        .firstNormalIndex = normalsCount > 0 ? normalBufferIndex : -1,
+        .firstTangents4Index = -1,
+        .firstTexcoordIndex = -1,
+
+        .indexCount = indexCount,
+        .firstIndexPosition = indexBufferIndex,
+    };
+    size_t meshPrimitiveIndex = beacon_agpu_pushMeshPrimitiveAttributes(agpu, meshPrimitive);
+    primitive->super.uploadedIndex = beacon_encodeSmallInteger(meshPrimitiveIndex);
+    primitive->super.lastUploadedFrame = beacon_encodeSmallInteger(renderer->renderingFrameIndex);
+    return meshPrimitiveIndex;
+}
+
+static uint32_t beacon_agpuWindowRenderer_uploadModel(beacon_context_t *context, beacon_AGPUWindowRenderer_t *renderer, beacon_Model3D_t *model)
+{
+    if(model->super.lastUploadedFrame == beacon_encodeSmallInteger(renderer->renderingFrameIndex))
+        return beacon_decodeSmallInteger(model->super.uploadedIndex);
+
+    beacon_AGPU_t *agpu = context->roots.agpuCommon;
+    uint32_t primitiveCount = model->primitives->super.super.super.super.super.header.slotCount;
+    uint32_t firstPrimitiveIndex = 0;
+    for(uint32_t i = 0; i < primitiveCount; ++i)
+    {
+        beacon_MeshPrimitive_t *primitive = (beacon_MeshPrimitive_t *)model->primitives->elements[i];
+        uint32_t primitiveIndex = beacon_agpuWindowRenderer_uploadPrimitive(context, renderer, primitive);
+        if(i == 0)
+            firstPrimitiveIndex = primitiveIndex;
+    }
+
+    beacon_RenderModelAttributes_t modelAttributes = {
+        .submeshCount = primitiveCount,
+        .firstSubmeshIndex = firstPrimitiveIndex
+    };
+
+    size_t modelIndex = beacon_agpu_pushModelAttributes(agpu, modelAttributes);
+    model->super.uploadedIndex = beacon_encodeSmallInteger(modelIndex);
+    model->super.lastUploadedFrame = beacon_encodeSmallInteger(renderer->renderingFrameIndex);
+    return modelIndex;
+}
+
+static beacon_oop_t beacon_agpuWindowRenderer_addRenderObject(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.renderObject3DClass);
+
+    beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
+    beacon_AGPU_t *agpu = context->roots.agpuCommon;
+
+    beacon_RenderObject3D_t *renderObject3D = (beacon_RenderObject3D_t*)arguments[0];
+    beacon_RenderMatrix4x4_t modelMatrix = beacon_RenderMatrix4x4_fromMatrix4x4(renderObject3D->modelMatrix);
+    beacon_RenderMatrix4x4_t inverseModelMatrix = beacon_RenderMatrix4x4_inverse(modelMatrix);
+
+    // TODO: Use the correct matrix.
+    beacon_RenderObjectAttributes_t objectAttributes = {
+        .modelMatrix = modelMatrix,
+        .inverseModelMatrix = inverseModelMatrix,
+        .modelIndex = beacon_agpuWindowRenderer_uploadModel(context, renderer, renderObject3D->model)
+    };
+
+    beacon_agpu_pushRenderObjectAttributes(agpu, objectAttributes);
+
     return receiver;
 }
 
@@ -1877,6 +2006,7 @@ void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
 
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestCameraWithLocation:orientation:", 2, beacon_agpuWindowRenderer_addTestCameraWithLocationAndOrientation);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestCubeWithLocation:", 1, beacon_agpuWindowRenderer_addTestCubeWithLocation);
+    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addRenderObject:", 1, beacon_agpuWindowRenderer_addRenderObject);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestLightWithLocation:color:intensity:influenceRadius:", 4, beacon_agpuWindowRenderer_addTestLight);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "get3DOutputTextureHandle", 0, beacon_agpuWindowRenderer_get3DOutputTextureHandle);
     

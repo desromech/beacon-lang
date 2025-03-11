@@ -1,3 +1,20 @@
+RenderingUploadedElement ![
+initialize
+    super initialize.
+    lastUploadedFrame := -1.
+    uploadedIndex := -1.
+].
+
+RenderingUploadedElement ![
+lastUploadedFrame
+    ^ lastUploadedFrame
+].
+
+RenderingUploadedElement ![
+uploadedIndex
+    ^ uploadedIndex
+].
+
 MeshMetallicRoughnessMaterial ![
 initialize
     super initialize.
@@ -163,4 +180,24 @@ primitives
 Model3D ![
 primitives: anArrayOfPrimitives
     primitives := anArrayOfPrimitives
+].
+
+RenderObject3D ![
+model
+    ^ model
+].
+
+RenderObject3D ![
+model: aModel
+    model := aModel
+].
+
+RenderObject3D ![
+modelMatrix
+    ^ modelMatrix
+].
+
+RenderObject3D ![
+modelMatrix: aMatrix
+    modelMatrix := aMatrix
 ].

@@ -26,17 +26,33 @@ renderWithBuilder: renderingBuilder
 
 CubeMorph ![
 render3DEnvironmentWith: rendererHandle
-    | extent |
+    | extent leftObject middleObject rightObject |
     extent := self extent.
     rendererHandle begin3DFrameRenderingWithWidth: extent x height: extent y.
 
     cameraOrientationMatrix := (Matrix3x3 yRotation: cameraEulerAngles y) * (Matrix3x3 xRotation: cameraEulerAngles x).
 
+    leftObject := RenderObject3D new
+        model: cubeModel;
+        modelMatrix: (Matrix4x4 translation: (Vector3 x: -2 y: 0 z: 0));
+        yourself.
+
+    middleObject := RenderObject3D new
+        model: cubeModel;
+        modelMatrix: (Matrix4x4 identity);
+        yourself.
+
+    rightObject := RenderObject3D new
+        model: cubeModel;
+        modelMatrix: (Matrix4x4 translation: (Vector3 x: 2 y: 0 z: 0));
+        yourself.
+
     rendererHandle 
         addTestCameraWithLocation: cameraLocation orientation: cameraOrientationMatrix;
         addTestLightWithLocation: (Vector3 x: 0 y: 1 z: 0) color: Color white intensity: 20 influenceRadius: 10;
-        addTestCubeWithLocation: (Vector3 x: -2 y: 0 z: 0);
-        addTestCubeWithLocation: (Vector3 x: 2 y: 0 z: 0).
+        addRenderObject: leftObject;
+        addRenderObject: middleObject;
+        addRenderObject: rightObject.
 
     rendererHandle end3DFrameRendering.
     outputTextureHandle := rendererHandle get3DOutputTextureHandle.

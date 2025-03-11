@@ -27,6 +27,7 @@
         "string.h": "c",
         "objectmodel.h": "c",
         "agpu.h": "c",
-        "math.h": "c"
+        "math.h": "c",
+        "beaconmath.h": "c"
     }
 }
