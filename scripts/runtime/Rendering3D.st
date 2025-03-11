@@ -139,6 +139,16 @@ tangents4: anArrayOfVector4
     tangents4 := anArrayOfVector4
 ].
 
+MeshPrimitive ![
+indices
+    ^ indices
+].
+
+MeshPrimitive ![
+indices: anArrayOfInteger
+    indices := anArrayOfInteger
+].
+
 Model3D ![
 initialize
     super initialize.

@@ -380,17 +380,17 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.agpuTextureHandleClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPUTextureHandle", sizeof(beacon_AGPUTextureHandle_t), BeaconObjectKindBytes, NULL);
     context->classes.agpuWindowRendererClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPUWindowRenderer", sizeof(beacon_AGPUWindowRenderer_t), BeaconObjectKindBytes, NULL);
 
-    context->classes.meshMaterialClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "MeshMaterial", sizeof(beacon_MeshMaterial_t), BeaconObjectKindPointers, NULL);
+    context->classes.renderingUploadedElementClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "RenderingUploadedElement", sizeof(beacon_RenderingUploadedElement_t), BeaconObjectKindPointers,
+        "lastUploadedFrame", "uploadedIndex", NULL);
+    context->classes.meshMaterialClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "MeshMaterial", sizeof(beacon_MeshMaterial_t), BeaconObjectKindPointers, NULL);
     context->classes.meshMetallicRoughnessMaterialClass = beacon_context_createClassAndMetaclass(context, context->classes.meshMaterialClass, "MeshMetallicRoughnessMaterial", sizeof(beacon_MeshMetallicRoughnessMaterial_t), BeaconObjectKindPointers,
         "baseColor", "baseColorTexture", "metallicFactor", "roughnessFactor", "occlusionFactor", "metallicRoughnessTexture", "occlusionTexture", "isUnlit", NULL);
-    context->classes.meshPrimitiveClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "MeshPrimitive", sizeof(beacon_MeshPrimitive_t), BeaconObjectKindPointers,
-        "material", "positions", "normals", "texcoords", "tangents4", NULL);
-    context->classes.model3DClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Model3D", sizeof(beacon_Model3D_t), BeaconObjectKindPointers,
+    context->classes.meshPrimitiveClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "MeshPrimitive", sizeof(beacon_MeshPrimitive_t), BeaconObjectKindPointers,
+        "material", "positions", "normals", "texcoords", "tangents4", "indices", NULL);
+    context->classes.model3DClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "Model3D", sizeof(beacon_Model3D_t), BeaconObjectKindPointers,
         "primitives", NULL);
-    context->classes.renderObject3DClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "RenderObject3D", sizeof(beacon_RenderObject3D_t), BeaconObjectKindPointers,
+    context->classes.renderObject3DClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "RenderObject3D", sizeof(beacon_RenderObject3D_t), BeaconObjectKindPointers,
         "model", "modelMatrix", NULL);
-    beacon_Behavior_t *renderObject3DClass;
-
 }
 
 void beacon_context_createImportantRoots(beacon_context_t *context)

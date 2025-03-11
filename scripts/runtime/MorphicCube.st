@@ -1,4 +1,4 @@
-Morph subclass: #CubeMorph instanceVariables: #(cameraLocation cameraEulerAngles cameraOrientationMatrix outputTextureHandle).
+Morph subclass: #CubeMorph instanceVariables: #(cameraLocation cameraEulerAngles cameraOrientationMatrix cubeModel outputTextureHandle).
 
 CubeMorph class ![
 defaultExtent
@@ -11,6 +11,10 @@ initialize
     cameraLocation := Vector3 x: 0 y: 1 z:3.
     cameraEulerAngles := Vector3 zeros.
     cameraOrientationMatrix := Matrix3x3 identity.
+    cubeModel := MeshBuilder new
+        addCubeWithMinX: -0.5 minY: -0.5 minZ: -0.5 maxX: 0.5 maxY: 0.5 maxZ: 0.5;
+        finishPrimitive;
+        finishModel.
 ].
 
 CubeMorph ![

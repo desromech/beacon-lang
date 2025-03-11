@@ -965,14 +965,21 @@ typedef struct beacon_Quaternion_s
     double w;
 } beacon_Quaternion_t;
 
-typedef struct beacon_MeshMaterial_s
+typedef struct beacon_RenderingUploadedElement_s
 {
     beacon_Object_t super;
+    beacon_oop_t lastUploadedFrame;
+    beacon_oop_t uploadedIndex;
+} beacon_RenderingUploadedElement_t;
+
+typedef struct beacon_MeshMaterial_s
+{
+    beacon_RenderingUploadedElement_t super;
 } beacon_MeshMaterial_t;
 
 typedef struct beacon_MeshMetallicRoughnessMaterial_s
 {
-    beacon_Object_t super;
+    beacon_MeshMaterial_t super;
     beacon_Color_t *baseColor;
     beacon_Form_t *baseColorTexture;
     beacon_oop_t metallicFactor;
@@ -985,23 +992,24 @@ typedef struct beacon_MeshMetallicRoughnessMaterial_s
 
 typedef struct beacon_MeshPrimitive_s
 {
-    beacon_Object_t super;
+    beacon_RenderingUploadedElement_t super;
     beacon_MeshMaterial_t *material;
     beacon_Array_t *positions;
     beacon_Array_t *normals;
     beacon_Array_t *texcoords;
     beacon_Array_t *tangents4;
+    beacon_Array_t *indices;
 } beacon_MeshPrimitive_t;
 
 typedef struct beacon_Model3D_s
 {
-    beacon_Object_t super;
+    beacon_RenderingUploadedElement_t super;
     beacon_Array_t *primitives;
 } beacon_Model3D_t;
 
 typedef struct beacon_RenderObject3D_s
 {
-    beacon_Object_t super;
+    beacon_RenderingUploadedElement_t super;
     beacon_Model3D_t *model;
     beacon_Matrix4x4_t *modelMatrix;
 } beacon_RenderObject3D_t;

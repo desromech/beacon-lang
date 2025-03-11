@@ -29,6 +29,7 @@ FilesToLoad := #(
     'Font.st'
     'FormRendering.st'
     'Rendering3D.st'
+    'MeshBuilder.st'
     'WindowEvents.st'
     'Window.st'
     'MorphicEvents.st'
