@@ -164,6 +164,7 @@ struct beacon_context_s
         beacon_Behavior_t *model3DClass;
         beacon_Behavior_t *renderObject3DClass;
         beacon_Behavior_t *lightSourceClass;
+        beacon_Behavior_t *sceneCameraClass;
     } classes;
 
     struct ContextGCRoots

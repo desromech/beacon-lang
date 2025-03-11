@@ -1014,6 +1014,22 @@ typedef struct beacon_RenderObject3D_s
     beacon_Matrix4x4_t *modelMatrix;
 } beacon_RenderObject3D_t;
 
+typedef struct beacon_SceneCamera_s
+{
+    beacon_Object_t super;
+    beacon_Vector3_t *location;
+    beacon_Matrix3x3_t *orientation;
+    beacon_oop_t nearDistance;
+    beacon_oop_t farDistance;
+    beacon_oop_t fovY;
+
+    beacon_oop_t timeOfSimulation;
+    beacon_oop_t timeOfDay;
+    beacon_oop_t exposure;
+
+    beacon_Vector3_t *ambientLightSource;
+} beacon_SceneCamera_t;
+
 typedef struct beacon_LightSource_s
 {
     beacon_Object_t super;
@@ -1034,13 +1050,13 @@ typedef struct beacon_LightSource_s
 	beacon_Vector4_t *shadowMapCascadeDistanceWorldTransform;
 	beacon_Vector4_t *shadowMapCascadeOffsets;
 	
-	beacon_Array_t modelMatrices;
-	beacon_Array_t inverseModelMatrices;
+	beacon_Array_t *modelMatrices;
+	beacon_Array_t *inverseModelMatrices;
 
-	beacon_Array_t projectionMatrices;
-	beacon_Array_t inverseProjectionMatrices;
+	beacon_Array_t *projectionMatrices;
+	beacon_Array_t *inverseProjectionMatrices;
 
-	beacon_Array_t shadowMapViewportOffsets;
+	beacon_Array_t *shadowMapViewportOffsets;
 } beacon_LightSource_t;
 
 #ifdef __cplusplus

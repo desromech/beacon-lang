@@ -1691,22 +1691,24 @@ static beacon_RenderVector2_t beacon_agpu_computeLightGridDepthSliceScaleOffset(
     return vector;
 }
 
-static beacon_oop_t beacon_agpuWindowRenderer_addTestCameraWithLocationAndOrientation(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+static beacon_oop_t beacon_agpuWindowRenderer_addSceneCamera(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
-    BeaconAssert(context, argumentCount == 2);
-    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
-    BeaconAssert(context, beacon_getClass(context, arguments[1]) == context->classes.matrix3x3Class);
+    BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.sceneCameraClass);
 
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
+    beacon_SceneCamera_t *sceneCamera = (beacon_SceneCamera_t*)arguments[0];
+
     beacon_AGPU_t *agpu = context->roots.agpuCommon;
     agpu_device *device = agpu->device;
 
     bool flipVertically = agpuHasTopLeftNdcOrigin(device);
-    float nearDistance = 0.01f;
-    float farDistance = 1000.0f;
+    float nearDistance = beacon_decodeNumberAsDouble(context, sceneCamera->nearDistance);
+    float farDistance = beacon_decodeNumberAsDouble(context, sceneCamera->farDistance);
+    float fovY = beacon_decodeNumberAsDouble(context, sceneCamera->fovY);
 
-    beacon_Vector3_t *translationArgument = (beacon_Vector3_t*)(arguments[0]);
-    beacon_Matrix3x3_t *orientation = (beacon_Matrix3x3_t*)(arguments[1]);
+    beacon_Vector3_t *translationArgument = (beacon_Vector3_t*)sceneCamera->location;
+    beacon_Matrix3x3_t *orientation = (beacon_Matrix3x3_t*)sceneCamera->orientation;
 
     beacon_RenderVector3_t translation = {translationArgument->x, translationArgument->y, translationArgument->z};
     beacon_RenderMatrix3x3_t renderOrientationMatrix = {
@@ -1718,22 +1720,26 @@ static beacon_oop_t beacon_agpuWindowRenderer_addTestCameraWithLocationAndOrient
     beacon_RenderMatrix4x4_t inverseViewMatrix = beacon_RenderMatrix4x4_withMatrix3x3AndTranslation(renderOrientationMatrix, translation);
     beacon_RenderMatrix4x4_t viewMatrix = beacon_RenderMatrix4x4_inverse(inverseViewMatrix);
 
-    beacon_RenderMatrix4x4_t projection = beacon_RenderMatrix4x4_reverseDepthPerspective(60.0f, (float)renderer->intermediateBufferWidth / renderer->intermediateBufferHeight, nearDistance, farDistance, flipVertically);
+    beacon_RenderMatrix4x4_t projection = beacon_RenderMatrix4x4_reverseDepthPerspective(fovY, (float)renderer->intermediateBufferWidth / renderer->intermediateBufferHeight, nearDistance, farDistance, flipVertically);
     beacon_RenderMatrix4x4_t inverseProjection = beacon_RenderMatrix4x4_inverse(projection);
 
-    beacon_RenderCameraState_t defaultCameraState = {
+    beacon_RenderCameraState_t cameraRenderState = {
         .framebufferExtent = {renderer->intermediateBufferWidth, renderer->intermediateBufferHeight},
         .framebufferReciprocalExtent = {1.0/renderer->intermediateBufferWidth, 1.0/renderer->intermediateBufferHeight},
 
         .flipVertically = flipVertically,
-        .nearDistance = 0.01f,
-        .farDistance = 1000.0f,
+        .nearDistance = nearDistance,
+        .farDistance = farDistance,
     
-        .timeOfSimulation = 0.0f,
-        .timeOfDay = 0.0f,
-        .exposure = 1.0f,
+        .timeOfSimulation = beacon_decodeNumberAsDouble(context, sceneCamera->timeOfSimulation),
+        .timeOfDay = beacon_decodeNumberAsDouble(context, sceneCamera->timeOfDay),
+        .exposure = beacon_decodeNumberAsDouble(context, sceneCamera->exposure),
     
-        .ambientLightSource = {0.2, 0.2, 0.2},
+        .ambientLightSource = {
+            sceneCamera->ambientLightSource->x,
+            sceneCamera->ambientLightSource->y,
+            sceneCamera->ambientLightSource->z
+        },
             
         .hasTopLeftNDCOrigin = agpuHasTopLeftNdcOrigin(device),
         .hasBottomLeftTextureCoordinates = agpuHasBottomLeftTextureCoordinates(device),
@@ -1750,12 +1756,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_addTestCameraWithLocationAndOrient
         .inverseViewMatrix = inverseViewMatrix,
     };
     
-    beacon_agpu_pushRenderCameraState(agpu, defaultCameraState);
-    return receiver;
-}
-
-static beacon_oop_t beacon_agpuWindowRenderer_addModel3D(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
-{
+    beacon_agpu_pushRenderCameraState(agpu, cameraRenderState);
     return receiver;
 }
 
@@ -1906,11 +1907,9 @@ void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "begin3DFrameRenderingWithWidth:height:", 2, beacon_agpuWindowRenderer_begin3DFrameRendering);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "end3DFrameRendering", 0, beacon_agpuWindowRenderer_end3DFrameRendering);
 
-    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestCameraWithLocation:orientation:", 2, beacon_agpuWindowRenderer_addTestCameraWithLocationAndOrientation);
+    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addSceneCamera:", 1, beacon_agpuWindowRenderer_addSceneCamera);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addRenderObject:", 1, beacon_agpuWindowRenderer_addRenderObject);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addLightSource:", 1, beacon_agpuWindowRenderer_addLightSource);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "get3DOutputTextureHandle", 0, beacon_agpuWindowRenderer_get3DOutputTextureHandle);
-    
-
 }
 

@@ -266,3 +266,40 @@ LightSource ![
 influenceRadius: aRadius
     influenceRadius := aRadius
 ].
+
+SceneCamera ![
+initialize
+    super initialize
+
+    location := Vector3 zeros.
+    orientation := Matrix3x3 identity.
+    nearDistance := 0.01.
+    farDistance := 1000.0.
+    fovY := 60.0.
+    
+    timeOfSimulation := 0.0.
+    timeOfDay := 0.0.
+    exposure := 1.0.
+
+    ambientLightSource := Vector3 x: 0.2 y: 0.2 z: 0.2.
+].
+
+SceneCamera ![
+location
+    ^ location
+].
+
+SceneCamera ![
+location: aVector3
+    location := aVector3
+].
+
+SceneCamera ![
+orientation
+    ^ orientation
+].
+
+SceneCamera ![
+orientation: aMatrix3x3
+    orientation := aMatrix3x3
+].

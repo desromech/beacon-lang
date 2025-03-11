@@ -57,7 +57,10 @@ render3DEnvironmentWith: rendererHandle
         yourself.
 
     rendererHandle 
-        addTestCameraWithLocation: cameraLocation orientation: cameraOrientationMatrix;
+        addSceneCamera: (SceneCamera new
+            location: cameraLocation;
+            orientation: cameraOrientationMatrix;
+            yourself);
         addLightSource: (LightSource new
             position: (Vector3 x: -2 y: 1 z: 0);
             color: Color green intensity: 20;
