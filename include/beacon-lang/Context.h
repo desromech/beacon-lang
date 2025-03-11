@@ -156,6 +156,12 @@ struct beacon_context_s
         beacon_Behavior_t *agpuSwapChainClass;
         beacon_Behavior_t *agpuTextureHandleClass;
         beacon_Behavior_t *agpuWindowRendererClass;
+
+        beacon_Behavior_t *meshMaterialClass;
+        beacon_Behavior_t *meshMetallicRoughnessMaterialClass;
+        beacon_Behavior_t *meshPrimitiveClass;
+        beacon_Behavior_t *model3DClass;
+        beacon_Behavior_t *renderObject3DClass;
     } classes;
 
     struct ContextGCRoots
