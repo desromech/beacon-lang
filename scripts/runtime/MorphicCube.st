@@ -49,7 +49,12 @@ render3DEnvironmentWith: rendererHandle
 
     rendererHandle 
         addTestCameraWithLocation: cameraLocation orientation: cameraOrientationMatrix;
-        addTestLightWithLocation: (Vector3 x: 0 y: 1 z: 0) color: Color white intensity: 20 influenceRadius: 10;
+        "addTestLightWithLocation: (Vector3 x: 0 y: 1 z: 0) color: Color white intensity: 20 influenceRadius: 10;"
+        addLightSource: (LightSource new
+            position: (Vector3 x: 0 y: 1 z: 0);
+            color: Color white intensity: 20;
+            influenceRadius: 10;
+            yourself);
         addRenderObject: leftObject;
         addRenderObject: middleObject;
         addRenderObject: rightObject.

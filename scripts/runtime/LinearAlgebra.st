@@ -36,6 +36,11 @@ printOn: aStream
 ].
 
 Vector4 class ![
+xyz: v3 w: w
+    ^ self x: v3 x y: v3 y z: v3 z w: w
+].
+
+Vector4 class ![
 zeros
     ^ self x: 0 y: 0 z: 0 w: 0
 ].

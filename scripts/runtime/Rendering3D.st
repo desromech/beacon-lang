@@ -201,3 +201,68 @@ RenderObject3D ![
 modelMatrix: aMatrix
     modelMatrix := aMatrix
 ].
+
+LightSource ![
+initialize
+    super initialize.
+	
+    positionOrDirection := Vector4 zeros.
+
+	intensity := Vector3 ones.
+	influenceRadius := 20.
+
+	spotDirection := Vector3 x: 0 y: 0 z: -1.
+	innerSpotCosCutoff := -1.
+	outerSpotCosCutoff := -1.
+	
+    castShadows := false.
+	shadowMapViewportScale := Vector2 zeros.
+	
+	shadowMapNormalBiasFactor := 0.005.
+
+	shadowMapCascadeDistanceWorldTransform := Vector4 zeros.
+	shadowMapCascadeOffsets := Vector4 zeros.
+	
+	modelMatrices = #().
+	inverseModelMatrices = #().
+
+	projectionMatrices := #().
+	inverseProjectionMatrices := #().
+
+	shadowMapViewportOffsets := #().
+].
+
+LightSource ![
+positionOrDirection
+    ^ positionOrDirection
+].
+
+LightSource ![
+positionOrDirection: aVector4
+    positionOrDirection := aVector4
+].
+
+LightSource ![
+position: aVector3
+    positionOrDirection := Vector4 xyz: aVector3 w: 1.0
+].
+
+LightSource ![
+direction: aVector3
+    positionOrDirection := Vector4 xyz: aVector3 w: 0.0
+].
+
+LightSource ![
+color: aColor intensity: anIntensity
+    intensity := Vector3 x: aColor r * anIntensity y: aColor g * anIntensity z: aColor b * anIntensity
+].
+
+LightSource ![
+influenceRadius
+    ^ influenceRadius
+].
+
+LightSource ![
+influenceRadius: aRadius
+    influenceRadius := aRadius
+].

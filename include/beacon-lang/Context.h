@@ -163,6 +163,7 @@ struct beacon_context_s
         beacon_Behavior_t *meshPrimitiveClass;
         beacon_Behavior_t *model3DClass;
         beacon_Behavior_t *renderObject3DClass;
+        beacon_Behavior_t *lightSourceClass;
     } classes;
 
     struct ContextGCRoots

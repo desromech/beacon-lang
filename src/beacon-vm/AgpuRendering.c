@@ -1863,30 +1863,32 @@ static beacon_oop_t beacon_agpuWindowRenderer_addRenderObject(beacon_context_t *
     return receiver;
 }
 
-static beacon_oop_t beacon_agpuWindowRenderer_addTestLight(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+
+
+static beacon_oop_t beacon_agpuWindowRenderer_addLightSource(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
-    BeaconAssert(context, argumentCount == 4);
-    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
-    BeaconAssert(context, beacon_getClass(context, arguments[1]) == context->classes.colorClass);
+    BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.lightSourceClass);
+
+    beacon_LightSource_t *lightSource = (beacon_LightSource_t *)arguments[0];
     
-    beacon_Vector3_t *location = (beacon_Vector3_t *)arguments[0];
-    beacon_Color_t *color = (beacon_Color_t *)arguments[1];
-    double intensity = beacon_decodeNumberAsDouble(context, arguments[2]);
-    double influenceRadius = beacon_decodeNumberAsDouble(context, arguments[3]);
+    beacon_Vector3_t *intensity = lightSource->intensity;
+    double influenceRadius = beacon_decodeNumberAsDouble(context, lightSource->influenceRadius);
 
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
     beacon_AGPU_t *agpu = context->roots.agpuCommon;
 
-    beacon_RenderLightSource_t lightSource = {
-        .positionOrDirection = {location->x, location->y, location->z, 1},
-        .intensity = {beacon_decodeNumberAsDouble(context, color->r)*intensity, beacon_decodeNumberAsDouble(context, color->g)*intensity, beacon_decodeNumberAsDouble(context, color->b)*intensity},
+    beacon_RenderLightSource_t renderLightSource = {
+        .positionOrDirection = {lightSource->positionOrDirection->x, lightSource->positionOrDirection->y, lightSource->positionOrDirection->z, lightSource->positionOrDirection->w},
+        .intensity = {intensity->x, intensity->y, intensity->z},
         .influenceRadius = influenceRadius,
-        .innerSpotCosCutoff = -1,
-        .outerSpotCosCutoff = -1,
-        .castShadows = false,
+        .spotDirection = {lightSource->spotDirection->x, lightSource->spotDirection->y, lightSource->spotDirection->z},
+        .innerSpotCosCutoff = beacon_decodeNumberAsDouble(context, lightSource->innerSpotCosCutoff),
+        .outerSpotCosCutoff = beacon_decodeNumberAsDouble(context, lightSource->outerSpotCosCutoff),
+        .castShadows = lightSource->castShadows == context->roots.trueValue,
     };
 
-    beacon_agpu_pushRenderLightSource(agpu, lightSource);
+    beacon_agpu_pushRenderLightSource(agpu, renderLightSource);
     return receiver;
 }
 
@@ -1906,7 +1908,7 @@ void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
 
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestCameraWithLocation:orientation:", 2, beacon_agpuWindowRenderer_addTestCameraWithLocationAndOrientation);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addRenderObject:", 1, beacon_agpuWindowRenderer_addRenderObject);
-    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestLightWithLocation:color:intensity:influenceRadius:", 4, beacon_agpuWindowRenderer_addTestLight);
+    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addLightSource:", 1, beacon_agpuWindowRenderer_addLightSource);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "get3DOutputTextureHandle", 0, beacon_agpuWindowRenderer_get3DOutputTextureHandle);
     
 
