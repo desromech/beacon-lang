@@ -30,9 +30,9 @@ render3DEnvironmentWith: rendererHandle
 
     rendererHandle 
         addTestCameraWithLocation: cameraLocation orientation: cameraOrientationMatrix;
-        addTestLight;
-        addTestCubeWithLocation: (Vector3 x: -1 y: 0 z: 0);
-        addTestCubeWithLocation: (Vector3 x: 1 y: 0 z: 0).
+        addTestLightWithLocation: (Vector3 x: 0 y: 1 z: 0) color: Color white intensity: 20 influenceRadius: 10;
+        addTestCubeWithLocation: (Vector3 x: -2 y: 0 z: 0);
+        addTestCubeWithLocation: (Vector3 x: 2 y: 0 z: 0).
 
     rendererHandle end3DFrameRendering.
     outputTextureHandle := rendererHandle get3DOutputTextureHandle.
@@ -56,8 +56,6 @@ handleMorphMouseMotionEvent: event
 
 CubeMorph ![
 handleMorphMouseWheelEvent: event
-    Stdio stdout print: event scrollDelta; lf.
-
     cameraLocation := cameraLocation + (cameraOrientationMatrix * (Vector3 x: 0 y: 0 z: event scrollDelta y * -0.5)).
     self changed.
     event wasHandled: true

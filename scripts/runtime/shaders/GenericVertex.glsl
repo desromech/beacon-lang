@@ -6,10 +6,11 @@ layout(location = 0) flat out int outMaterialIndex;
 layout(location = 1) out vec3 outViewPosition;
 layout(location = 2) out vec3 outViewNormal;
 layout(location = 3) out vec4 outViewTangent4;
+layout(location = 4) flat out uint hasTangent4;
 
-layout(location = 4) out vec3 outWorldPosition;
-layout(location = 5) out vec3 outWorldNormal;
-layout(location = 6) out vec2 outTexcoord;
+layout(location = 5) out vec3 outWorldPosition;
+layout(location = 6) out vec3 outWorldNormal;
+layout(location = 7) out vec2 outTexcoord;
 
 void main()
 {
@@ -28,6 +29,7 @@ void main()
         : vec2(0.0, 0.0);
     outTexcoord = vertexTexcoord;
 
+    hasTangent4 = meshPrimitive.firstTangents4Index >= 0 ? 1 : 0;
     vec4 vertexTangents4 = meshPrimitive.firstTangents4Index >= 0
         ? Tangents4Data[meshPrimitive.firstTangents4Index + vertexIndex]
         : vec4(1.0, 0.0, 0.0, 1.0);
