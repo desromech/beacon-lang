@@ -1014,6 +1014,7 @@ typedef struct beacon_RenderObject3D_s
     beacon_Matrix4x4_t *modelMatrix;
 } beacon_RenderObject3D_t;
 
+
 #ifdef __cplusplus
 }
 #endif

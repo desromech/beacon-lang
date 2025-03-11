@@ -1852,7 +1852,6 @@ static beacon_oop_t beacon_agpuWindowRenderer_addRenderObject(beacon_context_t *
     beacon_RenderMatrix4x4_t modelMatrix = beacon_RenderMatrix4x4_fromMatrix4x4(renderObject3D->modelMatrix);
     beacon_RenderMatrix4x4_t inverseModelMatrix = beacon_RenderMatrix4x4_inverse(modelMatrix);
 
-    // TODO: Use the correct matrix.
     beacon_RenderObjectAttributes_t objectAttributes = {
         .modelMatrix = modelMatrix,
         .inverseModelMatrix = inverseModelMatrix,
@@ -1861,105 +1860,6 @@ static beacon_oop_t beacon_agpuWindowRenderer_addRenderObject(beacon_context_t *
 
     beacon_agpu_pushRenderObjectAttributes(agpu, objectAttributes);
 
-    return receiver;
-}
-
-static beacon_oop_t beacon_agpuWindowRenderer_addTestCubeWithLocation(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
-{
-    BeaconAssert(context, argumentCount == 1);
-    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
-
-    beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
-    beacon_AGPU_t *agpu = context->roots.agpuCommon;
-    beacon_Vector3_t *translationArgument = (beacon_Vector3_t*)(arguments[0]);
-
-    size_t positionBufferIndex = agpu->vertexPositions.size;
-    size_t normalBufferIndex = agpu->vertexNormals.size;
-    size_t indexBufferIndex = agpu->indexData.size;
-
-    float minX = -0.5;
-    float minY = -0.5;
-    float minZ = -0.5;
-    float maxX = 0.5;
-    float maxY = 0.5;
-    float maxZ = 0.5;
-
-    // Left.
-    beacon_agpu_pushVertexPosition(agpu, minX, minY, minZ); beacon_agpu_pushVertexNormal(agpu, -1, 0, 0);
-    beacon_agpu_pushVertexPosition(agpu, minX, maxY, minZ); beacon_agpu_pushVertexNormal(agpu, -1, 0, 0);
-    beacon_agpu_pushVertexPosition(agpu, minX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, -1, 0, 0);
-    beacon_agpu_pushVertexPosition(agpu, minX, minY, maxZ); beacon_agpu_pushVertexNormal(agpu, -1, 0, 0);
-    beacon_agpu_pushTriangle(agpu, 1, 0, 2);
-    beacon_agpu_pushTriangle(agpu, 3, 2, 0);
-
-    // Right.
-    beacon_agpu_pushVertexPosition(agpu, maxX, minY, minZ); beacon_agpu_pushVertexNormal(agpu, 1, 0, 0);
-    beacon_agpu_pushVertexPosition(agpu, maxX, maxY, minZ); beacon_agpu_pushVertexNormal(agpu, 1, 0, 0);
-    beacon_agpu_pushVertexPosition(agpu, maxX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, 1, 0, 0);
-    beacon_agpu_pushVertexPosition(agpu, maxX, minY, maxZ); beacon_agpu_pushVertexNormal(agpu, 1, 0, 0);
-    beacon_agpu_pushTriangle(agpu, 4+0, 4+1, 4+2);
-    beacon_agpu_pushTriangle(agpu, 4+2, 4+3, 4+0);
-
-    // Top.
-    beacon_agpu_pushVertexPosition(agpu, minX, maxY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, 1, 0);
-    beacon_agpu_pushVertexPosition(agpu, maxX, maxY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, 1, 0);
-    beacon_agpu_pushVertexPosition(agpu, maxX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 1, 0);
-    beacon_agpu_pushVertexPosition(agpu, minX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 1, 0);
-    beacon_agpu_pushTriangle(agpu, 8+1, 8+0, 8+2);
-    beacon_agpu_pushTriangle(agpu, 8+3, 8+2, 8+0);
-
-    // Bottom.
-    beacon_agpu_pushVertexPosition(agpu, minX, minY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, -1, 0);
-    beacon_agpu_pushVertexPosition(agpu, maxX, minY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, -1, 0);
-    beacon_agpu_pushVertexPosition(agpu, maxX, minY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, -1, 0);
-    beacon_agpu_pushVertexPosition(agpu, minX, minY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, -1, 0);
-    beacon_agpu_pushTriangle(agpu, 12+0, 12+1, 12+2);
-    beacon_agpu_pushTriangle(agpu, 12+2, 12+3, 12+0);
-
-    // Back.
-    beacon_agpu_pushVertexPosition(agpu, minX, minY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, -1);
-    beacon_agpu_pushVertexPosition(agpu, maxX, minY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, -1);
-    beacon_agpu_pushVertexPosition(agpu, maxX, maxY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, -1);
-    beacon_agpu_pushVertexPosition(agpu, minX, maxY, minZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, -1);
-    beacon_agpu_pushTriangle(agpu, 16+1, 16+0, 16+2);
-    beacon_agpu_pushTriangle(agpu, 16+3, 16+2, 16+0);
-
-    // Front.
-    beacon_agpu_pushVertexPosition(agpu, minX, minY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, 1);
-    beacon_agpu_pushVertexPosition(agpu, maxX, minY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, 1);
-    beacon_agpu_pushVertexPosition(agpu, maxX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, 1);
-    beacon_agpu_pushVertexPosition(agpu, minX, maxY, maxZ); beacon_agpu_pushVertexNormal(agpu, 0, 0, 1);
-    beacon_agpu_pushTriangle(agpu, 20+0, 20+1, 20+2);
-    beacon_agpu_pushTriangle(agpu, 20+2, 20+3, 20+0);
-    
-    beacon_RenderMeshPrimitiveAttributes_t meshPrimitive = {
-        .materialIndex = -1,
-        .vertexCount = 24,
-        .firstPositionIndex = positionBufferIndex,
-        .firstNormalIndex = normalBufferIndex,
-        .firstTangents4Index = -1,
-        .firstTexcoordIndex = -1,
-
-        .indexCount = agpu->indexData.size - indexBufferIndex,
-        .firstIndexPosition = indexBufferIndex,
-    };
-    size_t meshPrimitiveIndex = beacon_agpu_pushMeshPrimitiveAttributes(agpu, meshPrimitive);
-
-    beacon_RenderModelAttributes_t modelAttributes = {
-        .submeshCount = 1,
-        .firstSubmeshIndex = meshPrimitiveIndex
-    };
-    size_t modelIndex = beacon_agpu_pushModelAttributes(agpu, modelAttributes);
-
-    beacon_RenderVector3_t translation = {translationArgument->x, translationArgument->y, translationArgument->z};
-    beacon_RenderVector3_t inverseTranslation = {-translationArgument->x, -translationArgument->y, -translationArgument->z};
-
-    beacon_RenderObjectAttributes_t objectAttributes = {
-        .modelMatrix = beacon_RenderMatrix4x4_translation(translation),
-        .inverseModelMatrix = beacon_RenderMatrix4x4_translation(inverseTranslation),
-        .modelIndex = modelIndex
-    };
-    beacon_agpu_pushRenderObjectAttributes(agpu, objectAttributes);
     return receiver;
 }
 
@@ -2005,7 +1905,6 @@ void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "end3DFrameRendering", 0, beacon_agpuWindowRenderer_end3DFrameRendering);
 
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestCameraWithLocation:orientation:", 2, beacon_agpuWindowRenderer_addTestCameraWithLocationAndOrientation);
-    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestCubeWithLocation:", 1, beacon_agpuWindowRenderer_addTestCubeWithLocation);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addRenderObject:", 1, beacon_agpuWindowRenderer_addRenderObject);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addTestLightWithLocation:color:intensity:influenceRadius:", 4, beacon_agpuWindowRenderer_addTestLight);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "get3DOutputTextureHandle", 0, beacon_agpuWindowRenderer_get3DOutputTextureHandle);
