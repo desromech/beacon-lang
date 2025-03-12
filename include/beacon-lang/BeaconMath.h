@@ -38,6 +38,15 @@ typedef union beacon_RenderVector4_s
 
 } beacon_RenderVector4_t GCC_ALIGNED(16);
 
+typedef union beacon_RenderQuaternion_s
+{
+    struct
+	{
+		float x, y, z, w;
+	};
+
+} beacon_RenderQuaternion_t GCC_ALIGNED(16);
+
 typedef union beacon_RenderMatrix3x3_s
 {
 	struct {
@@ -57,6 +66,10 @@ static inline beacon_RenderMatrix3x3_t beacon_RenderMatrix3x3_makeWithColumns(be
 	};
 	return result;
 }
+
+beacon_RenderMatrix3x3_t beacon_RenderMatrix3x3_fromQuaternion(beacon_RenderQuaternion_t quaternion);
+
+beacon_RenderVector3_t beacon_RenderMatrix3x3_multiplyVector(beacon_RenderMatrix3x3_t mat, beacon_RenderVector3_t v);
 
 typedef union beacon_RenderMatrix4x4_s
 {

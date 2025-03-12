@@ -188,6 +188,17 @@ typedef struct beacon_AGPUUpdateBuffer_s
     void *thisFrameBuffer;
 } beacon_AGPUUpdateBuffer_t;
 
+typedef struct beacon_AGPUShadowMapAtlasAllocation_s
+{
+    beacon_RenderVector2_t offset;
+    beacon_RenderVector2_t shadowMapExtent;
+    beacon_RenderVector2_t shadowMapAtlasExtent;
+} beacon_AGPUShadowMapAtlasAllocation_s;
+
+typedef struct beacon_AGPUShadowMapAtlasAllocator_s
+{
+}beacon_AGPUShadowMapAtlasAllocator_t;
+
 typedef struct beacon_AGPU_s
 {
     beacon_Object_t super;
@@ -260,6 +271,7 @@ typedef struct beacon_AGPU_s
 
     agpu_texture *shadowMapAtlas;
     agpu_framebuffer *shadowMapFramebuffer;
+    beacon_AGPUShadowMapAtlasAllocator_t shadowMapAtlasAllocator;
 
     agpu_shader_resource_binding *renderingDataBinding;
 

@@ -62,19 +62,33 @@ render3DEnvironmentWith: rendererHandle
             orientation: cameraOrientationMatrix;
             yourself);
         addLightSource: (LightSource new
-            position: (Vector3 x: -2 y: 1 z: 0);
+            position: (Vector3 x: -2 y: 2 z: 0);
             color: Color green intensity: 20;
             influenceRadius: 10;
+            castShadows: false;
+            spotOrientation: (Quaternion xRotation: Float halfPi negated);
+            innerSpotCutoff: 60.0;
+            outerSpotCutoff: 70.0;
+            castShadows: true;
             yourself);
         addLightSource: (LightSource new
-            position: (Vector3 x: 0 y: 1 z: 0);
+            position: (Vector3 x: 0 y: 2 z: 0);
             color: Color white intensity: 20;
             influenceRadius: 10;
+            spotOrientation: (Quaternion xRotation: Float halfPi negated);
+            innerSpotCutoff: 60.0;
+            outerSpotCutoff: 70.0;
+            castShadows: true;
             yourself);
         addLightSource: (LightSource new
-            position: (Vector3 x: 2 y: 1 z: 0);
+            position: (Vector3 x: 2 y: 2 z: 0);
             color: Color red intensity: 20;
+            castShadows: false;
             influenceRadius: 10;
+            spotOrientation: (Quaternion xRotation: Float halfPi negated);
+            innerSpotCutoff: 60.0;
+            outerSpotCutoff: 70.0;
+            castShadows: true;
             yourself);
         addRenderObject: floorObject;
         addRenderObject: leftObject;

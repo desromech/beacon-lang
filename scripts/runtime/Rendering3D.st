@@ -211,25 +211,12 @@ initialize
 	intensity := Vector3 ones.
 	influenceRadius := 20.
 
-	spotDirection := Vector3 x: 0 y: 0 z: -1.
-	innerSpotCosCutoff := -1.
-	outerSpotCosCutoff := -1.
+	spotOrientation := Quaternion identity.
+	innerSpotCutoff := 180.0.
+	outerSpotCutoff := 180.0.
 	
     castShadows := false.
-	shadowMapViewportScale := Vector2 zeros.
-	
 	shadowMapNormalBiasFactor := 0.005.
-
-	shadowMapCascadeDistanceWorldTransform := Vector4 zeros.
-	shadowMapCascadeOffsets := Vector4 zeros.
-	
-	modelMatrices = #().
-	inverseModelMatrices = #().
-
-	projectionMatrices := #().
-	inverseProjectionMatrices := #().
-
-	shadowMapViewportOffsets := #().
 ].
 
 LightSource ![
@@ -265,6 +252,46 @@ influenceRadius
 LightSource ![
 influenceRadius: aRadius
     influenceRadius := aRadius
+].
+
+LightSource ![
+castShadows
+    ^ castShadows
+].
+
+LightSource ![
+castShadows: aBoolean
+    castShadows := aBoolean
+].
+
+LightSource ![
+spotOrientation
+    ^ spotOrientation
+].
+
+LightSource ![
+spotOrientation: anOrientation
+    spotOrientation := anOrientation
+].
+
+LightSource ![
+innerSpotCutoff
+    ^ innerSpotCutoff
+].
+
+LightSource ![
+innerSpotCutoff: aCutoffAngle
+    innerSpotCutoff := aCutoffAngle
+].
+
+LightSource ![
+outerSpotCutoff
+    ^ outerSpotCutoff
+].
+
+LightSource ![
+outerSpotCutoff: aCutoffAngle
+    outerSpotCutoff := outerSpotCutoff
 ].
 
 SceneCamera ![

@@ -1038,25 +1038,14 @@ typedef struct beacon_LightSource_s
 	beacon_Vector3_t *intensity;
 	beacon_oop_t influenceRadius;
 
-	beacon_Vector3_t *spotDirection;
-	beacon_oop_t innerSpotCosCutoff;
+	beacon_Quaternion_t *spotOrientation;
 
-	beacon_oop_t outerSpotCosCutoff;
+    beacon_oop_t innerSpotCutoff;
+	beacon_oop_t outerSpotCutoff;
+    
 	beacon_oop_t castShadows;
-	beacon_Vector2_t *shadowMapViewportScale;
 	
 	beacon_oop_t shadowMapNormalBiasFactor;
-
-	beacon_Vector4_t *shadowMapCascadeDistanceWorldTransform;
-	beacon_Vector4_t *shadowMapCascadeOffsets;
-	
-	beacon_Array_t *modelMatrices;
-	beacon_Array_t *inverseModelMatrices;
-
-	beacon_Array_t *projectionMatrices;
-	beacon_Array_t *inverseProjectionMatrices;
-
-	beacon_Array_t *shadowMapViewportOffsets;
 } beacon_LightSource_t;
 
 #ifdef __cplusplus

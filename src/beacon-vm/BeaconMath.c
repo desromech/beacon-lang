@@ -13,6 +13,38 @@ float beacon_RenderMatrix3x3_determinant(beacon_RenderMatrix3x3_t m)
         - (m.m31 * m.m22 * m.m13) - (m.m32 * m.m23 * m.m11) - (m.m33 * m.m21 * m.m12);
 }
 
+beacon_RenderVector3_t beacon_RenderMatrix3x3_multiplyVector(beacon_RenderMatrix3x3_t mat, beacon_RenderVector3_t v)
+{
+    beacon_RenderVector3_t result = {
+        .x = mat.m11*v.x + mat.m12*v.y + mat.m13*v.z,
+        .y = mat.m21*v.x + mat.m22*v.y + mat.m23*v.z,
+        .z = mat.m31*v.x + mat.m32*v.y + mat.m33*v.z,
+    };
+    return result;
+}
+
+beacon_RenderMatrix3x3_t beacon_RenderMatrix3x3_fromQuaternion(beacon_RenderQuaternion_t quaternion)
+{
+    double i = quaternion.x;
+    double j = quaternion.y;
+    double k = quaternion.z;
+    double r = quaternion.w;
+
+    beacon_RenderMatrix3x3_t mat;
+    mat.m11 = 1.0 - (2.0*j*j) - (2.0*k*k);
+    mat.m12 = (2.0*i*j) - (2.0*k*r);
+    mat.m13 = (2.0*i*k) + (2.0*j*r);
+
+    mat.m21 = (2.0*i*j) + (2.0*k*r);
+    mat.m22 = 1.0 - (2.0*i*i) - (2.0*k*k);
+    mat.m23 = (2.0*j*k) - (2.0*i*r);
+
+    mat.m31 = (2.0*i*k) - (2.0*j*r);
+    mat.m32 = (2.0*j*k) + (2.0*i*r);
+    mat.m33 = 1.0 - (2.0*i*i) - (2.0*j*j);
+    return mat;
+}
+
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_identity(void)
 {
     beacon_RenderMatrix4x4_t matrix = {

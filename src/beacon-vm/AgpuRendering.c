@@ -1879,15 +1879,75 @@ static beacon_oop_t beacon_agpuWindowRenderer_addLightSource(beacon_context_t *c
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
     beacon_AGPU_t *agpu = context->roots.agpuCommon;
 
+    bool flipProjectionVertically = agpuHasTopLeftNdcOrigin(agpu->device);
+    bool flipTextureVertically = agpuHasTopLeftNdcOrigin(agpu->device) == agpuHasBottomLeftTextureCoordinates(agpu->device);
+
+    double innerSpotCutoff = beacon_decodeNumberAsDouble(context, lightSource->innerSpotCutoff);
+    double outerSpotCutoff = beacon_decodeNumberAsDouble(context, lightSource->outerSpotCutoff);
+    beacon_RenderQuaternion_t quat = {lightSource->spotOrientation->x, lightSource->spotOrientation->y, lightSource->spotOrientation->z, lightSource->spotOrientation->w};
+    beacon_RenderMatrix3x3_t mat = beacon_RenderMatrix3x3_fromQuaternion(quat);
+    beacon_RenderVector3_t localSpotDirection = {0, 0, -1};
+    beacon_RenderVector3_t spotDirection = beacon_RenderMatrix3x3_multiplyVector(mat, localSpotDirection);
+    
     beacon_RenderLightSource_t renderLightSource = {
         .positionOrDirection = {lightSource->positionOrDirection->x, lightSource->positionOrDirection->y, lightSource->positionOrDirection->z, lightSource->positionOrDirection->w},
         .intensity = {intensity->x, intensity->y, intensity->z},
         .influenceRadius = influenceRadius,
-        .spotDirection = {lightSource->spotDirection->x, lightSource->spotDirection->y, lightSource->spotDirection->z},
-        .innerSpotCosCutoff = beacon_decodeNumberAsDouble(context, lightSource->innerSpotCosCutoff),
-        .outerSpotCosCutoff = beacon_decodeNumberAsDouble(context, lightSource->outerSpotCosCutoff),
+        .spotDirection = {spotDirection.x, spotDirection.y, spotDirection.z},
+        .innerSpotCosCutoff = cos(innerSpotCutoff),
+        .outerSpotCosCutoff = cos(outerSpotCutoff),
         .castShadows = lightSource->castShadows == context->roots.trueValue,
     };
+
+    bool castShadows = renderLightSource.castShadows;
+    bool isDirectional = renderLightSource.positionOrDirection.w == 0.0;
+    bool isSpot = innerSpotCutoff < 180.0 || outerSpotCutoff < 180.0;
+    int shadowMapPartCount = 0;
+    if(isDirectional)
+    {
+        renderLightSource.castShadows = false;
+    }
+    else if(isSpot)
+    {
+        renderLightSource.castShadows = false;
+        if(castShadows)
+        {
+            shadowMapPartCount = 1;
+            beacon_RenderVector3_t translation = {lightSource->positionOrDirection->x, lightSource->positionOrDirection->y, lightSource->positionOrDirection->z};
+            beacon_RenderMatrix4x4_t modelMatrix = beacon_RenderMatrix4x4_withMatrix3x3AndTranslation(mat, translation);
+            beacon_RenderMatrix4x4_t inverseModelMatrix = beacon_RenderMatrix4x4_inverse(modelMatrix);
+
+            renderLightSource.shadowMapNormalBiasFactor = beacon_decodeNumberAsDouble(context, lightSource->shadowMapNormalBiasFactor);
+            renderLightSource.modelMatrix[0] = modelMatrix;
+            renderLightSource.inverseModelMatrix[0] = inverseModelMatrix;
+            renderLightSource.projectionMatrix[0] = beacon_RenderMatrix4x4_reverseDepthPerspective(outerSpotCutoff*2.0, 1.0, 0.01, renderLightSource.influenceRadius, flipProjectionVertically);
+            renderLightSource.inverseProjectionMatrix[0] = beacon_RenderMatrix4x4_inverse(renderLightSource.projectionMatrix[0]);
+        }
+    }
+    else // Point
+    {
+        renderLightSource.castShadows = false;
+    }
+
+    if(renderLightSource.castShadows)
+    {
+        bool isMissingPiece = false;
+        for(int i = 0; i < shadowMapPartCount; ++i)
+        {
+            /*if(cpuLight->shadowMapAtlasAllocations.size() <= size_t(i))
+            {
+                auto newAllocation = shadowMapAtlasAllocator->allocate();
+                if(!newAllocation)
+                {
+                    isMissingPiece = true;
+                    renderLight.castShadows = false;
+                    break;
+                }
+                cpuLight->shadowMapAtlasAllocations.push_back(newAllocation);
+            }*/
+
+        }
+    }
 
     beacon_agpu_pushRenderLightSource(agpu, renderLightSource);
     return receiver;

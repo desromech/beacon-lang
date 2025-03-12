@@ -462,6 +462,51 @@ static beacon_oop_t beacon_Quaternion_constructWithXYZW(beacon_context_t *contex
     return (beacon_oop_t)vector;
 }
 
+static beacon_oop_t beacon_Quaternion_xRotation(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    double angle = beacon_decodeNumberAsDouble(context, arguments[0]);
+    double halfAngle = angle *0.5;
+    double c = cos(halfAngle);
+    double s = sin(halfAngle);
+    beacon_Quaternion_t *quat = beacon_allocateObjectWithBehavior(context->heap, context->classes.quaternionClass, sizeof(beacon_Quaternion_t), BeaconObjectKindBytes);
+    quat->x = s;
+    quat->y = 0;
+    quat->z = 0;
+    quat->w = c;
+    return (beacon_oop_t)quat;
+}
+
+static beacon_oop_t beacon_Quaternion_yRotation(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    double angle = beacon_decodeNumberAsDouble(context, arguments[0]);
+    double halfAngle = angle *0.5;
+    double c = cos(halfAngle);
+    double s = sin(halfAngle);
+    beacon_Quaternion_t *quat = beacon_allocateObjectWithBehavior(context->heap, context->classes.quaternionClass, sizeof(beacon_Quaternion_t), BeaconObjectKindBytes);
+    quat->x = 0;
+    quat->y = s;
+    quat->z = 0;
+    quat->w = c;
+    return (beacon_oop_t)quat;
+}
+
+static beacon_oop_t beacon_Quaternion_zRotation(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    double angle = beacon_decodeNumberAsDouble(context, arguments[0]);
+    double halfAngle = angle *0.5;
+    double c = cos(halfAngle);
+    double s = sin(halfAngle);
+    beacon_Quaternion_t *quat = beacon_allocateObjectWithBehavior(context->heap, context->classes.quaternionClass, sizeof(beacon_Quaternion_t), BeaconObjectKindBytes);
+    quat->x = 0;
+    quat->y = 0;
+    quat->z = 0;
+    quat->w = s;
+    return (beacon_oop_t)quat;
+}
+
 static beacon_oop_t beacon_Quaternion_x(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 0);
@@ -1124,6 +1169,9 @@ void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context)
 
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.quaternionClass), "x:y:z:w:", 4, beacon_Quaternion_constructWithXYZW);
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.quaternionClass), "i:j:k:r:", 4, beacon_Quaternion_constructWithXYZW);
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.quaternionClass), "xRotation:", 1, beacon_Quaternion_xRotation);
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.quaternionClass), "yRotation:", 1, beacon_Quaternion_yRotation);
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.quaternionClass), "zRotation:", 1, beacon_Quaternion_zRotation);
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "x", 0, beacon_Quaternion_x);
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "i", 0, beacon_Quaternion_x);
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "y", 0, beacon_Quaternion_y);
