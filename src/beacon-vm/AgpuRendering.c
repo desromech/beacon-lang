@@ -260,7 +260,7 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
         agpuAttachShader(builder, screenQuadShader);
         agpuAttachShader(builder, clearDepthShader);
         agpuSetPrimitiveType(builder, AGPU_TRIANGLES);
-        agpuSetDepthState(builder, true, true, AGPU_GREATER_EQUAL);
+        agpuSetDepthState(builder, true, true, AGPU_ALWAYS);
         agpuSetCullMode(builder, AGPU_CULL_MODE_BACK);
         agpu->clearDepthPipeline = agpuBuildPipelineState(builder);
         agpuReleaseShader(clearDepthShader);
@@ -1815,6 +1815,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_addSceneCamera(beacon_context_t *c
     float nearDistance = beacon_decodeNumberAsDouble(context, sceneCamera->nearDistance);
     float farDistance = beacon_decodeNumberAsDouble(context, sceneCamera->farDistance);
     float fovY = beacon_decodeNumberAsDouble(context, sceneCamera->fovY);
+    float aspectRatio = (float)renderer->intermediateBufferWidth / renderer->intermediateBufferHeight;
 
     beacon_Vector3_t *translationArgument = (beacon_Vector3_t*)sceneCamera->location;
     beacon_Matrix3x3_t *orientation = (beacon_Matrix3x3_t*)sceneCamera->orientation;
@@ -1829,7 +1830,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_addSceneCamera(beacon_context_t *c
     beacon_RenderMatrix4x4_t inverseViewMatrix = beacon_RenderMatrix4x4_withMatrix3x3AndTranslation(renderOrientationMatrix, translation);
     beacon_RenderMatrix4x4_t viewMatrix = beacon_RenderMatrix4x4_inverse(inverseViewMatrix);
 
-    beacon_RenderMatrix4x4_t projection = beacon_RenderMatrix4x4_reverseDepthPerspective(fovY, (float)renderer->intermediateBufferWidth / renderer->intermediateBufferHeight, nearDistance, farDistance, flipVertically);
+    beacon_RenderMatrix4x4_t projection = beacon_RenderMatrix4x4_reverseDepthPerspective(fovY, aspectRatio, nearDistance, farDistance, flipVertically);
     beacon_RenderMatrix4x4_t inverseProjection = beacon_RenderMatrix4x4_inverse(projection);
 
     beacon_RenderCameraState_t cameraRenderState = {
@@ -1864,7 +1865,14 @@ static beacon_oop_t beacon_agpuWindowRenderer_addSceneCamera(beacon_context_t *c
         .viewMatrix = viewMatrix,
         .inverseViewMatrix = inverseViewMatrix,
     };
+    beacon_Frustum_t viewFrustum = {};
+    beacon_Frustum_setPerspective(&viewFrustum, fovY, aspectRatio, nearDistance, farDistance);
     
+    beacon_Frustum_t worldFrustum = {};
+    beacon_Frustum_transformWithMatrix4x4(&worldFrustum, &viewFrustum, inverseViewMatrix);
+    
+    cameraRenderState.worldFrustum = worldFrustum;
+
     beacon_agpu_pushRenderCameraState(agpu, cameraRenderState);
     return receiver;
 }
@@ -1993,36 +2001,130 @@ static beacon_oop_t beacon_agpuWindowRenderer_addLightSource(beacon_context_t *c
 
     double innerSpotCutoff = beacon_decodeNumberAsDouble(context, lightSource->innerSpotCutoff);
     double outerSpotCutoff = beacon_decodeNumberAsDouble(context, lightSource->outerSpotCutoff);
-    beacon_RenderQuaternion_t quat = {lightSource->spotOrientation->x, lightSource->spotOrientation->y, lightSource->spotOrientation->z, lightSource->spotOrientation->w};
-    beacon_RenderMatrix3x3_t mat = beacon_RenderMatrix3x3_fromQuaternion(quat);
-    beacon_RenderVector3_t localSpotDirection = {0, 0, -1};
-    beacon_RenderVector3_t spotDirection = beacon_RenderMatrix3x3_multiplyVector(mat, localSpotDirection);
-    
+    beacon_RenderQuaternion_t quat = {lightSource->orientation->x, lightSource->orientation->y, lightSource->orientation->z, lightSource->orientation->w};
+    beacon_RenderMatrix3x3_t orientationMat = beacon_RenderMatrix3x3_fromQuaternion(quat);
+    beacon_RenderVector3_t localLookDirection = {0, 0, -1};
+    beacon_RenderVector3_t lookDirection = beacon_RenderMatrix3x3_multiplyVector(orientationMat, localLookDirection);
+
+    beacon_RenderVector4_t positionOrDirection = {lightSource->position->x, lightSource->position->y, lightSource->position->z, 1};
+    bool isDirectional = lightSource->isDirectional == context->roots.trueValue;
+    if(isDirectional)
+    {
+        positionOrDirection.x = -lookDirection.x; 
+        positionOrDirection.y = -lookDirection.y;
+        positionOrDirection.z = -lookDirection.z;
+        positionOrDirection.w = 0;
+    }
+
     beacon_RenderLightSource_t renderLightSource = {
-        .positionOrDirection = {lightSource->positionOrDirection->x, lightSource->positionOrDirection->y, lightSource->positionOrDirection->z, lightSource->positionOrDirection->w},
+        .positionOrDirection = positionOrDirection,
         .intensity = {intensity->x, intensity->y, intensity->z},
         .influenceRadius = influenceRadius,
-        .spotDirection = {spotDirection.x, spotDirection.y, spotDirection.z},
+        .spotDirection = {lookDirection.x, lookDirection.y, lookDirection.z},
         .innerSpotCosCutoff = cos(innerSpotCutoff),
         .outerSpotCosCutoff = cos(outerSpotCutoff),
         .castShadows = lightSource->castShadows == context->roots.trueValue,
     };
 
     bool castShadows = renderLightSource.castShadows;
-    bool isDirectional = renderLightSource.positionOrDirection.w == 0.0;
     bool isSpot = innerSpotCutoff < 180.0 || outerSpotCutoff < 180.0;
     int shadowMapPartCount = 0;
     if(isDirectional)
     {
-        renderLightSource.castShadows = false;
+        renderLightSource.innerSpotCosCutoff = -1;
+        renderLightSource.outerSpotCosCutoff = -1;
+        if(castShadows)
+        {
+            shadowMapPartCount = 4;
+            renderLightSource.shadowMapNormalBiasFactor = beacon_decodeNumberAsDouble(context, lightSource->shadowMapNormalBiasFactor);
+            beacon_RenderCameraState_t cameraRenderState = {};
+            if(agpu->cameraState.size > 0)
+                cameraRenderState = ((beacon_RenderCameraState_t*)agpu->cameraState.thisFrameBuffer)[agpu->cameraState.size - 1];
+
+            shadowMapPartCount = 4;
+            int numSlices = 4;
+            float splitDistributionDistances[5];
+            for(int i = 0; i <= shadowMapPartCount; ++i)
+            {
+                // Cascade shadow map split distribution scheme from GPU Gems 3, Chapter 10:
+                // Parallel-Split Shadow Maps on Programmable GPUs
+
+                float uniformSlice = (cameraRenderState.farDistance - cameraRenderState.nearDistance) / (float)(numSlices)*i + cameraRenderState.nearDistance;
+                float exponentialSlice = cameraRenderState.nearDistance * powf(cameraRenderState.farDistance / cameraRenderState.nearDistance, (float)(i)/numSlices);
+                float cascadeDistributionLambda = 0.99;
+                float split = (1.0-cascadeDistributionLambda)*uniformSlice + cascadeDistributionLambda*exponentialSlice;
+                splitDistributionDistances[i] = split;
+            }
+
+            float splitDistributionLambdas[5];
+            for(int i = 0; i <= 4; ++i)
+            {
+                float distance = splitDistributionDistances[i];
+                splitDistributionLambdas[i] = (distance - cameraRenderState.nearDistance) / (cameraRenderState.farDistance - cameraRenderState.nearDistance);
+                if(splitDistributionLambdas[i] < 0.0f)
+                    splitDistributionLambdas[i] = 0.0f;
+                else if(splitDistributionLambdas[i] > 1.0f)
+                    splitDistributionLambdas[i] = 1.0f;
+            }
+
+            beacon_RenderVector4_t shadowMapCascadeDistanceWorldTransform = {
+                -cameraRenderState.viewMatrix.m31, -cameraRenderState.viewMatrix.m32, -cameraRenderState.viewMatrix.m33, -cameraRenderState.viewMatrix.m34
+            };
+
+            beacon_RenderVector4_t shadowMapCascadeOffsets = {
+                splitDistributionDistances[1], splitDistributionDistances[2], splitDistributionDistances[3], splitDistributionDistances[4]
+            };
+
+            renderLightSource.shadowMapCascadeDistanceWorldTransform = shadowMapCascadeDistanceWorldTransform;
+            renderLightSource.shadowMapCascadeOffsets = shadowMapCascadeOffsets;
+
+            for(int i = 0; i < shadowMapPartCount; ++i)
+            {
+                beacon_Frustum_t frustumSlice = beacon_Frustum_splitAtNearAndFarLambda(&cameraRenderState.worldFrustum, splitDistributionLambdas[i], splitDistributionLambdas[i + 1]);
+                beacon_RenderVector3_t frustumCenter = beacon_AABox3_center(&frustumSlice.boundingBox);
+                beacon_RenderMatrix4x4_t cascadeTransform = beacon_RenderMatrix4x4_withMatrix3x3AndTranslation(orientationMat, frustumCenter);
+
+                renderLightSource.modelMatrix[i] = cascadeTransform;
+                renderLightSource.inverseModelMatrix[i] = beacon_RenderMatrix4x4_inverse(cascadeTransform);
+
+                beacon_RenderVector3_t worldCorners[8] = {
+                    frustumSlice.leftBottomNear,
+                    frustumSlice.rightBottomNear,
+                    frustumSlice.leftTopNear,
+                    frustumSlice.rightTopNear,
+
+                    frustumSlice.leftBottomFar,
+                    frustumSlice.rightBottomFar,
+                    frustumSlice.leftTopFar,
+                    frustumSlice.rightTopFar,
+                };
+
+                beacon_AABox3_t localShadowVolume = beacon_AABox3_empty();
+                for(size_t c = 0; c < 8; ++c)
+                {
+                    beacon_RenderVector3_t localPoint = beacon_RenderMatrix4x4_multiplyVector3(renderLightSource.inverseModelMatrix[i], worldCorners[c]);
+                    beacon_AABox3_insertPoint(&localShadowVolume, localPoint);
+                }
+
+                float influenceRadius = 100.0f;
+                localShadowVolume.min.z -= influenceRadius;
+                localShadowVolume.max.z += influenceRadius;
+
+                renderLightSource.projectionMatrix[i] = beacon_RenderMatrix4x4_reverseDepthOrtho(
+                    localShadowVolume.min.x, localShadowVolume.max.x,
+                    localShadowVolume.min.y, localShadowVolume.max.y,
+                    -localShadowVolume.max.z, -localShadowVolume.min.z);
+                renderLightSource.inverseProjectionMatrix[i] = beacon_RenderMatrix4x4_inverse(renderLightSource.projectionMatrix[i]);
+            }
+        }
     }
     else if(isSpot)
     {
         if(castShadows)
         {
             shadowMapPartCount = 1;
-            beacon_RenderVector3_t translation = {lightSource->positionOrDirection->x, lightSource->positionOrDirection->y, lightSource->positionOrDirection->z};
-            beacon_RenderMatrix4x4_t modelMatrix = beacon_RenderMatrix4x4_withMatrix3x3AndTranslation(mat, translation);
+            beacon_RenderVector3_t translation = {lightSource->position->x, lightSource->position->y, lightSource->position->z};
+            beacon_RenderMatrix4x4_t modelMatrix = beacon_RenderMatrix4x4_withMatrix3x3AndTranslation(orientationMat, translation);
             beacon_RenderMatrix4x4_t inverseModelMatrix = beacon_RenderMatrix4x4_inverse(modelMatrix);
 
             renderLightSource.shadowMapNormalBiasFactor = beacon_decodeNumberAsDouble(context, lightSource->shadowMapNormalBiasFactor);

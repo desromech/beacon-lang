@@ -202,6 +202,16 @@ beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_multiply(beacon_RenderMatrix4x4_
     return result;
 }
 
+beacon_RenderVector3_t beacon_RenderMatrix4x4_multiplyVector3(beacon_RenderMatrix4x4_t mat, beacon_RenderVector3_t vec)
+{
+    beacon_RenderVector3_t result = {
+        .x = mat.m11*vec.x + mat.m12*vec.y + mat.m13*vec.z + mat.m14,
+        .y = mat.m21*vec.x + mat.m22*vec.y + mat.m23*vec.z + mat.m24,
+        .z = mat.m31*vec.x + mat.m32*vec.y + mat.m33*vec.z + mat.m34,
+    };
+    return result;
+}
+
 float beacon_RenderMatrix4x4_determinant(beacon_RenderMatrix4x4_t mat)
 {
     return
@@ -257,6 +267,17 @@ beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_inverse(beacon_RenderMatrix4x4_t
     return inverse;
 }
 
+beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_reverseDepthOrtho(float left, float right, float bottom, float top, float near, float far)
+{
+    beacon_RenderMatrix4x4_t matrix = {
+        .m11 = 2.0 / (right - left), .m12 = 0, .m13 = 0,         .m14 = -((right + left) / (right - left)),
+        .m21 = 0, .m22 = 2.0 / (top - bottom), .m23 = 0,         .m24 = -((top + bottom) / (top - bottom)),
+        .m31 = 0, .m32 = 0, .m32 = 0, .m33 = 1.0 / (far - near), .m34 = far / (far - near),
+        .m41 = 0, .m42 = 0, .m43 = 0,                          .m44 = 1,
+    };
+    return matrix;
+}
+
 beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_reverseDepthFrustum(float left, float right, float bottom, float top, float near, float far, bool flipVertically)
 {
     float flipYFactor = flipVertically ? -1.0f : 1.0f;
@@ -277,4 +298,90 @@ beacon_RenderMatrix4x4_t beacon_RenderMatrix4x4_reverseDepthPerspective(float fo
     float right = top * aspectRatio;
 	
     return beacon_RenderMatrix4x4_reverseDepthFrustum(-right, right, -top, top, near, far, flipVertically);
+}
+
+void beacon_Frustum_setFrustumTangents(beacon_Frustum_t *frustum, float left, float right, float bottom, float top, float nearDistance, float farDistance)
+{
+    float factor = farDistance / nearDistance;
+
+    beacon_Frustum_t result = {
+        .leftBottomNear = {left, bottom, -nearDistance},
+        .rightBottomNear = {right, bottom, -nearDistance},
+        .leftTopNear = {left, top, -nearDistance},
+        .rightTopNear = {right, top, -nearDistance},
+
+        .leftBottomFar = {factor*left, factor*bottom, -factor*nearDistance},
+        .rightBottomFar = {factor*right, factor*bottom, -factor*nearDistance},
+        .leftTopFar = {factor*left, factor*top, -factor*nearDistance},
+        .rightTopFar = {factor*right, factor*top, -factor*nearDistance},
+    };
+    *frustum = result;
+    beacon_Frustum_computeBoundingBox(frustum);
+}
+
+void beacon_Frustum_setPerspective(beacon_Frustum_t *frustum, float fovy, float aspect, float nearDistance, float farDistance)
+{
+    float fovyRad = fovy *0.5f * (M_PI / 180.0f);
+    float top = nearDistance * tan(fovyRad);
+    float right = top * aspect;
+    beacon_Frustum_setFrustumTangents(frustum, -right, right, -top, top, nearDistance, farDistance);
+}
+
+void beacon_Frustum_transformWithMatrix4x4(beacon_Frustum_t *outTransformedFrustum, const beacon_Frustum_t *inFrustum, beacon_RenderMatrix4x4_t matrix)
+{
+    beacon_Frustum_t result = {
+        .leftBottomNear  = beacon_RenderMatrix4x4_multiplyVector3(matrix, inFrustum->leftBottomNear),
+        .rightBottomNear = beacon_RenderMatrix4x4_multiplyVector3(matrix, inFrustum->rightBottomNear),
+        .leftTopNear     = beacon_RenderMatrix4x4_multiplyVector3(matrix, inFrustum->leftTopNear),
+        .rightTopNear    = beacon_RenderMatrix4x4_multiplyVector3(matrix, inFrustum->rightTopNear),
+
+        .leftBottomFar  = beacon_RenderMatrix4x4_multiplyVector3(matrix, inFrustum->leftBottomFar),
+        .rightBottomFar = beacon_RenderMatrix4x4_multiplyVector3(matrix, inFrustum->rightBottomFar),
+        .leftTopFar     = beacon_RenderMatrix4x4_multiplyVector3(matrix, inFrustum->leftTopFar),
+        .rightTopFar    = beacon_RenderMatrix4x4_multiplyVector3(matrix, inFrustum->rightTopFar),
+    };
+    *outTransformedFrustum = result;
+    beacon_Frustum_computeBoundingBox(outTransformedFrustum);
+}
+
+beacon_RenderVector3_t beacon_RenderVector3_interpolateTo(beacon_RenderVector3_t a, beacon_RenderVector3_t b, float lambda)
+{
+    beacon_RenderVector3_t result = {
+        .x = (1.0f-lambda)*a.x + lambda*b.x,
+        .y = (1.0f-lambda)*a.y + lambda*b.y,
+        .z = (1.0f-lambda)*a.z + lambda*b.z,
+    };
+    return result;
+}
+
+beacon_Frustum_t beacon_Frustum_splitAtNearAndFarLambda(const beacon_Frustum_t *inFrustum, float nearLambda, float farLambda)
+{
+    beacon_Frustum_t result = {
+        .leftBottomNear  = beacon_RenderVector3_interpolateTo(inFrustum->leftBottomNear,  inFrustum->leftBottomFar,  nearLambda),
+        .rightBottomNear = beacon_RenderVector3_interpolateTo(inFrustum->rightBottomNear, inFrustum->rightBottomFar, nearLambda),
+        .leftTopNear     = beacon_RenderVector3_interpolateTo(inFrustum->leftTopNear,     inFrustum->leftTopFar,     nearLambda),
+        .rightTopNear    = beacon_RenderVector3_interpolateTo(inFrustum->rightTopNear,    inFrustum->rightTopFar,    nearLambda),
+
+        .leftBottomFar  = beacon_RenderVector3_interpolateTo(inFrustum->leftBottomNear,  inFrustum->leftBottomFar,  farLambda),
+        .rightBottomFar = beacon_RenderVector3_interpolateTo(inFrustum->rightBottomNear, inFrustum->rightBottomFar, farLambda),
+        .leftTopFar     = beacon_RenderVector3_interpolateTo(inFrustum->leftTopNear,     inFrustum->leftTopFar,     farLambda),
+        .rightTopFar    = beacon_RenderVector3_interpolateTo(inFrustum->rightTopNear,    inFrustum->rightTopFar,    farLambda),
+    };
+
+    beacon_Frustum_computeBoundingBox(&result);
+    return result;
+}
+
+void beacon_Frustum_computeBoundingBox(beacon_Frustum_t *frustum)
+{
+    frustum->boundingBox = beacon_AABox3_empty();
+    beacon_AABox3_insertPoint(&frustum->boundingBox, frustum->leftBottomNear);
+    beacon_AABox3_insertPoint(&frustum->boundingBox, frustum->rightBottomNear);
+    beacon_AABox3_insertPoint(&frustum->boundingBox, frustum->leftTopNear);
+    beacon_AABox3_insertPoint(&frustum->boundingBox, frustum->rightTopNear);
+
+    beacon_AABox3_insertPoint(&frustum->boundingBox, frustum->leftBottomFar);
+    beacon_AABox3_insertPoint(&frustum->boundingBox, frustum->rightBottomFar);
+    beacon_AABox3_insertPoint(&frustum->boundingBox, frustum->leftTopFar);
+    beacon_AABox3_insertPoint(&frustum->boundingBox, frustum->rightTopFar);
 }

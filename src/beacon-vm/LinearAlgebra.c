@@ -609,6 +609,25 @@ static beacon_oop_t beacon_Quaternion_minus(beacon_context_t *context, beacon_oo
     return (beacon_oop_t)resultVector;
 }
 
+static beacon_oop_t beacon_Quaternion_multiply(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.quaternionClass);
+
+    beacon_Quaternion_t *leftQuat = (beacon_Quaternion_t *)receiver;
+    beacon_Quaternion_t *rightQuat = (beacon_Quaternion_t *)arguments[0];
+    beacon_Quaternion_t *result = beacon_allocateObjectWithBehavior(context->heap, context->classes.quaternionClass, sizeof(beacon_Quaternion_t), BeaconObjectKindBytes);
+    
+    double sr = leftQuat->w; double si = leftQuat->x; double sj = leftQuat->y; double sk = leftQuat->z;
+    double or = rightQuat->w; double oi = rightQuat->x; double oj = rightQuat->y; double ok = rightQuat->z;
+
+    result->w = (sr * or) - (si * oi) - (sj * oj) - (sk * ok);
+    result->x = (sr * oi) + (si * or) + (sj * ok) - (sk * oj);
+    result->y = (sr * oj) - (si * ok) + (sj * or) + (sk * oi);
+    result->z = (sr * ok) + (si * oj) - (sj * oi) + (sk * or);
+    return (beacon_oop_t)result;
+}
+
 static beacon_oop_t beacon_Matrix2x2_identity(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 0);
@@ -1185,6 +1204,7 @@ void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "asMatrix3x3", 0, beacon_Quaternion_asMatrix3x3);
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "+", 1, beacon_Quaternion_add);
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "-", 1, beacon_Quaternion_minus);
+    beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "*", 1, beacon_Quaternion_multiply);
 
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.matrix2x2Class), "identity", 0, beacon_Matrix2x2_identity);
     beacon_addPrimitiveToClass(context, context->classes.matrix2x2Class, "firstColumn",  0, beacon_Matrix2x2_firstColumn);

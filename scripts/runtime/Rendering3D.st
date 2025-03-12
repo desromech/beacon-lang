@@ -206,12 +206,14 @@ LightSource ![
 initialize
     super initialize.
 	
-    positionOrDirection := Vector4 zeros.
+    position := Vector3 zeros.
+    isDirectional := false.
 
 	intensity := Vector3 ones.
 	influenceRadius := 20.
 
-	spotOrientation := Quaternion identity.
+	orientation := Quaternion identity.
+
 	innerSpotCutoff := 180.0.
 	outerSpotCutoff := 180.0.
 	
@@ -220,23 +222,23 @@ initialize
 ].
 
 LightSource ![
-positionOrDirection
-    ^ positionOrDirection
-].
-
-LightSource ![
-positionOrDirection: aVector4
-    positionOrDirection := aVector4
+position
+    ^ position
 ].
 
 LightSource ![
 position: aVector3
-    positionOrDirection := Vector4 xyz: aVector3 w: 1.0
+    position := aVector3
 ].
 
 LightSource ![
-direction: aVector3
-    positionOrDirection := Vector4 xyz: aVector3 w: 0.0
+isDirectional
+    ^ isDirectional
+].
+
+LightSource ![
+isDirectional: aBoolean
+    isDirectional := aBoolean
 ].
 
 LightSource ![
@@ -265,13 +267,13 @@ castShadows: aBoolean
 ].
 
 LightSource ![
-spotOrientation
-    ^ spotOrientation
+orientation
+    ^ orientation
 ].
 
 LightSource ![
-spotOrientation: anOrientation
-    spotOrientation := anOrientation
+orientation: anOrientation
+    orientation := anOrientation
 ].
 
 LightSource ![

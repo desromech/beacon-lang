@@ -1033,16 +1033,17 @@ typedef struct beacon_SceneCamera_s
 typedef struct beacon_LightSource_s
 {
     beacon_Object_t super;
-	beacon_Vector4_t *positionOrDirection;
+	beacon_Vector3_t *position;
+    beacon_oop_t isDirectional;
 
 	beacon_Vector3_t *intensity;
 	beacon_oop_t influenceRadius;
 
-	beacon_Quaternion_t *spotOrientation;
+	beacon_Quaternion_t *orientation;
 
     beacon_oop_t innerSpotCutoff;
 	beacon_oop_t outerSpotCutoff;
-    
+
 	beacon_oop_t castShadows;
 	
 	beacon_oop_t shadowMapNormalBiasFactor;

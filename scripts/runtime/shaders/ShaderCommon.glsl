@@ -12,6 +12,12 @@ layout( push_constant ) uniform constants
     vec2 framebufferReciprocalExtent;
 } PushConstants;
 
+struct AABox3
+{
+	vec3 boxMin;
+	vec3 boxMax;
+};
+
 struct Frustum
 {
 	vec3 leftBottomNear;
@@ -23,6 +29,7 @@ struct Frustum
 	vec3 leftTopFar;
 	vec3 rightTopFar;
 
+    AABox3 boundingBox;
     vec4 planes[6];
 };
 

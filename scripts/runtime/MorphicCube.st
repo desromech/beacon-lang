@@ -64,11 +64,17 @@ render3DEnvironmentWith: rendererHandle
             orientation: cameraOrientationMatrix;
             yourself);
         addLightSource: (LightSource new
+            isDirectional: true;
+            orientation: ((Quaternion yRotation: Float halfPi * -0.5)) * (Quaternion xRotation: Float halfPi * -0.5);
+            color: Color white intensity: 0.8;
+            castShadows: true;
+            yourself);
+        addLightSource: (LightSource new
             position: (Vector3 x: -2 y: 2 z: 0);
             color: Color green intensity: 20;
             influenceRadius: 10;
             castShadows: false;
-            spotOrientation: spotOrientation;
+            orientation: spotOrientation;
             innerSpotCutoff: 60.0;
             outerSpotCutoff: 70.0;
             castShadows: true;
@@ -84,7 +90,7 @@ render3DEnvironmentWith: rendererHandle
             color: Color red intensity: 20;
             castShadows: false;
             influenceRadius: 10;
-            spotOrientation: spotOrientation;
+            orientation: spotOrientation;
             innerSpotCutoff: 60.0;
             outerSpotCutoff: 70.0;
             castShadows: true;

@@ -393,14 +393,14 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "model", "modelMatrix", NULL);
 
     context->classes.lightSourceClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "LightSource", sizeof(beacon_LightSource_t), BeaconObjectKindPointers,
-        "positionOrDirection", "intensity", "influenceRadius", "spotOrientation", 
+        "position",  "isDirectional", "intensity", "influenceRadius", "orientation", 
         "innerSpotCutoff", "outerSpotCutoff", "castShadows", 
         "shadowMapNormalBiasFactor", NULL);
 
-        context->classes.sceneCameraClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "SceneCamera", sizeof(beacon_SceneCamera_t), BeaconObjectKindPointers,
-            "location", "orientation", "nearDistance", "farDistance", "fovY",
-            "timeOfSimulation", "timeOfDay", "exposure", "ambientLightSource", 
-            NULL);
+    context->classes.sceneCameraClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "SceneCamera", sizeof(beacon_SceneCamera_t), BeaconObjectKindPointers,
+        "location", "orientation", "nearDistance", "farDistance", "fovY",
+        "timeOfSimulation", "timeOfDay", "exposure", "ambientLightSource", 
+        NULL);
 }
 
 void beacon_context_createImportantRoots(beacon_context_t *context)
