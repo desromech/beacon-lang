@@ -291,7 +291,7 @@ outerSpotCutoff
 
 LightSource ![
 outerSpotCutoff: aCutoffAngle
-    outerSpotCutoff := outerSpotCutoff
+    outerSpotCutoff := aCutoffAngle
 ].
 
 SceneCamera ![

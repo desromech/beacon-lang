@@ -30,7 +30,7 @@ renderWithBuilder: renderingBuilder
 
 CubeMorph ![
 render3DEnvironmentWith: rendererHandle
-    | extent floorObject leftObject middleObject rightObject |
+    | extent floorObject leftObject middleObject rightObject spotOrientation |
     extent := self extent.
     rendererHandle begin3DFrameRenderingWithWidth: extent x height: extent y.
 
@@ -56,6 +56,8 @@ render3DEnvironmentWith: rendererHandle
         modelMatrix: (Matrix4x4 translation: (Vector3 x: 2 y: 0 z: 0));
         yourself.
 
+    spotOrientation := Quaternion xRotation: Float halfPi negated.
+
     rendererHandle 
         addSceneCamera: (SceneCamera new
             location: cameraLocation;
@@ -66,7 +68,7 @@ render3DEnvironmentWith: rendererHandle
             color: Color green intensity: 20;
             influenceRadius: 10;
             castShadows: false;
-            spotOrientation: (Quaternion xRotation: Float halfPi negated);
+            spotOrientation: spotOrientation;
             innerSpotCutoff: 60.0;
             outerSpotCutoff: 70.0;
             castShadows: true;
@@ -75,7 +77,7 @@ render3DEnvironmentWith: rendererHandle
             position: (Vector3 x: 0 y: 2 z: 0);
             color: Color white intensity: 20;
             influenceRadius: 10;
-            spotOrientation: (Quaternion xRotation: Float halfPi negated);
+            spotOrientation: spotOrientation;
             innerSpotCutoff: 60.0;
             outerSpotCutoff: 70.0;
             castShadows: true;
@@ -85,7 +87,7 @@ render3DEnvironmentWith: rendererHandle
             color: Color red intensity: 20;
             castShadows: false;
             influenceRadius: 10;
-            spotOrientation: (Quaternion xRotation: Float halfPi negated);
+            spotOrientation: spotOrientation;
             innerSpotCutoff: 60.0;
             outerSpotCutoff: 70.0;
             castShadows: true;

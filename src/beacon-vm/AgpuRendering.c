@@ -16,6 +16,51 @@ typedef struct VulkanDrawIndexedIndirectCommand {
 
 typedef VulkanDrawIndexedIndirectCommand DrawIndirectCommand;
 
+void shadowMapAtlasAllocator_initializeWithExtent(beacon_AGPUShadowMapAtlasAllocator_t *allocator, uint32_t atlasWidth, uint32_t atlasHeight)
+{
+    allocator->atlasWidth = atlasWidth;
+    allocator->atlasHeight = atlasHeight;
+
+    allocator->columns = 4;
+    allocator->rows = 4;
+
+    allocator->shadowMapExtent.x = atlasWidth / allocator->columns;
+    allocator->shadowMapExtent.y = atlasHeight / allocator->rows;
+
+    allocator->capacity = allocator->columns*allocator->rows;
+    allocator->size = 0;
+}
+
+void shadowMapAtlasAllocator_reset(beacon_AGPUShadowMapAtlasAllocator_t *allocator)
+{
+    allocator->size = 0;
+}
+
+bool shadowMapAtlasAllocator_allocate(beacon_AGPUShadowMapAtlasAllocator_t *allocator, beacon_AGPUShadowMapAtlasAllocation_t *allocation)
+{
+    if(allocator->size >= allocator->capacity)
+        return false;
+
+    memset(allocation, 0, sizeof(allocation));
+
+    int row = allocator->size / allocator->columns;
+    int column = allocator->size % allocator->columns;
+    
+    allocation->offset.x = column*allocator->shadowMapExtent.x;
+    allocation->offset.y = row*allocator->shadowMapExtent.y;
+    
+    allocation->shadowMapExtent = allocator->shadowMapExtent;
+
+    allocation->shadowMapAtlasExtent.x = allocator->atlasWidth;
+    allocation->shadowMapAtlasExtent.y = allocator->atlasHeight;
+
+    ++allocator->size;
+
+    return true;
+
+}
+
+
 agpu_platform *beacon_agpu_getPlatform(beacon_context_t *context, beacon_AGPU_t *agpu)
 {
     if(agpu->platform)
@@ -204,6 +249,39 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
         screenQuadShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiVertex", NULL, "scripts/runtime/assets/shaders/ScreenQuadFlippedY.glsl", AGPU_VERTEX_SHADER);
     else
         screenQuadShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiVertex", NULL, "scripts/runtime/shaders/ScreenQuad.glsl", AGPU_VERTEX_SHADER);
+
+    // Clear depth
+    {
+        agpu_shader *clearDepthShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "ClearDepth", NULL, "scripts/runtime/shaders/ClearDepth.glsl", AGPU_FRAGMENT_SHADER);
+        agpu_pipeline_builder *builder = agpuCreatePipelineBuilder(device);
+        agpuSetRenderTargetCount(builder, 0);
+        agpuSetDepthStencilFormat(builder, BEACON_AGPU_DEPTH_FORMAT);
+        agpuSetPipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachShader(builder, screenQuadShader);
+        agpuAttachShader(builder, clearDepthShader);
+        agpuSetPrimitiveType(builder, AGPU_TRIANGLES);
+        agpuSetDepthState(builder, true, true, AGPU_GREATER_EQUAL);
+        agpuSetCullMode(builder, AGPU_CULL_MODE_BACK);
+        agpu->clearDepthPipeline = agpuBuildPipelineState(builder);
+        agpuReleaseShader(clearDepthShader);
+        agpuReleasePipelineBuilder(builder);
+    }
+
+    // Shadow map vertex
+    {
+        agpu_shader *shadowMapVertexShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "ShadowMapVertex", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/ShadowMapVertex.glsl", AGPU_VERTEX_SHADER);
+        agpu_pipeline_builder *builder = agpuCreatePipelineBuilder(device);
+        agpuSetRenderTargetCount(builder, 0);
+        agpuSetDepthStencilFormat(builder, BEACON_AGPU_DEPTH_FORMAT);
+        agpuSetPipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachShader(builder, shadowMapVertexShader);
+        agpuSetPrimitiveType(builder, AGPU_TRIANGLES);
+        agpuSetDepthState(builder, true, true, AGPU_GREATER_EQUAL);
+        agpuSetDepthBias(builder, -2.0, 0.0, -1.0);
+        agpu->shadowMapDepthPipeline = agpuBuildPipelineState(builder);
+        agpuReleaseShader(shadowMapVertexShader);
+        agpuReleasePipelineBuilder(builder);
+    }
 
     // Depth only
     {
@@ -578,6 +656,7 @@ void beacon_agpu_initializeCommonObjects(beacon_context_t *context, beacon_AGPU_
 
         agpu->shadowMapAtlas = agpuCreateTexture(agpu->device, &desc);
         agpu->shadowMapFramebuffer = agpuCreateFrameBuffer(agpu->device, BEACON_AGPU_SHADOW_MAP_ATLAS_SIZE, BEACON_AGPU_SHADOW_MAP_ATLAS_SIZE,0, NULL, agpuGetOrCreateFullTextureView(agpu->shadowMapAtlas));
+        shadowMapAtlasAllocator_initializeWithExtent(&agpu->shadowMapAtlasAllocator, desc.width, desc.height);
     }
 
     beacon_agpu_loadPipelineStates(context, agpu);
@@ -867,7 +946,8 @@ static beacon_oop_t beacon_agpuWindowRenderer_beginFrame(beacon_context_t *conte
 
     uint8_t *renderingDataUploadBuffer = renderer->renderingDataUploadBuffer + renderer->frameRenderingDataUploadSize* renderer->currentFrameBufferingIndex;
     beacon_agpuWindowRenderer_resetPerFrameBuffers(context, renderer, thisFrameState);
-
+    shadowMapAtlasAllocator_reset(&context->roots.agpuCommon->shadowMapAtlasAllocator);
+    context->roots.agpuCommon->numberOfShadowCastingLightSources = 0;
     return receiver;
 }
 
@@ -1315,6 +1395,35 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
         agpuUsePipelineState(commandList, agpu->lightClusterListComputationPipeline);
         agpuDispatchCompute(commandList, workgroupCount, 1, 1);
         agpuMemoryBarrier(commandList, AGPU_PIPELINE_STAGE_COMPUTE_SHADER, AGPU_PIPELINE_STAGE_COMPUTE_SHADER | AGPU_PIPELINE_STAGE_FRAGMENT_SHADER, AGPU_ACCESS_SHADER_WRITE, AGPU_ACCESS_SHADER_READ);
+    }
+
+    // Shadow maps
+    {
+        agpuBeginRenderPass(commandList, renderer->shadowMapAtlasRenderPass, agpu->shadowMapFramebuffer, false);
+        for(size_t i = 0; i < agpu->numberOfShadowCastingLightSources; ++i)
+        {
+            beacon_AGPUShadowCastingLight_t *lightSource = agpu->shadowCastingLightSources + i;
+            for(uint32_t partIndex = 0; partIndex < lightSource->shadowMapPartCount; ++partIndex)
+            {
+                beacon_AGPUShadowMapAtlasAllocation_t *allocation = lightSource->atlasAllocations + partIndex;
+                beacon_RenderVector2_t offset = allocation->offset;
+                beacon_RenderVector2_t extent = allocation->shadowMapExtent;
+                agpuSetViewport(commandList, offset.x, offset.y, extent.x, extent.y);
+                agpuSetScissor(commandList, offset.x, offset.y, extent.x, extent.y);
+
+                uint32_t shadowMapLightSourceIndex = lightSource->renderLightSourceIndex;
+                uint32_t shadowMapComponent = partIndex;
+                agpuPushConstants(commandList, 8, 4, &shadowMapLightSourceIndex);
+                agpuPushConstants(commandList, 12, 4, &shadowMapComponent);
+
+                agpuUsePipelineState(commandList, agpu->clearDepthPipeline);
+                agpuDrawArrays(commandList, 3, 1, 0, 0);
+
+                agpuUsePipelineState(commandList, agpu->shadowMapDepthPipeline);
+                agpuDrawElementsIndirect(commandList, 0, agpu->renderObjectAttributes.size);
+            }
+        }
+        agpuEndRenderPass(commandList);
     }
 
     // Depth only render pass
@@ -1909,7 +2018,6 @@ static beacon_oop_t beacon_agpuWindowRenderer_addLightSource(beacon_context_t *c
     }
     else if(isSpot)
     {
-        renderLightSource.castShadows = false;
         if(castShadows)
         {
             shadowMapPartCount = 1;
@@ -1929,23 +2037,46 @@ static beacon_oop_t beacon_agpuWindowRenderer_addLightSource(beacon_context_t *c
         renderLightSource.castShadows = false;
     }
 
+    
     if(renderLightSource.castShadows)
     {
+        beacon_AGPUShadowCastingLight_t shadowCastingLight = {
+            .renderLightSourceIndex = agpu->renderLightSourceAttributes.size,
+            .shadowMapPartCount = shadowMapPartCount
+        };
+
         bool isMissingPiece = false;
         for(int i = 0; i < shadowMapPartCount; ++i)
         {
-            /*if(cpuLight->shadowMapAtlasAllocations.size() <= size_t(i))
+            if(!shadowMapAtlasAllocator_allocate(&agpu->shadowMapAtlasAllocator, shadowCastingLight.atlasAllocations + i))
             {
-                auto newAllocation = shadowMapAtlasAllocator->allocate();
-                if(!newAllocation)
-                {
-                    isMissingPiece = true;
-                    renderLight.castShadows = false;
-                    break;
-                }
-                cpuLight->shadowMapAtlasAllocations.push_back(newAllocation);
-            }*/
+                isMissingPiece = true;
+                renderLightSource.castShadows = false;
+                break;
+            }
+        }
 
+        if(!isMissingPiece && agpu->numberOfShadowCastingLightSources < BEACON_AGPU_MAX_SHADOW_CASTING_LIGHTS)
+        {
+            beacon_RenderVector2_t viewportScale = {0.5f, 0.5f};
+            if(flipTextureVertically)
+                viewportScale.y = -viewportScale.y;
+            beacon_RenderVector2_t viewportOffset = {0.5f, 0.5f}; 
+
+            beacon_RenderVector2_t atlasExtent =  shadowCastingLight.atlasAllocations[0].shadowMapAtlasExtent;
+            beacon_RenderVector2_t viewportExtent = shadowCastingLight.atlasAllocations[0].shadowMapExtent;
+            beacon_RenderVector2_t viewportExtentScale = {viewportExtent.x / atlasExtent.x, viewportExtent.y / atlasExtent.y};
+
+            beacon_RenderVector2_t shadowMapViewportScale = {viewportScale.x *viewportExtentScale.x, viewportScale.y *viewportExtentScale.y};
+            renderLightSource.shadowMapViewportScale = shadowMapViewportScale;
+
+            for(int i = 0; i < shadowMapPartCount; ++i)
+            {
+                renderLightSource.shadowMapViewportOffsets[i].x = viewportOffset.x*viewportExtentScale.x + shadowCastingLight.atlasAllocations[i].offset.x / atlasExtent.x;
+                renderLightSource.shadowMapViewportOffsets[i].y = viewportOffset.y*viewportExtentScale.y + shadowCastingLight.atlasAllocations[i].offset.y / atlasExtent.y;
+            }
+
+            agpu->shadowCastingLightSources[agpu->numberOfShadowCastingLightSources++] = shadowCastingLight;
         }
     }
 

@@ -21,6 +21,7 @@
 
 #define BEACON_AGPU_MAX_LIGHT_CLUSTER_CAPACITY 100
 #define BEACON_AGPU_SHADOW_MAP_ATLAS_SIZE 4096
+#define BEACON_AGPU_MAX_SHADOW_CASTING_LIGHTS 64
 
 #define BEACON_AGPU_LIGHT_GRID_WIDTH 16
 #define BEACON_AGPU_LIGHT_GRID_HEIGHT 9
@@ -193,11 +194,27 @@ typedef struct beacon_AGPUShadowMapAtlasAllocation_s
     beacon_RenderVector2_t offset;
     beacon_RenderVector2_t shadowMapExtent;
     beacon_RenderVector2_t shadowMapAtlasExtent;
-} beacon_AGPUShadowMapAtlasAllocation_s;
+} beacon_AGPUShadowMapAtlasAllocation_t;
 
 typedef struct beacon_AGPUShadowMapAtlasAllocator_s
 {
+    uint32_t atlasWidth;
+    uint32_t atlasHeight;
+
+    uint32_t columns;
+    uint32_t rows;
+    uint32_t capacity;
+    uint32_t size;
+    beacon_RenderVector2_t shadowMapExtent;
 }beacon_AGPUShadowMapAtlasAllocator_t;
+
+typedef struct beacon_AGPUShadowCastingLight_s
+{
+    uint32_t renderLightSourceIndex;
+    uint32_t shadowMapPartCount;
+    beacon_RenderVector2_t shadowMapViewportOffsets[6];
+    beacon_AGPUShadowMapAtlasAllocation_t atlasAllocations[6];
+}beacon_AGPUShadowCastingLight_t;
 
 typedef struct beacon_AGPU_s
 {
@@ -232,6 +249,9 @@ typedef struct beacon_AGPU_s
     agpu_pipeline_state *lightGridComputationPipeline;
     agpu_pipeline_state *lightClusterBeginComputationPipeline;
     agpu_pipeline_state *lightClusterListComputationPipeline;
+
+    agpu_pipeline_state *clearDepthPipeline;
+    agpu_pipeline_state *shadowMapDepthPipeline;
 
     agpu_pipeline_state *opaqueColorPipeline;
 
@@ -272,6 +292,8 @@ typedef struct beacon_AGPU_s
     agpu_texture *shadowMapAtlas;
     agpu_framebuffer *shadowMapFramebuffer;
     beacon_AGPUShadowMapAtlasAllocator_t shadowMapAtlasAllocator;
+    size_t numberOfShadowCastingLightSources;
+    beacon_AGPUShadowCastingLight_t shadowCastingLightSources[BEACON_AGPU_MAX_SHADOW_CASTING_LIGHTS];
 
     agpu_shader_resource_binding *renderingDataBinding;
 
