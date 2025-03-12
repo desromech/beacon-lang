@@ -77,9 +77,6 @@ render3DEnvironmentWith: rendererHandle
             position: (Vector3 x: 0 y: 2 z: 0);
             color: Color white intensity: 20;
             influenceRadius: 10;
-            spotOrientation: spotOrientation;
-            innerSpotCutoff: 60.0;
-            outerSpotCutoff: 70.0;
             castShadows: true;
             yourself);
         addLightSource: (LightSource new

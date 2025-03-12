@@ -2034,9 +2034,29 @@ static beacon_oop_t beacon_agpuWindowRenderer_addLightSource(beacon_context_t *c
     }
     else // Point
     {
-        renderLightSource.castShadows = false;
-    }
+        renderLightSource.innerSpotCosCutoff = -1;
+        renderLightSource.outerSpotCosCutoff = -1;
+        if(renderLightSource.castShadows)
+        {
+            shadowMapPartCount = 6;
+            beacon_RenderVector3_t center = {renderLightSource.positionOrDirection.x, renderLightSource.positionOrDirection.y, renderLightSource.positionOrDirection.z};
 
+            renderLightSource.shadowMapNormalBiasFactor = beacon_decodeNumberAsDouble(context, lightSource->shadowMapNormalBiasFactor);
+            renderLightSource.projectionMatrix[0] = beacon_RenderMatrix4x4_reverseDepthPerspective(90, 1.0, 0.1, renderLightSource.influenceRadius, flipProjectionVertically);
+            renderLightSource.inverseProjectionMatrix[0] = beacon_RenderMatrix4x4_inverse(renderLightSource.projectionMatrix[0]) ;
+
+            for(int i = 0; i < shadowMapPartCount; ++i)
+            {
+                beacon_RenderMatrix3x3_t faceMatrix = beacon_RenderMatrix3x3_CubeMapFaceRotations[i];
+                renderLightSource.modelMatrix[i] = beacon_RenderMatrix4x4_withMatrix3x3AndTranslation(faceMatrix, center);
+                renderLightSource.inverseModelMatrix[i] = beacon_RenderMatrix4x4_inverse(renderLightSource.modelMatrix[i]);
+
+                renderLightSource.projectionMatrix[i] = renderLightSource.projectionMatrix[0];
+                renderLightSource.inverseProjectionMatrix[i] = renderLightSource.inverseProjectionMatrix[0];
+
+            }
+        }
+    }
     
     if(renderLightSource.castShadows)
     {

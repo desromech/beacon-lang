@@ -2,6 +2,46 @@
 #include <math.h>
 #include <stdlib.h>
 
+beacon_RenderMatrix3x3_t beacon_RenderMatrix3x3_CubeMapFaceRotations[6] = {
+    // +X
+    {
+        .m11 = 0, .m12 = 0, .m13 = -1,
+        .m21 = 0, .m22 = 1, .m23 = 0,
+        .m31 = 1, .m32 = 0, .m33 = 0,
+    },
+    // -X
+    {
+        .m11 = 0,  .m12 = 0, .m13 = 1,
+        .m21 = 0,  .m22 = 1, .m23 = 0,
+        .m31 = -1, .m32 = 0, .m33 = 0,
+    },
+    // +Y
+    {
+        .m11 = 1, .m12 = 0, .m13 = 0,
+        .m21 = 0, .m22 = 0, .m23 = -1,
+        .m31 = 0, .m32 = 1, .m33 = 0,
+    },
+    // -Y
+    {
+        .m11 = 1, .m12 = 0,  .m13 = 0,
+        .m21 = 0, .m22 = 0,  .m23 = 1,
+        .m31 = 0, .m32 = -1, .m33 = 0,
+    },
+
+    // +Z
+    {
+        .m11 = -1, .m12 = 0, .m13 = 0,
+        .m21 = 0, .m22 = 1, .m23 = 0,
+        .m31 = 0, .m32 = 0, .m33 = -1,
+    },
+    // -Z
+    {
+        .m11 = 1, .m12 = 0, .m13 = 0,
+        .m21 = 0, .m22 = 1, .m23 = 0,
+        .m31 = 0, .m32 = 0, .m33 = 1,
+    },
+};
+
 float beacon_RenderMatrix3x3_determinant(beacon_RenderMatrix3x3_t m)
 {
     //| m11 m12 m13 | m11 m12
