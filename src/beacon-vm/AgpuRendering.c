@@ -2001,8 +2001,29 @@ static beacon_oop_t beacon_agpuWindowRenderer_addLightSource(beacon_context_t *c
 
     double innerSpotCutoff = beacon_decodeNumberAsDouble(context, lightSource->innerSpotCutoff);
     double outerSpotCutoff = beacon_decodeNumberAsDouble(context, lightSource->outerSpotCutoff);
-    beacon_RenderQuaternion_t quat = {lightSource->orientation->x, lightSource->orientation->y, lightSource->orientation->z, lightSource->orientation->w};
-    beacon_RenderMatrix3x3_t orientationMat = beacon_RenderMatrix3x3_fromQuaternion(quat);
+
+    beacon_RenderMatrix3x3_t orientationMat;
+    if(beacon_getClass(context, lightSource->orientation) == context->classes.quaternionClass)
+    {
+        beacon_Quaternion_t *sourceQuat = (beacon_Quaternion_t *)lightSource->orientation;
+        beacon_RenderQuaternion_t quat = {sourceQuat->x, sourceQuat->y, sourceQuat->z, sourceQuat->w};
+    }
+    else if(beacon_getClass(context, lightSource->orientation) == context->classes.matrix3x3Class)
+    {
+        beacon_Matrix3x3_t *sourceMat = (beacon_Matrix3x3_t*)lightSource->orientation;
+        beacon_RenderMatrix3x3_t mat = {
+            .m11 = sourceMat->m11, .m12 = sourceMat->m12, .m13 = sourceMat->m13,
+            .m21 = sourceMat->m21, .m22 = sourceMat->m22, .m23 = sourceMat->m23,
+            .m31 = sourceMat->m31, .m32 = sourceMat->m32, .m33 = sourceMat->m33,
+        };
+
+        orientationMat = mat;
+    }
+    else
+    {
+        BeaconAssert(context, false && "Unsupported light source orientation type.");
+    }
+
     beacon_RenderVector3_t localLookDirection = {0, 0, -1};
     beacon_RenderVector3_t lookDirection = beacon_RenderMatrix3x3_multiplyVector(orientationMat, localLookDirection);
 

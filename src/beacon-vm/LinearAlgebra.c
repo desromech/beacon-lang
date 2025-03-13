@@ -991,6 +991,22 @@ static beacon_oop_t beacon_Matrix4x4_translation(beacon_context_t *context, beac
     return (beacon_oop_t)matrix;
 }
 
+static beacon_oop_t beacon_Matrix4x4_withMat3AndTranslation(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 2);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.matrix3x3Class);
+    BeaconAssert(context, beacon_getClass(context, arguments[1]) == context->classes.vector3Class);
+
+    beacon_Matrix4x4_t *matrix = beacon_allocateObjectWithBehavior(context->heap, context->classes.matrix4x4Class, sizeof(beacon_Matrix4x4_t), BeaconObjectKindBytes);
+    beacon_Matrix3x3_t *mat3 = (beacon_Matrix3x3_t*)arguments[0];
+    beacon_Vector3_t *vector = (beacon_Vector3_t*)arguments[1];
+    matrix->m11 = mat3->m11; matrix->m12 = mat3->m12; matrix->m13 = mat3->m13; matrix->m14 = vector->x;
+    matrix->m21 = mat3->m21; matrix->m22 = mat3->m22; matrix->m23 = mat3->m23; matrix->m24 = vector->y;
+    matrix->m31 = mat3->m31; matrix->m32 = mat3->m32; matrix->m33 = mat3->m33; matrix->m34 = vector->z;
+    matrix->m41 = 0; matrix->m42 = 0; matrix->m43 = 0; matrix->m44 = 1;
+    return (beacon_oop_t)matrix;
+}
+
 static beacon_oop_t beacon_Matrix4x4_firstColumn(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 0);
@@ -1234,6 +1250,7 @@ void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context)
 
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.matrix4x4Class), "identity", 0, beacon_Matrix4x4_identity);
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.matrix4x4Class), "translation:", 1, beacon_Matrix4x4_translation);
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.matrix4x4Class), "mat3:translation:", 2, beacon_Matrix4x4_withMat3AndTranslation);
     beacon_addPrimitiveToClass(context, context->classes.matrix4x4Class, "firstColumn",  0, beacon_Matrix4x4_firstColumn);
     beacon_addPrimitiveToClass(context, context->classes.matrix4x4Class, "secondColumn", 0, beacon_Matrix4x4_secondColumn);
     beacon_addPrimitiveToClass(context, context->classes.matrix4x4Class, "thirdColumn",  0, beacon_Matrix4x4_thirdColumn);

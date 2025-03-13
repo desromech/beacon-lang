@@ -106,6 +106,11 @@ addCubeWithMinX: minX minY: minY minZ: minZ maxX: maxX maxY: maxY maxZ: maxZ
 ].
 
 MeshBuilder ![
+addCubeWithWidth: width height: height depth: depth
+	self addCubeWithMinX: width * -0.5 minY: height * -0.5 minZ: depth * -0.5 maxX: width * 0.5 maxY: height * 0.5 maxZ: depth * 0.5
+].
+
+MeshBuilder ![
 finishPrimitive
     | primitive |
     primitive := MeshPrimitive new

@@ -1039,7 +1039,7 @@ typedef struct beacon_LightSource_s
 	beacon_Vector3_t *intensity;
 	beacon_oop_t influenceRadius;
 
-	beacon_Quaternion_t *orientation;
+	beacon_oop_t orientation;
 
     beacon_oop_t innerSpotCutoff;
 	beacon_oop_t outerSpotCutoff;

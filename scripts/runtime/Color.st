@@ -84,6 +84,22 @@ white
 ].
 
 Color class ![
+yellow
+    ^ self r: 1 g: 1 b: 0 a: 1
+].
+
+Color class ![
+cyan
+    ^ self r: 0 g: 1 b: 1 a: 1
+].
+
+Color class ![
+magenta
+    ^ self r: 1 g: 0 b: 1 a: 1
+].
+
+
+Color class ![
 transparent
     ^ self r: 0 g: 0 b: 0 a: 0
 ].
