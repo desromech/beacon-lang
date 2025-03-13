@@ -56,7 +56,7 @@ render3DEnvironmentWith: rendererHandle
         modelMatrix: (Matrix4x4 translation: (Vector3 x: 2 y: 0 z: 0));
         yourself.
 
-    spotOrientation := Quaternion xRotation: Float halfPi negated.
+    spotOrientation := (Quaternion xRotation: Float halfPi negated) asMatrix3x3.
 
     rendererHandle 
         addSceneCamera: (SceneCamera new
@@ -73,10 +73,9 @@ render3DEnvironmentWith: rendererHandle
             position: (Vector3 x: -2 y: 2 z: 0);
             color: Color green intensity: 20;
             influenceRadius: 10;
-            castShadows: false;
             orientation: spotOrientation;
-            innerSpotCutoff: 60.0;
-            outerSpotCutoff: 70.0;
+            innerSpotCutoff: 40.0;
+            outerSpotCutoff: 60.0;
             castShadows: true;
             yourself);
         addLightSource: (LightSource new
@@ -88,11 +87,10 @@ render3DEnvironmentWith: rendererHandle
         addLightSource: (LightSource new
             position: (Vector3 x: 2 y: 2 z: 0);
             color: Color red intensity: 20;
-            castShadows: false;
             influenceRadius: 10;
             orientation: spotOrientation;
-            innerSpotCutoff: 60.0;
-            outerSpotCutoff: 70.0;
+            innerSpotCutoff: 40.0;
+            outerSpotCutoff: 60.0;
             castShadows: true;
             yourself);
         addRenderObject: floorObject;

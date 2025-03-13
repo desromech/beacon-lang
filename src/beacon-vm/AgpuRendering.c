@@ -2007,6 +2007,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_addLightSource(beacon_context_t *c
     {
         beacon_Quaternion_t *sourceQuat = (beacon_Quaternion_t *)lightSource->orientation;
         beacon_RenderQuaternion_t quat = {sourceQuat->x, sourceQuat->y, sourceQuat->z, sourceQuat->w};
+        orientationMat = beacon_RenderMatrix3x3_fromQuaternion(quat);
     }
     else if(beacon_getClass(context, lightSource->orientation) == context->classes.matrix3x3Class)
     {
@@ -2024,16 +2025,16 @@ static beacon_oop_t beacon_agpuWindowRenderer_addLightSource(beacon_context_t *c
         BeaconAssert(context, false && "Unsupported light source orientation type.");
     }
 
-    beacon_RenderVector3_t localLookDirection = {0, 0, -1};
+    beacon_RenderVector3_t localLookDirection = {0, 0, 1};
     beacon_RenderVector3_t lookDirection = beacon_RenderMatrix3x3_multiplyVector(orientationMat, localLookDirection);
 
     beacon_RenderVector4_t positionOrDirection = {lightSource->position->x, lightSource->position->y, lightSource->position->z, 1};
     bool isDirectional = lightSource->isDirectional == context->roots.trueValue;
     if(isDirectional)
     {
-        positionOrDirection.x = -lookDirection.x; 
-        positionOrDirection.y = -lookDirection.y;
-        positionOrDirection.z = -lookDirection.z;
+        positionOrDirection.x = lookDirection.x; 
+        positionOrDirection.y = lookDirection.y;
+        positionOrDirection.z = lookDirection.z;
         positionOrDirection.w = 0;
     }
 
@@ -2042,8 +2043,8 @@ static beacon_oop_t beacon_agpuWindowRenderer_addLightSource(beacon_context_t *c
         .intensity = {intensity->x, intensity->y, intensity->z},
         .influenceRadius = influenceRadius,
         .spotDirection = {lookDirection.x, lookDirection.y, lookDirection.z},
-        .innerSpotCosCutoff = cos(innerSpotCutoff),
-        .outerSpotCosCutoff = cos(outerSpotCutoff),
+        .innerSpotCosCutoff = cos(innerSpotCutoff * (M_PI / 180.0)),
+        .outerSpotCosCutoff = cos(outerSpotCutoff * (M_PI / 180.0)),
         .castShadows = lightSource->castShadows == context->roots.trueValue,
     };
 
