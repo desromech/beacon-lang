@@ -98,6 +98,20 @@ magenta
     ^ self r: 1 g: 0 b: 1 a: 1
 ].
 
+Color class ![
+lightGray
+    ^ self r: 0.6 g: 0.6 b: 0.6 a: 1
+].
+
+Color class ![
+gray
+    ^ self r: 0.5 g: 0.5 b: 0.5 a: 1
+].
+
+Color class ![
+darkGray
+    ^ self r: 0.35 g: 0.35 b: 0.35 a: 1
+].
 
 Color class ![
 transparent

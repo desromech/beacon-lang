@@ -20,6 +20,13 @@ morph: aMorph
 ].
 
 MorphPackingLayoutElement ![
+initialize
+    super initialize
+    proportion := 0.
+    expanded := false.
+].
+
+MorphPackingLayoutElement ![
 morph
     ^ morph
 ].
@@ -56,6 +63,16 @@ proportion: anInteger
 ].
 
 MorphPackingLayoutElement ![
+expanded
+    ^ expanded
+].
+
+MorphPackingLayoutElement ![
+expanded: anInteger
+    expanded := anInteger
+].
+
+MorphPackingLayoutElement ![
 applyRectangle: aRectangle
     morph ~~ nil ifTrue: [
         ^ morph bounds: aRectangle
@@ -72,11 +89,17 @@ initialize
 ].
 
 MorphPackingLayout ![
-addMorph: morph proportion: proportion
+addMorph: morph proportion: proportion expanded: expanded
     elements add: (MorphPackingLayoutElement new
         morph: morph;
         proportion: proportion;
+        expanded: expanded;
         yourself)
+].
+
+MorphPackingLayout ![
+addMorph: morph proportion: proportion
+    ^ self addMorph: morph proportion: proportion expanded: false
 ].
 
 MorphPackingLayout ![
@@ -107,8 +130,12 @@ applyWithLocalBounds: bounds
     1 to: elements size do: [:eachElementIndex |
         eachElement := elements at: eachElementIndex.
         eachElement proportion = 0 ifTrue: [
-            eachElement applyRectangle: (destinationX @ bounds origin y extent: eachElement fixedExtent).
-            destinationX := destinationX + eachElement fixedExtent y
+            eachElement expanded ifTrue: [
+                eachElement applyRectangle: (destinationX @ bounds origin y extent: eachElement fixedExtent x @ boundsExtent y).
+            ] ifFalse: [
+                eachElement applyRectangle: (destinationX @ bounds origin y extent: eachElement fixedExtent).
+            ].
+            destinationX := destinationX + eachElement fixedExtent x
         ] ifFalse: [
             elementWidth := (remainingWidth * eachElement proportion asFloat / totalProportion + 0.5) asInteger.
             eachElement applyRectangle: (destinationX@bounds origin y extent: elementWidth @ boundsExtent y).
@@ -137,7 +164,11 @@ applyWithLocalBounds: bounds
     1 to: elements size do: [:eachElementIndex |
         eachElement := elements at: eachElementIndex.
         eachElement proportion = 0 ifTrue: [
-            eachElement applyRectangle: (bounds origin x @destinationY extent: eachElement fixedExtent).
+            eachElement expanded ifTrue: [
+                eachElement applyRectangle: (bounds origin x @destinationY extent: boundsExtent x @ eachElement fixedExtent y).
+            ] ifFalse: [
+                eachElement applyRectangle: (bounds origin x @destinationY extent: eachElement fixedExtent).
+            ].
             destinationY := destinationY + eachElement fixedExtent y
         ] ifFalse: [
             elementHeight := (remainingHeight * eachElement proportion asFloat / totalProportion + 0.5) asInteger.

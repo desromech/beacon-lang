@@ -388,8 +388,8 @@ defaultColor
 StringMorph ![
 renderWithBuilder: renderingBuilder
     renderingBuilder
-        solidRectangle: self bounds color: backgroundColor;
-        text: contents rectangle: self bounds color: color
+        solidRectangle: self localBounds color: backgroundColor;
+        text: contents rectangle: self localBounds color: color
 ].
 
 StringMorph ![
