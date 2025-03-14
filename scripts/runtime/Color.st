@@ -99,6 +99,11 @@ magenta
 ].
 
 Color class ![
+lightBlue
+    ^ self r: 0.8 g: 1.0 b: 1.0 a: 1
+].
+
+Color class ![
 lightGray
     ^ self r: 0.6 g: 0.6 b: 0.6 a: 1
 ].

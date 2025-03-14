@@ -236,7 +236,16 @@ rootMorph
     ^ owner rootMorph
 ].
 
-Morph subclass: #RootMorph instanceVariables: #(keyboardFocus mouseFocus ownerWindow).
+Morph ![
+transformLocalPositionToGlobal: aLocalPosition
+    | parentPosition |
+    parentPosition := position + aLocalPosition.
+    ^ owner ~~ nil
+        ifTrue: [owner transformLocalPositionToGlobal: parentPosition ]
+        ifFalse: [parentPosition]
+].
+
+Morph subclass: #RootMorph instanceVariables: #(keyboardFocus mouseFocus ownerWindow activePopups).
 
 RootMorph class ![
 defaultColor
@@ -250,6 +259,35 @@ extent: newExtent
     submorphs size > 0 ifTrue: [
         (submorphs at: 1) extent: extent
     ]
+].
+
+RootMorph ![
+initialize
+    super initialize.
+    activePopups := #()
+].
+
+RootMorph ![
+popUp: aMorph atPosition: aGlobalPosition.
+    aMorph position: aGlobalPosition.
+    activePopups := activePopups copyWith: aMorph.
+    self addMorph: aMorph
+].
+
+RootMorph ![
+popUpUnique: aMorph atPosition: aGlobalPosition.
+    (activePopups includes: aMorph) ifTrue: [^ self].
+    self killPopUps.
+    self popUp: aMorph atPosition: aGlobalPosition.
+].
+
+RootMorph ![
+killPopUps
+    1 to: activePopups size do: [:eachIndex |
+        self removeSubmorph: (activePopups at: eachIndex)
+    ].
+
+    activePopups := #().
 ].
 
 RootMorph ![
