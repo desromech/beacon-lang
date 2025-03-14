@@ -142,7 +142,7 @@ processMouseEvent: anEvent
     anEvent translatedBy: self position negated during: [
         1 to: submorphs size do: [:i |
             | submorph |
-            submorph := submorphs at: i.
+            submorph := submorphs at: submorphs size - i + 1.
             (submorph bounds containsPoint: anEvent position) ifTrue:[
                 submorph processEvent: anEvent
             ]

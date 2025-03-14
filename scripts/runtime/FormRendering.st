@@ -181,7 +181,7 @@ texture: textureHandle rectangle: rectangle
     | texturedRectangle |
     texturedRectangle := FormTextureHandleRenderingElement new
         textureHandle: textureHandle;
-        rectangle: rectangle;
+        rectangle: ((rectangle translatedBy: translation) scaledWithXFactor: scaleFactorX y: scaleFactorY);
         yourself.
     renderingElements add: texturedRectangle.
     texturedRectangle

@@ -1,5 +1,5 @@
-BorderedMorph subclass: #MenuBarMorph instanceVariables: #(layout elements).
-Morph subclass: #MenuItemButton instanceVariables: #(label submenu).
+BorderedMorph subclass: #MenuBarMorph instanceVariables: #(elements).
+Morph subclass: #MenuItemButtonMorph instanceVariables: #(label submenu actionBlock).
 BorderedMorph subclass: #MenuMorph instanceVariables: #(elements).
 
 MenuBarMorph class ![
@@ -12,12 +12,12 @@ defaultExtent
     ^ 100@30.
 ].
 
-MenuItemButton class ![
+MenuItemButtonMorph class ![
 defaultColor
     ^ Color lightGray.
 ].
 
-MenuItemButton class ![
+MenuItemButtonMorph class ![
 defaultExtent
     ^ 50@30.
 ].
@@ -33,7 +33,7 @@ initialize
 MenuBarMorph ![
 addItem: label submenu: submenu
     | button |
-    button := MenuItemButton new label: label; submenu: submenu; yourself.
+    button := MenuItemButtonMorph new label: label; submenu: submenu; yourself.
     elements add: button.
     self addMorph: button.
 
@@ -41,12 +41,36 @@ addItem: label submenu: submenu
     self updateLayout
 ].
 
-MenuItemButton ![
+MenuMorph ![
+initialize
+    super initialize.
+    elements := ArrayList new.
+
+    self layout: VerticalMorphPackingLayout new.
+].
+
+MenuMorph ![
+addItem: label withAction: aBlock
+    | button |
+    button := MenuItemButtonMorph new label: label; actionBlock: aBlock; yourself.
+    elements add: button.
+    self addMorph: button.
+
+    self layout addMorph: button proportion: 0 expanded: true.
+    self extent: 200 @ (elements size * 30).
+    self updateLayout
+].
+
+MenuMorph ![
+addSeparator
+].
+
+MenuItemButtonMorph ![
 initialize
     super initialize.
 ].
 
-MenuItemButton ![
+MenuItemButtonMorph ![
 renderWithBuilder: renderingBuilder
     self hasMouseFocus ifTrue: [
         renderingBuilder solidRectangle: self localBounds color: Color lightGray
@@ -54,15 +78,14 @@ renderWithBuilder: renderingBuilder
     renderingBuilder text: label rectangle: self localBounds color: Color black.
 ].
 
-MenuItemButton ![
+MenuItemButtonMorph ![
 handleMorphMouseMotionEvent: anEvent
-    Stdio stdout print: anEvent; cr.
     self grabMouseFocus.
     anEvent wasHandled: true.
     self changed
 ].
 
-MenuItemButton ![
+MenuItemButtonMorph ![
 handleMorphMouseButtonDownEvent: anEvent
     self changed.
 ].
@@ -72,23 +95,33 @@ handleMorphMouseLeaveEvent: anEvent
     self changed
 ].
 
-MenuItemButton ![
+MenuItemButtonMorph ![
 label
     ^ label
 ].
 
-MenuItemButton ![
+MenuItemButtonMorph ![
 label: aString
     label := aString.
     self extent: (Font defaultFontFace measureTextExtent: label) + (10 @ 10)
 ].
 
-MenuItemButton ![
+MenuItemButtonMorph ![
 submenu
     ^ submenu
 ].
 
-MenuItemButton ![
+MenuItemButtonMorph ![
 submenu: aMenu
     submenu := aMenu
+].
+
+MenuItemButtonMorph ![
+actionBlock
+    ^ actionBlock
+].
+
+MenuItemButtonMorph ![
+actionBlock: aBlockClosure
+    actionBlock := aBlockClosure
 ].
