@@ -441,6 +441,7 @@ static beacon_oop_t beacon_WindowClass_enterMainLoop(beacon_context_t *context, 
         beacon_sdl2_fetchAndDispatchEvents(context);
 
         beacon_sdl2_animateAndRender(context);
+        SDL_Delay(4);
     }
 
     return receiver;
