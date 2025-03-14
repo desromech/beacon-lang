@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static void beacon_displayExceptionStackTrace(beacon_context_t *context);
+void beacon_displayExceptionStackTrace(beacon_context_t *context);
 
 void beacon_exception_signal(beacon_context_t *context, beacon_Exception_t *exception)
 {
@@ -75,7 +75,7 @@ static void beacon_displaySourcePosition(beacon_context_t *context, beacon_Sourc
     }
 }
 
-static void beacon_displayExceptionStackTrace(beacon_context_t *context)
+void beacon_displayExceptionStackTrace(beacon_context_t *context)
 {
     beacon_StackFrameRecord_t *record =  beacon_getTopStackFrameRecord();
     while(record)

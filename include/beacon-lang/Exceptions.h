@@ -12,6 +12,8 @@ extern "C" {
 typedef struct beacon_context_s beacon_context_t;
 typedef struct beacon_ScannerToken_s beacon_ScannerToken_t;
 
+void beacon_displayExceptionStackTrace(beacon_context_t *context);
+
 void beacon_exception_signal(beacon_context_t *context, beacon_Exception_t *exception);
 
 void beacon_exception_error(beacon_context_t *context, const char *errorMessage);

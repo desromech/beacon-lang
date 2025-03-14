@@ -1106,10 +1106,12 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
             renderer->hdrColorBuffer     = NULL;
             renderer->normalGBuffer      = NULL;
             renderer->specularityGBuffer = NULL;
+            renderer->outputTexture = NULL;
 
             renderer->depthOnlyFramebuffer = NULL;
             renderer->hdrOpaqueFramebuffer = NULL;
             renderer->hdrFramebuffer       = NULL;
+            renderer->outputFramebuffer       = NULL;
 
             renderer->hasIntermediateBuffers = false;
         }
@@ -1297,6 +1299,16 @@ static void beacon_agpuWindowRenderer_uploadIndicesPerFrameBuffer(agpu_command_l
 static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t*)receiver;
+    renderer->hasPending3DRenderingCommands = true;
+    return receiver;
+}
+
+static void beacon_agpuWindowRenderer_emit3DFrameRendering(beacon_context_t *context, beacon_AGPUWindowRenderer_t *renderer)
+{
+    if(!renderer->hasPending3DRenderingCommands)
+        return;
+    renderer->hasPending3DRenderingCommands = false;
+
     beacon_AGPUWindowRendererPerFrameState_t *thisFrameState = renderer->frameState + renderer->currentFrameBufferingIndex;
     beacon_AGPU_t *agpu = context->roots.agpuCommon;
     agpu_command_list *commandList = thisFrameState->commandList;
@@ -1468,8 +1480,6 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
     agpuDrawArrays(commandList, 3, 1, 0, 0);
 
     agpuEndRenderPass(commandList);
-    
-    return receiver;
 }
 
 static beacon_oop_t beacon_agpuWindowRenderer_get3DOutputTextureHandle(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -1485,6 +1495,8 @@ static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context
     beacon_AGPU_t *agpu = context->roots.agpuCommon;
 
     beacon_agpuWindowRenderer_uploadPerFrameBuffer(thisFrameState->commandList, agpu, renderer, &agpu->guiData);
+
+    beacon_agpuWindowRenderer_emit3DFrameRendering(context, renderer);
 
     agpuSetShaderSignature(thisFrameState->commandList, context->roots.agpuCommon->shaderSignature);
     agpuUseShaderResources(thisFrameState->commandList, context->roots.agpuCommon->samplerBinding);

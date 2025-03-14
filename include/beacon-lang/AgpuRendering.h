@@ -8,7 +8,7 @@
 
 #define BEACON_AGPU_FRAMEBUFFERING_COUNT 3
 
-#define BEACON_AGPU_MAX_NUMBER_OF_QUADS 1024
+#define BEACON_AGPU_MAX_NUMBER_OF_QUADS 16384
 #define BEACON_AGPU_TEXTURE_ARRAY_SIZE 1024
 
 #define BEACON_AGPU_MAX_MATERIALS 1024
@@ -366,6 +366,7 @@ typedef struct beacon_AGPUWindowRenderer_s
     agpu_shader_resource_binding *intermediateBindings;
 
     uint32_t renderingFrameIndex;
+    bool hasPending3DRenderingCommands;
 } beacon_AGPUWindowRenderer_t;
 
 agpu_platform *beacon_agpu_getPlatform(beacon_context_t *context, beacon_AGPU_t *agpu);
