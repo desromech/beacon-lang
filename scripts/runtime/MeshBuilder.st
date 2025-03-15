@@ -111,6 +111,12 @@ addCubeWithWidth: width height: height depth: depth
 ].
 
 MeshBuilder ![
+addCubeWithHalfExtent: halfExtent
+	self addCubeWithMinX: halfExtent x negated minY: halfExtent y negated minZ: halfExtent z negated
+		maxX: halfExtent x maxY: halfExtent y maxZ: halfExtent z
+].
+
+MeshBuilder ![
 finishPrimitive
     | primitive |
     primitive := MeshPrimitive new

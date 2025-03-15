@@ -398,7 +398,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "shadowMapNormalBiasFactor", NULL);
 
     context->classes.sceneCameraClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "SceneCamera", sizeof(beacon_SceneCamera_t), BeaconObjectKindPointers,
-        "location", "orientation", "nearDistance", "farDistance", "fovY",
+        "location", "orientation", "nearDistance", "farDistance", "fovY", "focalDistance", "isPerspective",
         "timeOfSimulation", "timeOfDay", "exposure", "ambientLightSource", 
         NULL);
 }
@@ -1025,6 +1025,41 @@ static beacon_oop_t beacon_SmallFloat_sqrt(beacon_context_t *context, beacon_oop
     return beacon_encodeSmallFloat(sqrt(beacon_decodeSmallNumber(receiver)));
 }
 
+static beacon_oop_t beacon_SmallFloat_exp(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    BeaconAssert(context, argumentCount == 0);
+    return beacon_encodeSmallFloat(exp(beacon_decodeSmallNumber(receiver)));
+}
+
+static beacon_oop_t beacon_SmallFloat_ln(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    BeaconAssert(context, argumentCount == 0);
+    return beacon_encodeSmallFloat(log(beacon_decodeSmallNumber(receiver)));
+}
+
+static beacon_oop_t beacon_SmallFloat_sin(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    BeaconAssert(context, argumentCount == 0);
+    return beacon_encodeSmallFloat(sin(beacon_decodeSmallNumber(receiver)));
+}
+
+static beacon_oop_t beacon_SmallFloat_cos(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    BeaconAssert(context, argumentCount == 0);
+    return beacon_encodeSmallFloat(cos(beacon_decodeSmallNumber(receiver)));
+}
+
+static beacon_oop_t beacon_SmallFloat_tan(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    (void)context;
+    BeaconAssert(context, argumentCount == 0);
+    return beacon_encodeSmallFloat(tan(beacon_decodeSmallNumber(receiver)));
+}
+
 static beacon_oop_t beacon_SmallFloat_equals(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 1);
@@ -1584,6 +1619,11 @@ void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "ceiling", 0, beacon_SmallFloat_ceiling);
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "negated", 0, beacon_SmallFloat_negated);
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "sqrt", 0, beacon_SmallFloat_sqrt);
+    beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "exp", 0, beacon_SmallFloat_exp);
+    beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "ln", 0, beacon_SmallFloat_ln);
+    beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "sin", 0, beacon_SmallFloat_sin);
+    beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "cos", 0, beacon_SmallFloat_cos);
+    beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "tan", 0, beacon_SmallFloat_tan);
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "+", 1, beacon_SmallFloat_plus);
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "-", 1, beacon_SmallFloat_minus);
     beacon_addPrimitiveToClass(context, context->classes.smallFloatClass, "*", 1, beacon_SmallFloat_times);

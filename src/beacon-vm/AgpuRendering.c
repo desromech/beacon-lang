@@ -1827,7 +1827,9 @@ static beacon_oop_t beacon_agpuWindowRenderer_addSceneCamera(beacon_context_t *c
     float nearDistance = beacon_decodeNumberAsDouble(context, sceneCamera->nearDistance);
     float farDistance = beacon_decodeNumberAsDouble(context, sceneCamera->farDistance);
     float fovY = beacon_decodeNumberAsDouble(context, sceneCamera->fovY);
+    float focalDistance = beacon_decodeNumberAsDouble(context, sceneCamera->focalDistance);
     float aspectRatio = (float)renderer->intermediateBufferWidth / renderer->intermediateBufferHeight;
+    bool isPerspective = sceneCamera->isPerspective == context->roots.trueValue;
 
     beacon_Vector3_t *translationArgument = (beacon_Vector3_t*)sceneCamera->location;
     beacon_Matrix3x3_t *orientation = (beacon_Matrix3x3_t*)sceneCamera->orientation;
@@ -1842,7 +1844,21 @@ static beacon_oop_t beacon_agpuWindowRenderer_addSceneCamera(beacon_context_t *c
     beacon_RenderMatrix4x4_t inverseViewMatrix = beacon_RenderMatrix4x4_withMatrix3x3AndTranslation(renderOrientationMatrix, translation);
     beacon_RenderMatrix4x4_t viewMatrix = beacon_RenderMatrix4x4_inverse(inverseViewMatrix);
 
-    beacon_RenderMatrix4x4_t projection = beacon_RenderMatrix4x4_reverseDepthPerspective(fovY, aspectRatio, nearDistance, farDistance, flipVertically);
+    beacon_RenderMatrix4x4_t projection;
+    if(isPerspective)
+    {
+        projection = beacon_RenderMatrix4x4_reverseDepthPerspective(fovY, aspectRatio, nearDistance, farDistance, flipVertically);
+    }
+    else
+	{
+        float hh = tan((fovY / 2 ) * (M_PI / 180.0)) * focalDistance;
+        float hw = hh * aspectRatio;
+        if(flipVertically)
+            projection = beacon_RenderMatrix4x4_reverseDepthOrtho(-hw, hw, hh, -hh, nearDistance, farDistance);
+        else
+            projection = beacon_RenderMatrix4x4_reverseDepthOrtho(-hw, hw, -hh, hh, nearDistance, farDistance);
+    }
+    
     beacon_RenderMatrix4x4_t inverseProjection = beacon_RenderMatrix4x4_inverse(projection);
 
     beacon_RenderCameraState_t cameraRenderState = {

@@ -24,6 +24,7 @@ FilesToLoad := #(
     'LinearAlgebra.st'
 
     'Geometry.st'
+    'Geometry3D.st'
     'Color.st'
     'Form.st'
     'Font.st'

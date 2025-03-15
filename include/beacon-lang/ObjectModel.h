@@ -1022,6 +1022,8 @@ typedef struct beacon_SceneCamera_s
     beacon_oop_t nearDistance;
     beacon_oop_t farDistance;
     beacon_oop_t fovY;
+    beacon_oop_t focalDistance;
+    beacon_oop_t isPerspective;
 
     beacon_oop_t timeOfSimulation;
     beacon_oop_t timeOfDay;

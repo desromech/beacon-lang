@@ -305,6 +305,8 @@ initialize
     nearDistance := 0.01.
     farDistance := 1000.0.
     fovY := 60.0.
+    focalDistance := 10.0.
+    isPerspective := true.
     
     timeOfSimulation := 0.0.
     timeOfDay := 0.0.
@@ -331,4 +333,29 @@ orientation
 SceneCamera ![
 orientation: aMatrix3x3
     orientation := aMatrix3x3
+].
+
+SceneCamera ![
+nearDistance
+    ^ nearDistance
+].
+
+SceneCamera ![
+nearDistance: aDistance
+    nearDistance := aDistance
+].
+
+SceneCamera ![
+farDistance
+    ^ farDistance
+].
+
+SceneCamera ![
+farDistance: aDistance
+    farDistance := aDistance
+].
+
+SceneCamera ![
+fovY: aFieldOfView
+    fovY := aFieldOfView
 ].
