@@ -194,6 +194,23 @@ static beacon_oop_t beacon_Vector3_reciprocal(beacon_context_t *context, beacon_
     return (beacon_oop_t)resultVector;
 }
 
+
+static beacon_oop_t beacon_Vector3_interpolateToAt(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 2);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
+
+    beacon_Vector3_t *leftVector = (beacon_Vector3_t *)receiver;
+    beacon_Vector3_t *rightVector = (beacon_Vector3_t *)arguments[0];
+    double lambda = beacon_decodeNumberAsDouble(context, arguments[1]);
+
+    beacon_Vector3_t *resultVector = beacon_allocateObjectWithBehavior(context->heap, context->classes.vector3Class, sizeof(beacon_Vector3_t), BeaconObjectKindBytes);
+    resultVector->x = (1.0 - lambda)*leftVector->x + lambda*rightVector->x;
+    resultVector->y = (1.0 - lambda)*leftVector->y + lambda*rightVector->y;
+    resultVector->z = (1.0 - lambda)*leftVector->z + lambda*rightVector->z;
+    return (beacon_oop_t)resultVector; 
+}
+
 static beacon_oop_t beacon_Vector3_add(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 1);
@@ -223,26 +240,51 @@ static beacon_oop_t beacon_Vector3_minus(beacon_context_t *context, beacon_oop_t
 static beacon_oop_t beacon_Vector3_times(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_isImmediate(arguments[0]) || beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
 
     beacon_Vector3_t *leftVector = (beacon_Vector3_t *)receiver;
-    beacon_Vector3_t *rightVector = (beacon_Vector3_t *)arguments[0];
     beacon_Vector3_t *resultVector = beacon_allocateObjectWithBehavior(context->heap, context->classes.vector3Class, sizeof(beacon_Vector3_t), BeaconObjectKindBytes);
-    resultVector->x = leftVector->x * rightVector->x;
-    resultVector->y = leftVector->y * rightVector->y;
-    resultVector->z = leftVector->z * rightVector->z;
+
+    if(beacon_isImmediate(arguments[0]))
+    {
+        double factor = beacon_decodeNumberAsDouble(context, arguments[0]);
+        resultVector->x = leftVector->x * factor;
+        resultVector->y = leftVector->y * factor;
+        resultVector->z = leftVector->z * factor;
+    }
+    else
+    {
+        beacon_Vector3_t *rightVector = (beacon_Vector3_t *)arguments[0];
+        resultVector->x = leftVector->x * rightVector->x;
+        resultVector->y = leftVector->y * rightVector->y;
+        resultVector->z = leftVector->z * rightVector->z;    
+    }
+
     return (beacon_oop_t)resultVector;
 }
 
 static beacon_oop_t beacon_Vector3_divide(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_isImmediate(arguments[0]) || beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
 
     beacon_Vector3_t *leftVector = (beacon_Vector3_t *)receiver;
-    beacon_Vector3_t *rightVector = (beacon_Vector3_t *)arguments[0];
     beacon_Vector3_t *resultVector = beacon_allocateObjectWithBehavior(context->heap, context->classes.vector3Class, sizeof(beacon_Vector3_t), BeaconObjectKindBytes);
-    resultVector->x = leftVector->x / rightVector->x;
-    resultVector->y = leftVector->y / rightVector->y;
-    resultVector->z = leftVector->z / rightVector->z;
+    if(beacon_isImmediate(arguments[0]))
+    {
+        double factor = beacon_decodeNumberAsDouble(context, arguments[0]);
+        resultVector->x = leftVector->x / factor;
+        resultVector->y = leftVector->y / factor;
+        resultVector->z = leftVector->z / factor;
+    }
+    else
+    {
+        beacon_Vector3_t *rightVector = (beacon_Vector3_t *)arguments[0];
+        resultVector->x = leftVector->x / rightVector->x;
+        resultVector->y = leftVector->y / rightVector->y;
+        resultVector->z = leftVector->z / rightVector->z;    
+    }
+
     return (beacon_oop_t)resultVector;
 }
 
@@ -1173,6 +1215,7 @@ void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "length", 0, beacon_Vector3_length);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "negated", 0, beacon_Vector3_negated);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "reciprocal", 0, beacon_Vector3_reciprocal);
+    beacon_addPrimitiveToClass(context, context->classes.vector3Class, "interpolateTo:at:", 2, beacon_Vector3_interpolateToAt);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "+", 1, beacon_Vector3_add);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "-", 1, beacon_Vector3_minus);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "*", 1, beacon_Vector3_times);

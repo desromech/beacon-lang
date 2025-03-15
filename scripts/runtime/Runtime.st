@@ -22,6 +22,8 @@ FilesToLoad := #(
     'Exceptions.st'
     
     'LinearAlgebra.st'
+    'ReversibleAffineTransform3D.st'
+    'TRSTransform3D.st'
 
     'Geometry.st'
     'Geometry3D.st'

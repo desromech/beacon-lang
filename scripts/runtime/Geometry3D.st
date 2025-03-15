@@ -18,10 +18,15 @@ origin: origin direction: direction tmin: tmin tmax: tmax
 	^ self basicNew
 		origin: origin;
 		direction: direction;
-		inverseDirection: direction safeReciprocal;
+		inverseDirection: direction reciprocal;
 		tmin: tmin;
 		tmax: tmax;
 		yourself
+].
+
+Ray3D ![
+printOn: aStream
+    aStream nextPutAll: 'Ray3D origin: '; print: origin; nextPutAll: ' direction: '; print: direction
 ].
 
 Ray3D ![
@@ -196,4 +201,61 @@ makePerspectiveFovY: fovy aspect: aspect near: near far: far
 
 Frustum ![
 computePlanes
+].
+
+Frustum ![
+transformedWith: aTransform
+    | result |
+
+    result := Frustum basicNew.
+    result leftBottomNear:  (aTransform transformPosition: leftBottomNear).
+	result rightBottomNear: (aTransform transformPosition: rightBottomNear).
+	result leftTopNear:     (aTransform transformPosition: leftTopNear).
+	result rightTopNear:    (aTransform transformPosition: rightTopNear).
+
+    result leftBottomFar:  (aTransform transformPosition: leftBottomFar).
+	result rightBottomFar: (aTransform transformPosition: rightBottomFar).
+	result leftTopFar:     (aTransform transformPosition: leftTopFar).
+	result rightTopFar:    (aTransform transformPosition: rightTopFar).
+    ^ result
+].
+
+Frustum ![
+normalizedPointInNearPlane: normalizedPoint
+	^ (leftBottomNear interpolateTo: rightBottomNear at: normalizedPoint x) interpolateTo:
+		(leftTopNear interpolateTo: rightTopNear at: normalizedPoint x) at: normalizedPoint y.
+].
+
+Frustum ![
+normalizedPointInFarPlane: normalizedPoint
+	^ (leftBottomFar interpolateTo: rightBottomFar at: normalizedPoint x) interpolateTo:
+		(leftTopFar interpolateTo: rightTopFar at: normalizedPoint x) at: normalizedPoint y.
+].
+
+Frustum ![
+rayForNormalizedPoint: normalizedPoint
+	| nearPoint farPoint |
+	nearPoint := self normalizedPointInNearPlane: normalizedPoint.
+	farPoint := self normalizedPointInFarPlane: normalizedPoint.
+	^ Ray3D from: nearPoint to: farPoint
+].
+
+SceneCamera ![
+viewFrustumWithAspectRatio: aspectRatio
+    | newFrustum |
+    newFrustum := Frustum new.
+    isPerspective ifTrue: [
+        newFrustum makePerspectiveFovY: fovY aspect: aspectRatio near: nearDistance far: farDistance
+    ] ifFalse: [
+        
+    ].
+    ^ newFrustum
+].
+
+SceneCamera ![
+worldFrustumWithAspectRatio: aspectRatio
+    | viewFrustum cameraTransform |
+    viewFrustum := self viewFrustumWithAspectRatio: aspectRatio.
+    cameraTransform := ReversibleAffineTransform3D scale: Vector3 ones rotation: orientation translation: location.
+    ^ viewFrustum transformedWith: cameraTransform
 ].
