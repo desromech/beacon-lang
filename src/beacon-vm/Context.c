@@ -390,7 +390,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.model3DClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "Model3D", sizeof(beacon_Model3D_t), BeaconObjectKindPointers,
         "primitives", NULL);
     context->classes.renderObject3DClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "RenderObject3D", sizeof(beacon_RenderObject3D_t), BeaconObjectKindPointers,
-        "model", "modelMatrix", NULL);
+        "model", "modelMatrix", "isSelected", "selectionColor", NULL);
 
     context->classes.lightSourceClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "LightSource", sizeof(beacon_LightSource_t), BeaconObjectKindPointers,
         "position",  "isDirectional", "intensity", "influenceRadius", "orientation", 

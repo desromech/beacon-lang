@@ -100,6 +100,9 @@ struct RenderObjectAttributes
     mat4 inverseModelMatrix;
 
     int modelIndex;
+    int isSelected;
+    
+    vec4 selectionColor;
 };
 
 struct RenderModelAttributes

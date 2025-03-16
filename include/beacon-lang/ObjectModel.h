@@ -1012,6 +1012,8 @@ typedef struct beacon_RenderObject3D_s
     beacon_RenderingUploadedElement_t super;
     beacon_Model3D_t *model;
     beacon_Matrix4x4_t *modelMatrix;
+    beacon_oop_t isSelected;
+    beacon_Color_t *selectionColor;
 } beacon_RenderObject3D_t;
 
 typedef struct beacon_SceneCamera_s

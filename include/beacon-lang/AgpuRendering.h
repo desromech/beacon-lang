@@ -104,6 +104,8 @@ typedef struct beacon_RenderObjectAttributes_s
     beacon_RenderMatrix4x4_t inverseModelMatrix;
 
     int32_t modelIndex;
+    int32_t isSelected;
+    beacon_RenderVector4_t selectionColor;
 }beacon_RenderObjectAttributes_t;
 
 typedef struct beacon_RenderModelAttributes_s

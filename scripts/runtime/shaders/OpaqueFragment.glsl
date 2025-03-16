@@ -11,6 +11,9 @@ layout(location = 5) in vec3 inWorldPosition;
 layout(location = 6) in vec3 inWorldNormal;
 layout(location = 7) in vec2 inTexcoord;
 
+layout(location = 8) flat in uint hasSelectionColor;
+layout(location = 9) in vec4 selectionColor;
+
 layout(location = 0) out vec4 outColor;
 layout(location = 1) out vec2 outNormalGBuffer;
 layout(location = 2) out vec4 outSpecularityGBuffer;
@@ -99,5 +102,7 @@ void main()
     
     vec4 lightedColor = performLightingModelComputation(lightingParams, outNormalGBuffer, outSpecularityGBuffer);
     outColor = lightedColor;
+    if(hasSelectionColor != 0)
+        outColor = mix(outColor, selectionColor, 0.4);
     //outColor = vec4(N*0.5 + 0.5, 1.0);
 }

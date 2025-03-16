@@ -2001,7 +2001,14 @@ static beacon_oop_t beacon_agpuWindowRenderer_addRenderObject(beacon_context_t *
     beacon_RenderObjectAttributes_t objectAttributes = {
         .modelMatrix = modelMatrix,
         .inverseModelMatrix = inverseModelMatrix,
-        .modelIndex = beacon_agpuWindowRenderer_uploadModel(context, renderer, renderObject3D->model)
+        .modelIndex = beacon_agpuWindowRenderer_uploadModel(context, renderer, renderObject3D->model),
+        .isSelected = renderObject3D->isSelected == context->roots.trueValue,
+        .selectionColor = {
+            .x = beacon_decodeSmallNumber(renderObject3D->selectionColor->r),
+            .y = beacon_decodeSmallNumber(renderObject3D->selectionColor->g),
+            .z = beacon_decodeSmallNumber(renderObject3D->selectionColor->b),
+            .w = beacon_decodeSmallNumber(renderObject3D->selectionColor->a),
+        }
     };
 
     beacon_agpu_pushRenderObjectAttributes(agpu, objectAttributes);

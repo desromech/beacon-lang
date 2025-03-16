@@ -202,6 +202,26 @@ modelMatrix: aMatrix
     modelMatrix := aMatrix
 ].
 
+RenderObject3D ![
+isSelected
+    ^ isSelected
+].
+
+RenderObject3D ![
+isSelected: aBoolean
+    isSelected := aBoolean
+].
+
+RenderObject3D ![
+selectionColor
+    ^ selectionColor
+].
+
+RenderObject3D ![
+selectionColor: aColor
+    selectionColor := aColor
+].
+
 LightSource ![
 initialize
     super initialize.

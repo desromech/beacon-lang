@@ -12,12 +12,17 @@ layout(location = 5) out vec3 outWorldPosition;
 layout(location = 6) out vec3 outWorldNormal;
 layout(location = 7) out vec2 outTexcoord;
 
+layout(location = 8) flat out uint hasSelectionColor;
+layout(location = 9) out vec4 selectionColor;
+
 void main()
 {
     RenderMeshChunk renderChunk = RenderMeshChunkData[gl_InstanceIndex];
     RenderObjectAttributes renderObject = RenderObjectData[renderChunk.renderObjectIndex];
     RenderMeshPrimitiveAttributes meshPrimitive = RenderSubmeshData[renderChunk.renderMeshPrimitiveIndex];
     outMaterialIndex = meshPrimitive.materialIndex;
+    hasSelectionColor = renderObject.isSelected;
+    selectionColor = renderObject.selectionColor;
 
     int vertexIndex = gl_VertexIndex;
     vec3 vertexPosition = unpackVec3(PositionsData[meshPrimitive.firstPositionIndex + vertexIndex]);

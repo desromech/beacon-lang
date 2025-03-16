@@ -16,6 +16,11 @@ elementAtIndex: index
 ].
 
 TableDataSource ![
+isValidIndex: index
+    ^ false
+].
+
+TableDataSource ![
 displayStringFor: anElement
     ^ anElement asString
 ].
@@ -43,8 +48,13 @@ elements: aCollection
 ].
 
 SimpleTableDataSource ![
+isValidIndex: index
+    ^ 1 <= index and: [index <= elements size]
+].
+
+SimpleTableDataSource ![
 elementAtIndex: index
-    ^ (1 <= index and: [index <= elements size])
+    ^ (self isValidIndex: index)
         ifTrue: [elements at: index]
         ifFalse: [nil]
 ].
@@ -130,7 +140,11 @@ TableContainerMorph ![
 handleMorphMouseButtonDownEvent: event
     | selectionRowIndex |
     selectionRowIndex := self computeRowIndexAtPosition: event position.
-    self table selectionSet: {selectionRowIndex}.
+    (self table dataSource isValidIndex: selectionRowIndex) ifTrue: [
+        self table selectionSet: {selectionRowIndex}.
+    ] ifFalse: [
+        self table selectionSet: #().
+    ].
 
     event wasHandled: true
 ].
