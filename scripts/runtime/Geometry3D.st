@@ -1,8 +1,8 @@
 Object subclass: #Ray3D instanceVariables: #(origin direction inverseDirection tmin tmax).
+Object subclass: #AABox instanceVariables: #(min max).
 Object subclass: #Frustum instanceVariables: #(leftBottomNear rightBottomNear  leftTopNear 
                                                 rightTopNear  leftBottomFar  rightBottomFar 
                                                 leftTopFar  rightTopFar  planes).
-
 
 Ray3D class ![
 from: startPoint to: endPoint
@@ -66,7 +66,7 @@ tmin
 
 Ray3D ![
 tmin: aFloat
-    tmin := tmin
+    tmin := aFloat
 ].
 
 Ray3D ![
@@ -76,7 +76,88 @@ tmax
 
 Ray3D ![
 tmax: aFloat
-    tmax := tmax
+    tmax := aFloat
+].
+
+AABox class ![
+center: center halfExtent: halfExtent
+	^ self basicNew
+		min: center - halfExtent;
+		max: center + halfExtent;
+		yourself
+].
+
+AABox class ![
+min: min max: max
+	^ self basicNew
+		min: min;
+		max: max;
+		yourself
+].
+
+AABox ![
+initialize
+	min := max := Vector3 zeros.
+].
+
+AABox ![
+printOn: aStream
+	aStream nextPutAll: 'AABox min: '; print: min; nextPutAll: ' max '; print: max.
+
+].
+
+AABox ![
+min
+	^ min
+].
+
+AABox ![
+min: aVector3
+	min := aVector3
+].
+
+AABox ![
+max
+	^ max
+].
+
+AABox ![
+max: aVector3
+	max := aVector3
+].
+
+AABox ![
+intersectionWithRay: ray
+	"Slab testing algorithm from: A Ray-Box Intersection Algorithm andEfficient Dynamic Voxel Rendering. By Majercik et al"
+	| t0 t1 tmin tmax maxTMin minTMax hasIntersection |
+	t0 := (min - ray origin)*ray inverseDirection.
+	t1 := (max - ray origin)*ray inverseDirection.
+	tmin := t0 min: t1.
+	tmax := t0 max: t1.
+	maxTMin := ((tmin x max: tmin y) max: tmin z) max: ray tmin.
+	minTMax := ((tmax x min: tmax y) min: tmax z) min: ray tmax.
+
+	hasIntersection := maxTMin <= minTMax.
+ 	hasIntersection ifFalse: [ ^ nil ].
+
+	^ maxTMin min: minTMax
+].
+
+AABox ![
+intersectionsWithRay: ray
+	"Slab testing algorithm from: A Ray-Box Intersection Algorithm andEfficient Dynamic Voxel Rendering. By Majercik et al"
+	| t0 t1 tmin tmax maxTMin minTMax hasIntersection |
+	t0 := (min - ray origin)*ray inverseDirection.
+	t1 := (max - ray origin)*ray inverseDirection.
+	tmin := t0 min: t1.
+	tmax := t0 max: t1.
+	maxTMin := ((tmin x max: tmin y) max: tmin z) max: ray tmin.
+	minTMax := ((tmax x min: tmax y) min: tmax z) min: ray tmax.
+
+	hasIntersection := maxTMin <= minTMax.
+ 	hasIntersection ifFalse: [ ^ nil ].
+
+	^ {maxTMin min: minTMax. maxTMin max: minTMax}
 ].
 
 Frustum ![

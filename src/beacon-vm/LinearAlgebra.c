@@ -211,6 +211,34 @@ static beacon_oop_t beacon_Vector3_interpolateToAt(beacon_context_t *context, be
     return (beacon_oop_t)resultVector; 
 }
 
+static beacon_oop_t beacon_Vector3_min(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
+
+    beacon_Vector3_t *leftVector = (beacon_Vector3_t *)receiver;
+    beacon_Vector3_t *rightVector = (beacon_Vector3_t *)arguments[0];
+    beacon_Vector3_t *resultVector = beacon_allocateObjectWithBehavior(context->heap, context->classes.vector3Class, sizeof(beacon_Vector3_t), BeaconObjectKindBytes);
+    resultVector->x = leftVector->x < rightVector->x ? leftVector->x : rightVector->x;
+    resultVector->y = leftVector->y < rightVector->y ? leftVector->y : rightVector->y;
+    resultVector->z = leftVector->z < rightVector->z ? leftVector->z : rightVector->z;
+    return (beacon_oop_t)resultVector;
+}
+
+static beacon_oop_t beacon_Vector3_max(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
+
+    beacon_Vector3_t *leftVector = (beacon_Vector3_t *)receiver;
+    beacon_Vector3_t *rightVector = (beacon_Vector3_t *)arguments[0];
+    beacon_Vector3_t *resultVector = beacon_allocateObjectWithBehavior(context->heap, context->classes.vector3Class, sizeof(beacon_Vector3_t), BeaconObjectKindBytes);
+    resultVector->x = leftVector->x > rightVector->x ? leftVector->x : rightVector->x;
+    resultVector->y = leftVector->y > rightVector->y ? leftVector->y : rightVector->y;
+    resultVector->z = leftVector->z > rightVector->z ? leftVector->z : rightVector->z;
+    return (beacon_oop_t)resultVector;
+}
+
 static beacon_oop_t beacon_Vector3_add(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 1);
@@ -1216,6 +1244,8 @@ void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "negated", 0, beacon_Vector3_negated);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "reciprocal", 0, beacon_Vector3_reciprocal);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "interpolateTo:at:", 2, beacon_Vector3_interpolateToAt);
+    beacon_addPrimitiveToClass(context, context->classes.vector3Class, "min:", 1, beacon_Vector3_min);
+    beacon_addPrimitiveToClass(context, context->classes.vector3Class, "max:", 1, beacon_Vector3_max);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "+", 1, beacon_Vector3_add);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "-", 1, beacon_Vector3_minus);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "*", 1, beacon_Vector3_times);
