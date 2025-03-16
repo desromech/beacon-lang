@@ -135,3 +135,12 @@ atAllPut: value
         self at: i put: value
     ]
 ].
+
+SequenceableCollection ![
+indexOf: value
+    1 to: self size do: [:i |
+        value == (self at: i) ifTrue: [ ^ i]
+    ].
+
+    ^ 0
+].

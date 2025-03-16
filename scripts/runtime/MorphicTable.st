@@ -16,6 +16,11 @@ elementAtIndex: index
 ].
 
 TableDataSource ![
+indexOfElement: anElement
+    ^ nil
+].
+
+TableDataSource ![
 isValidIndex: index
     ^ false
 ].
@@ -120,7 +125,7 @@ renderRowsWithBuilder: renderingBuilder
         rowIndex := startingRowIndex + displayIndex.
         rowPositionY := (rowIndex - 1) * cellHeight - positionY.
         rowElement := dataSource elementAtIndex: rowIndex.
-        rowElement ~~ nil ifTrue: [
+        nil ~~ rowElement ifTrue: [
             rowBounds := 0@rowPositionY extent: self width @cellHeight.
 
             isSelected := selectionSet includes: rowIndex.
@@ -181,6 +186,20 @@ initialize
         addMorph: container proportion: 1;
         yourself)
 
+].
+TableMorph ![
+setSelectionToElements: aSetOfElements
+    | newSelection |
+    newSelection := ArrayList new.
+    aSetOfElements do: [:each |
+        | index |
+        index := dataSource indexOfElement: each.
+        index ~~ nil ifTrue: [
+            newSelection add: index
+        ]
+    ].
+
+    selectionSet := newSelection asArray
 ].
 
 TableMorph ![
