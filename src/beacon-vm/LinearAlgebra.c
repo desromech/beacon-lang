@@ -201,6 +201,19 @@ static beacon_oop_t beacon_Vector3_negated(beacon_context_t *context, beacon_oop
     return (beacon_oop_t)resultVector;
 }
 
+static beacon_oop_t beacon_Vector3_normalized(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 0);
+
+    beacon_Vector3_t *operandVector = (beacon_Vector3_t *)receiver;
+    beacon_Vector3_t *resultVector = beacon_allocateObjectWithBehavior(context->heap, context->classes.vector3Class, sizeof(beacon_Vector3_t), BeaconObjectKindBytes);
+    double length = sqrt(operandVector->x*operandVector->x + operandVector->y*operandVector->y + operandVector->z*operandVector->z);
+    resultVector->x = operandVector->x / length;
+    resultVector->y = operandVector->y / length;
+    resultVector->z = operandVector->z / length;
+    return (beacon_oop_t)resultVector;
+}
+
 static beacon_oop_t beacon_Vector3_reciprocal(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 0);
@@ -261,6 +274,7 @@ static beacon_oop_t beacon_Vector3_max(beacon_context_t *context, beacon_oop_t r
 static beacon_oop_t beacon_Vector3_add(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
 
     beacon_Vector3_t *leftVector = (beacon_Vector3_t *)receiver;
     beacon_Vector3_t *rightVector = (beacon_Vector3_t *)arguments[0];
@@ -274,6 +288,7 @@ static beacon_oop_t beacon_Vector3_add(beacon_context_t *context, beacon_oop_t r
 static beacon_oop_t beacon_Vector3_minus(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
 
     beacon_Vector3_t *leftVector = (beacon_Vector3_t *)receiver;
     beacon_Vector3_t *rightVector = (beacon_Vector3_t *)arguments[0];
@@ -512,6 +527,53 @@ static beacon_oop_t beacon_Complex_length(beacon_context_t *context, beacon_oop_
     return beacon_encodeDoubleAsNumber(context, result);
 }
 
+static beacon_oop_t beacon_Complex_arg(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 0);
+
+    beacon_Complex_t *complex = (beacon_Complex_t *)receiver;
+    double result = atan2(complex->y, complex->x);
+    return beacon_encodeDoubleAsNumber(context, result);
+}
+
+static beacon_oop_t beacon_Complex_normalized(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 0);
+
+    beacon_Complex_t *complex = (beacon_Complex_t *)receiver;
+    beacon_Complex_t *result = beacon_allocateObjectWithBehavior(context->heap, context->classes.complexClass, sizeof(beacon_Complex_t), BeaconObjectKindBytes);
+    double length = sqrt(complex->x*complex->x + complex->y*complex->y);
+    result->x = complex->x / length;
+    result->y = complex->y / length;
+
+    return (beacon_oop_t)result;
+}
+
+static beacon_oop_t beacon_Complex_conjugated(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 0);
+
+    beacon_Complex_t *complex = (beacon_Complex_t *)receiver;
+    beacon_Complex_t *result = beacon_allocateObjectWithBehavior(context->heap, context->classes.complexClass, sizeof(beacon_Complex_t), BeaconObjectKindBytes);
+    result->x = complex->x;
+    result->y = -complex->y;
+
+    return (beacon_oop_t)result;
+}
+
+static beacon_oop_t beacon_Complex_inverse(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 0);
+
+    beacon_Complex_t *complex = (beacon_Complex_t *)receiver;
+    beacon_Complex_t *result = beacon_allocateObjectWithBehavior(context->heap, context->classes.complexClass, sizeof(beacon_Complex_t), BeaconObjectKindBytes);
+    double length2 = complex->x*complex->x + complex->y*complex->y;
+    result->x = complex->x / length2;
+    result->y = -complex->y / length2;
+
+    return (beacon_oop_t)result;
+}
+
 static beacon_oop_t beacon_Complex_add(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 1);
@@ -534,6 +596,21 @@ static beacon_oop_t beacon_Complex_minus(beacon_context_t *context, beacon_oop_t
     resultVector->x = leftVector->x - rightVector->x;
     resultVector->y = leftVector->y - rightVector->y;
     return (beacon_oop_t)resultVector;
+}
+
+static beacon_oop_t beacon_Complex_multiply(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 1);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.complexClass);
+
+    beacon_Complex_t *leftComplex = (beacon_Complex_t *)receiver;
+    beacon_Complex_t *rightComplex = (beacon_Complex_t *)arguments[0];
+    beacon_Complex_t *resultComplex = beacon_allocateObjectWithBehavior(context->heap, context->classes.complexClass, sizeof(beacon_Complex_t), BeaconObjectKindBytes);
+
+    resultComplex->x = leftComplex->x*rightComplex->x - leftComplex->y*rightComplex->y;
+    resultComplex->y = leftComplex->x*rightComplex->y + leftComplex->y*rightComplex->x;
+    
+    return (beacon_oop_t)resultComplex;
 }
 
 static beacon_oop_t beacon_Quaternion_constructWithXYZW(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -591,8 +668,28 @@ static beacon_oop_t beacon_Quaternion_zRotation(beacon_context_t *context, beaco
     beacon_Quaternion_t *quat = beacon_allocateObjectWithBehavior(context->heap, context->classes.quaternionClass, sizeof(beacon_Quaternion_t), BeaconObjectKindBytes);
     quat->x = 0;
     quat->y = 0;
-    quat->z = 0;
-    quat->w = s;
+    quat->z = s;
+    quat->w = c;
+    return (beacon_oop_t)quat;
+}
+
+static beacon_oop_t beacon_Quaternion_axisAngle(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 2);
+    BeaconAssert(context, beacon_getClass(context, arguments[0]) == context->classes.vector3Class);
+
+    beacon_Vector3_t *axis = (beacon_Vector3_t *)arguments[0];
+
+    double angle = beacon_decodeNumberAsDouble(context, arguments[1]);
+    double halfAngle = angle *0.5;
+    double c = cos(halfAngle);
+    double s = sin(halfAngle);
+
+    beacon_Quaternion_t *quat = beacon_allocateObjectWithBehavior(context->heap, context->classes.quaternionClass, sizeof(beacon_Quaternion_t), BeaconObjectKindBytes);
+    quat->x = axis->x*s;
+    quat->y = axis->y*s;
+    quat->z = axis->z*s;
+    quat->w = c;
     return (beacon_oop_t)quat;
 }
 
@@ -1287,6 +1384,7 @@ void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "dot:", 1, beacon_Vector3_dot);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "length", 0, beacon_Vector3_length);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "negated", 0, beacon_Vector3_negated);
+    beacon_addPrimitiveToClass(context, context->classes.vector3Class, "normalized", 0, beacon_Vector3_normalized);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "reciprocal", 0, beacon_Vector3_reciprocal);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "interpolateTo:at:", 2, beacon_Vector3_interpolateToAt);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "min:", 1, beacon_Vector3_min);
@@ -1317,14 +1415,20 @@ void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.complexClass, "i", 0, beacon_Complex_y);
     beacon_addPrimitiveToClass(context, context->classes.complexClass, "dot:", 1, beacon_Complex_dot);
     beacon_addPrimitiveToClass(context, context->classes.complexClass, "length", 0, beacon_Complex_length);
+    beacon_addPrimitiveToClass(context, context->classes.complexClass, "arg", 0, beacon_Complex_arg);
+    beacon_addPrimitiveToClass(context, context->classes.complexClass, "normalized", 0, beacon_Complex_normalized);
+    beacon_addPrimitiveToClass(context, context->classes.complexClass, "conjugated", 0, beacon_Complex_conjugated);
+    beacon_addPrimitiveToClass(context, context->classes.complexClass, "inverse", 0, beacon_Complex_inverse);
     beacon_addPrimitiveToClass(context, context->classes.complexClass, "+", 1, beacon_Complex_add);
     beacon_addPrimitiveToClass(context, context->classes.complexClass, "-", 1, beacon_Complex_minus);
+    beacon_addPrimitiveToClass(context, context->classes.complexClass, "*", 1, beacon_Complex_multiply);
 
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.quaternionClass), "x:y:z:w:", 4, beacon_Quaternion_constructWithXYZW);
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.quaternionClass), "i:j:k:r:", 4, beacon_Quaternion_constructWithXYZW);
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.quaternionClass), "xRotation:", 1, beacon_Quaternion_xRotation);
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.quaternionClass), "yRotation:", 1, beacon_Quaternion_yRotation);
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.quaternionClass), "zRotation:", 1, beacon_Quaternion_zRotation);
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.quaternionClass), "axis:angle:", 2, beacon_Quaternion_axisAngle);
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "x", 0, beacon_Quaternion_x);
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "i", 0, beacon_Quaternion_x);
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "y", 0, beacon_Quaternion_y);

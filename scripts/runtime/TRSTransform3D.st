@@ -17,6 +17,24 @@ setIdentity
     translation := Vector3 zeros.
 ].
 
+TRSTransform3D class ![
+rotation: aRotation
+    ^ self new rotation: aRotation; yourself
+].
+
+TRSTransform3D class ![
+rotation: aRotation around: aPivot
+    ^ self new 
+        rotation: aRotation;
+        translation: aPivot - (aRotation rotateVector: aPivot);
+        yourself
+].
+
+TRSTransform3D class ![
+scale: aScale
+    ^ self new scale: aScale; yourself
+].
+
 TRSTransform3D ![
 scale
     ^ scale
@@ -50,6 +68,20 @@ translation: aTranslation
 TRSTransform3D ![
 transformPosition: aPosition
     ^ (rotation rotateVector: aPosition*scale) + translation
+].
+
+TRSTransform3D ![
+transformVector: aVector
+    ^ rotation rotateVector: aVector*scale
+].
+
+TRSTransform3D ![
+transformTransform: otherTransform
+    ^ self class basicNew
+        scale: scale * otherTransform scale;
+		rotation: rotation * otherTransform rotation;
+		translation: (self transformPosition: otherTransform translation);
+		yourself
 ].
 
 TRSTransform3D ![
