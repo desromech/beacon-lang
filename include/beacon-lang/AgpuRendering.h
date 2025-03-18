@@ -346,7 +346,8 @@ typedef struct beacon_AGPUWindowRenderer_s
     int intermediateBufferWidth;
     int intermediateBufferHeight;
     int32_t outputTextureIndex;
-    beacon_AGPUTextureHandle_t *outputTextureHandle;
+    agpu_texture_view *outputTextureView;
+    
 
     agpu_texture *mainDepthBuffer;
     agpu_texture *hdrColorBuffer;

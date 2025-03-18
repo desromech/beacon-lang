@@ -1251,15 +1251,8 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
         {   
             if(renderer->outputTextureIndex <= 0)
                 renderer->outputTextureIndex = context->roots.agpuCommon->textureArrayBindingCount++;
-            agpu_texture_view *outputTextureView = agpuGetOrCreateFullTextureView(renderer->outputTexture);
-            agpuBindArrayOfSampledTextureView(context->roots.agpuCommon->texturesArrayBinding, 0, renderer->outputTextureIndex, 1, &outputTextureView);            
-
-            if(!renderer->outputTextureHandle)
-                renderer->outputTextureHandle = beacon_allocateObjectWithBehavior(context->heap, context->classes.agpuTextureHandleClass, sizeof(beacon_AGPUTextureHandle_t), BeaconObjectKindBytes);
-            
-            renderer->outputTextureHandle->texture = renderer->outputTexture;
-            renderer->outputTextureHandle->textureView = outputTextureView;
-            renderer->outputTextureHandle->textureArrayBindingIndex = renderer->outputTextureIndex;
+            renderer->outputTextureView = agpuGetOrCreateFullTextureView(renderer->outputTexture);
+            agpuBindArrayOfSampledTextureView(context->roots.agpuCommon->texturesArrayBinding, 0, renderer->outputTextureIndex, 1, &renderer->outputTextureView);            
         }
 
         if(!renderer->intermediateBindings)
@@ -1485,7 +1478,11 @@ static void beacon_agpuWindowRenderer_emit3DFrameRendering(beacon_context_t *con
 static beacon_oop_t beacon_agpuWindowRenderer_get3DOutputTextureHandle(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t *)receiver;
-    return (beacon_oop_t)renderer->outputTextureHandle;
+    beacon_AGPUTextureHandle_t *outputTextureHandle = beacon_allocateObjectWithBehavior(context->heap, context->classes.agpuTextureHandleClass, sizeof(beacon_AGPUTextureHandle_t), BeaconObjectKindBytes);
+    outputTextureHandle->texture = renderer->outputTexture;
+    outputTextureHandle->textureView = renderer->outputTextureView;
+    outputTextureHandle->textureArrayBindingIndex = renderer->outputTextureIndex;
+    return (beacon_oop_t)outputTextureHandle;
 }
 
 static beacon_oop_t beacon_agpuWindowRenderer_endFrame(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
