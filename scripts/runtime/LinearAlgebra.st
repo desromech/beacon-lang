@@ -16,6 +16,11 @@ printOn: aStream
         nextPut: $)
 ].
 
+Point ![
+asVector2
+    ^ Vector2 x: x y: y
+].
+
 Vector3 class ![
 zeros
     ^ self x: 0 y: 0 z: 0
