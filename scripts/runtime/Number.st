@@ -44,6 +44,13 @@ degreesToRadians
 ].
 
 Number ![
+abs
+	^ self >= 0
+		ifTrue: [self]
+		ifFalse: [self negated]
+].
+
+Number ![
 sqrt
 	^ self asFloat sqrt
 ].

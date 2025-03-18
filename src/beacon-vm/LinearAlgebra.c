@@ -997,6 +997,19 @@ static beacon_oop_t beacon_Matrix3x3_thirdRow(beacon_context_t *context, beacon_
     return (beacon_oop_t)vector;
 }
 
+static beacon_oop_t beacon_Matrix3x3_transposed(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 0);
+
+    beacon_Matrix3x3_t *mat  = (beacon_Matrix3x3_t *)receiver;
+    beacon_Matrix3x3_t *result = beacon_allocateObjectWithBehavior(context->heap, context->classes.matrix3x3Class, sizeof(beacon_Matrix3x3_t), BeaconObjectKindBytes);
+    result->m11 = mat->m11; result->m12 = mat->m21; result->m13 = mat->m31;
+    result->m21 = mat->m12; result->m22 = mat->m22; result->m23 = mat->m32;
+    result->m31 = mat->m13; result->m32 = mat->m23; result->m33 = mat->m33;
+
+    return (beacon_oop_t)result;
+}
+
 static beacon_oop_t beacon_Matrix3x3_add(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     BeaconAssert(context, argumentCount == 1);
@@ -1349,6 +1362,7 @@ void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.matrix3x3Class, "firstRow",     0, beacon_Matrix3x3_firstRow);
     beacon_addPrimitiveToClass(context, context->classes.matrix3x3Class, "secondRow",    0, beacon_Matrix3x3_secondRow);
     beacon_addPrimitiveToClass(context, context->classes.matrix3x3Class, "thirdRow",     0, beacon_Matrix3x3_thirdRow);
+    beacon_addPrimitiveToClass(context, context->classes.matrix3x3Class, "transposed",   0, beacon_Matrix3x3_transposed);
     beacon_addPrimitiveToClass(context, context->classes.matrix3x3Class, "+", 1, beacon_Matrix3x3_add);
     beacon_addPrimitiveToClass(context, context->classes.matrix3x3Class, "-", 1, beacon_Matrix3x3_minus);
     beacon_addPrimitiveToClass(context, context->classes.matrix3x3Class, "*", 1, beacon_Matrix3x3_multiply);

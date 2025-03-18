@@ -108,6 +108,17 @@ initialize
 	min := max := Vector3 zeros.
 ].
 
+
+AABox ![
+halfExtent
+	^ (max - min) * 0.5
+].
+
+AABox ![
+center
+	^ min + self halfExtent
+].
+
 AABox ![
 printOn: aStream
 	aStream nextPutAll: 'AABox min: '; print: min; nextPutAll: ' max '; print: max.
@@ -348,6 +359,14 @@ Frustum ![
 normalizedPointInFarPlane: normalizedPoint
 	^ (leftBottomFar interpolateTo: rightBottomFar at: normalizedPoint x) interpolateTo:
 		(leftTopFar interpolateTo: rightTopFar at: normalizedPoint x) at: normalizedPoint y.
+].
+
+Frustum ![
+normalizedPoint: normalizedPoint linearDepth: linearDepth
+	| nearPoint farPoint |
+	nearPoint := self normalizedPointInNearPlane: normalizedPoint.
+	farPoint := self normalizedPointInFarPlane: normalizedPoint.
+	^ nearPoint interpolateTo: farPoint at: linearDepth
 ].
 
 Frustum ![
