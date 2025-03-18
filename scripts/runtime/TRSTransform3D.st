@@ -48,6 +48,11 @@ translation: aTranslation
 ].
 
 TRSTransform3D ![
+transformPosition: aPosition
+    ^ (rotation rotateVector: aPosition*scale) + translation
+].
+
+TRSTransform3D ![
 asReversibleAffineTransform3D
     ^ ReversibleAffineTransform3D scale: scale rotation: rotation translation: translation
 ]

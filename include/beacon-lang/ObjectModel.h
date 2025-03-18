@@ -999,12 +999,14 @@ typedef struct beacon_MeshPrimitive_s
     beacon_Array_t *texcoords;
     beacon_Array_t *tangents4;
     beacon_Array_t *indices;
+    beacon_oop_t boundingBox;
 } beacon_MeshPrimitive_t;
 
 typedef struct beacon_Model3D_s
 {
     beacon_RenderingUploadedElement_t super;
     beacon_Array_t *primitives;
+    beacon_oop_t boundingBox;
 } beacon_Model3D_t;
 
 typedef struct beacon_RenderObject3D_s

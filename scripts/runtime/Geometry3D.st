@@ -80,6 +80,14 @@ tmax: aFloat
 ].
 
 AABox class ![
+empty
+	^ self basicNew
+		min: Vector3 infinity;
+		max: Vector3 negativeInfinity;
+		yourself
+].
+
+AABox class ![
 center: center halfExtent: halfExtent
 	^ self basicNew
 		min: center - halfExtent;
@@ -104,6 +112,35 @@ AABox ![
 printOn: aStream
 	aStream nextPutAll: 'AABox min: '; print: min; nextPutAll: ' max '; print: max.
 
+].
+
+AABox ![
+insertPoint: aPoint
+	min := min min: aPoint.
+	max := max max: aPoint.
+].
+
+AABox ![
+insertBox: aBox
+	min := min min: aBox min.
+	max := max max: aBox max.
+].
+
+AABox ![
+transformedWith: aTransform
+	| result |
+	result := AABox empty.
+	result
+		insertPoint: (aTransform transformPosition: (Vector3 x: min x y: min y z: min z));
+		insertPoint: (aTransform transformPosition: (Vector3 x: max x y: min y z: min z));
+		insertPoint: (aTransform transformPosition: (Vector3 x: min x y: max y z: min z));
+		insertPoint: (aTransform transformPosition: (Vector3 x: max x y: max y z: min z));
+
+		insertPoint: (aTransform transformPosition: (Vector3 x: min x y: min y z: max z));
+		insertPoint: (aTransform transformPosition: (Vector3 x: max x y: min y z: max z));
+		insertPoint: (aTransform transformPosition: (Vector3 x: min x y: max y z: max z));
+		insertPoint: (aTransform transformPosition: (Vector3 x: max x y: max y z: max z)).
+	^ result
 ].
 
 AABox ![

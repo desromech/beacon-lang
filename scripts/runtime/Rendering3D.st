@@ -103,6 +103,7 @@ initialize
     normals := #().
     texcoords := #().
     tangents4 := #().
+    boundingBox := AABox empty.
 ].
 
 
@@ -166,10 +167,21 @@ indices: anArrayOfInteger
     indices := anArrayOfInteger
 ].
 
+MeshPrimitive ![
+boundingBox
+    ^ boundingBox
+].
+
+MeshPrimitive ![
+boundingBox: aBoundingBox
+    boundingBox := aBoundingBox
+].
+
 Model3D ![
 initialize
     super initialize.
     primitives := #().
+    boundingBox := AABox empty.
 ].
 
 Model3D ![
@@ -180,6 +192,16 @@ primitives
 Model3D ![
 primitives: anArrayOfPrimitives
     primitives := anArrayOfPrimitives
+].
+
+Model3D ![
+boundingBox
+    ^ boundingBox
+].
+
+Model3D ![
+boundingBox: aBoundingBox
+    boundingBox := aBoundingBox
 ].
 
 RenderObject3D ![

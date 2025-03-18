@@ -386,9 +386,9 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.meshMetallicRoughnessMaterialClass = beacon_context_createClassAndMetaclass(context, context->classes.meshMaterialClass, "MeshMetallicRoughnessMaterial", sizeof(beacon_MeshMetallicRoughnessMaterial_t), BeaconObjectKindPointers,
         "baseColor", "baseColorTexture", "metallicFactor", "roughnessFactor", "occlusionFactor", "metallicRoughnessTexture", "occlusionTexture", "isUnlit", NULL);
     context->classes.meshPrimitiveClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "MeshPrimitive", sizeof(beacon_MeshPrimitive_t), BeaconObjectKindPointers,
-        "material", "positions", "normals", "texcoords", "tangents4", "indices", NULL);
+        "material", "positions", "normals", "texcoords", "tangents4", "indices", "boundingBox", NULL);
     context->classes.model3DClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "Model3D", sizeof(beacon_Model3D_t), BeaconObjectKindPointers,
-        "primitives", NULL);
+        "primitives", "boundingBox", NULL);
     context->classes.renderObject3DClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "RenderObject3D", sizeof(beacon_RenderObject3D_t), BeaconObjectKindPointers,
         "model", "modelMatrix", "isSelected", "selectionColor", NULL);
 

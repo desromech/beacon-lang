@@ -121,6 +121,25 @@ static beacon_oop_t beacon_Vector3_constructWithXYZ(beacon_context_t *context, b
     return (beacon_oop_t)vector;
 }
 
+static beacon_oop_t beacon_Vector3_infinity(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 0);
+    beacon_Vector3_t *vector = beacon_allocateObjectWithBehavior(context->heap, context->classes.vector3Class, sizeof(beacon_Vector3_t), BeaconObjectKindBytes);
+    vector->x = INFINITY;
+    vector->y = INFINITY;
+    vector->z = INFINITY;
+    return (beacon_oop_t)vector;
+}
+
+static beacon_oop_t beacon_Vector3_negativeInfinity(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 0);
+    beacon_Vector3_t *vector = beacon_allocateObjectWithBehavior(context->heap, context->classes.vector3Class, sizeof(beacon_Vector3_t), BeaconObjectKindBytes);
+    vector->x = -INFINITY;
+    vector->y = -INFINITY;
+    vector->z = -INFINITY;
+    return (beacon_oop_t)vector;
+}
 
 static beacon_oop_t beacon_Vector3_asVector3(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
@@ -607,6 +626,17 @@ static beacon_oop_t beacon_Quaternion_w(beacon_context_t *context, beacon_oop_t 
 
     beacon_Quaternion_t *vector = (beacon_Quaternion_t *)receiver;
     return beacon_encodeDoubleAsNumber(context, vector->w);
+}
+
+static beacon_oop_t beacon_Quaternion_conjugated(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 0);
+
+    beacon_Quaternion_t *quat = (beacon_Quaternion_t *)receiver;
+    beacon_Quaternion_t *result = beacon_allocateObjectWithBehavior(context->heap, context->classes.quaternionClass, sizeof(beacon_Quaternion_t), BeaconObjectKindBytes);
+
+    result->x = -quat->x; result->y = -quat->y; result->z = -quat->z; result->w = quat->w;
+    return (beacon_oop_t)result;
 }
 
 static beacon_oop_t beacon_Quaternion_dot(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -1235,6 +1265,8 @@ void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.vector2Class, "/", 1, beacon_Vector2_divide);
 
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.vector3Class), "x:y:z:", 3, beacon_Vector3_constructWithXYZ);
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.vector3Class), "infinity", 0, beacon_Vector3_infinity);
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.vector3Class), "negativeInfinity", 3, beacon_Vector3_negativeInfinity);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "asVector3", 0, beacon_Vector3_asVector3);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "x", 0, beacon_Vector3_x);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "y", 0, beacon_Vector3_y);
@@ -1288,6 +1320,7 @@ void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "k", 0, beacon_Quaternion_z);
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "w", 0, beacon_Quaternion_w);
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "r", 0, beacon_Quaternion_w);
+    beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "conjugated", 0, beacon_Quaternion_conjugated);
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "dot:", 1, beacon_Quaternion_dot);
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "length", 0, beacon_Quaternion_length);
     beacon_addPrimitiveToClass(context, context->classes.quaternionClass, "asMatrix3x3", 0, beacon_Quaternion_asMatrix3x3);

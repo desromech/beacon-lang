@@ -118,7 +118,9 @@ addCubeWithHalfExtent: halfExtent
 
 MeshBuilder ![
 finishPrimitive
-    | primitive |
+    | primitive boundingBox |
+	boundingBox := AABox empty.
+	positions do: [:eachPosition | boundingBox insertPoint: eachPosition].
     primitive := MeshPrimitive new
         material: currentMaterial;
         positions: positions asArray;
@@ -126,6 +128,7 @@ finishPrimitive
         texcoords: texcoords asArray;
         tangents4: tangents4 asArray;
         indices: indices asArray;
+		boundingBox: boundingBox;
         yourself.
     self resetPrimitive.
     primitives add: primitive.
@@ -135,7 +138,14 @@ finishPrimitive
 
 MeshBuilder ![
 finishModel
-    ^ Model3D new
+	| boundingBox model |
+	boundingBox := AABox empty.
+	primitives do: [:eachPrimitive | boundingBox insertBox: eachPrimitive boundingBox].
+
+    model :=  Model3D new
         primitives: primitives asArray;
+		boundingBox: boundingBox;
         yourself.
+
+	^ model
 ].

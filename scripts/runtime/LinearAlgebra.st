@@ -73,6 +73,22 @@ identity
     ^ self x: 0 y: 0 z: 0 w: 1
 ].
 
+Quaternion class ![
+xyz: aVector3
+    ^ self x: aVector3 x y: aVector3 y z: aVector3 z w: 0
+].
+
+
+Quaternion ![
+rotateVector: aVector
+    ^ (self * (self class xyz: aVector) * self conjugated) xyz
+].
+
+Quaternion ![
+xyz
+    ^ Vector3 x: self x y: self y z: self z
+].
+
 Quaternion ![
 printOn: aStream
     aStream
