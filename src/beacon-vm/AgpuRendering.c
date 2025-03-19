@@ -319,6 +319,28 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
     }
 
     {
+        agpu_shader *gridVertexShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "EditorGrid", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/EditorGridVertex.glsl", AGPU_VERTEX_SHADER);
+        agpu_shader *gridFragmentShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "EditorGrid", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/EditorGridFragment.glsl", AGPU_FRAGMENT_SHADER);
+        agpu_pipeline_builder *builder = agpuCreatePipelineBuilder(device);
+        agpuSetRenderTargetCount(builder, 1);
+        agpuSetRenderTargetFormat(builder, 0, BEACON_AGPU_COLOR_FORMAT);
+        agpuSetDepthStencilFormat(builder, BEACON_AGPU_DEPTH_FORMAT);
+        agpuSetPipelineShaderSignature(builder, agpu->shaderSignature);
+        agpuAttachShader(builder, gridVertexShader);
+        agpuAttachShader(builder, gridFragmentShader);
+        agpuSetPrimitiveType(builder, AGPU_TRIANGLE_STRIP);
+        agpuSetDepthState(builder, true, false, AGPU_GREATER_EQUAL);
+        agpuSetCullMode(builder, AGPU_CULL_MODE_NONE);
+        agpuSetBlendState(builder, -1, true);
+        agpuSetBlendFunction(builder, -1, AGPU_BLENDING_ONE, AGPU_BLENDING_INVERTED_SRC_ALPHA, AGPU_BLENDING_OPERATION_ADD,
+            AGPU_BLENDING_ONE, AGPU_BLENDING_INVERTED_SRC_ALPHA, AGPU_BLENDING_OPERATION_ADD);
+        agpu->editorGridPipeline = agpuBuildPipelineState(builder);
+        agpuReleaseShader(gridVertexShader);
+        agpuReleaseShader(gridFragmentShader);
+        agpuReleasePipelineBuilder(builder);
+    }
+
+    {
         agpu_shader *toneMapping = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "ToneMapping", "scripts/runtime/shaders/ShaderCommon.glsl", "scripts/runtime/shaders/FilmicTonemapping.glsl", AGPU_FRAGMENT_SHADER);
         agpu_pipeline_builder *builder = agpuCreatePipelineBuilder(device);
         agpuSetRenderTargetFormat(builder, 0, BEACON_AGPU_SWAP_CHAIN_COLOR_FORMAT);
@@ -1265,6 +1287,8 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
         renderer->hasIntermediateBuffers = true;
     }
 
+    renderer->useDayNightSkyBackground = false;
+    renderer->useEditorGrid = false;
 
     return receiver;
 }
@@ -1293,6 +1317,20 @@ static beacon_oop_t beacon_agpuWindowRenderer_end3DFrameRendering(beacon_context
 {
     beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t*)receiver;
     renderer->hasPending3DRenderingCommands = true;
+    return receiver;
+}
+
+static beacon_oop_t beacon_agpuWindowRenderer_addEditorGrid(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t*)receiver;
+    renderer->useEditorGrid = true;
+    return receiver;
+}
+
+static beacon_oop_t beacon_agpuWindowRenderer_useDayNightBackground(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t*)receiver;
+    renderer->useDayNightSkyBackground = true;
     return receiver;
 }
 
@@ -1447,8 +1485,11 @@ static void beacon_agpuWindowRenderer_emit3DFrameRendering(beacon_context_t *con
     agpuSetScissor(commandList, 0, 0, displayWidth, displayHeight);
 
     // Draw the sky and the background.
-    agpuUsePipelineState(commandList, agpu->daySkyPipeline);
-    agpuDrawArrays(commandList, 3, 1, 0, 0);
+    if(renderer->useDayNightSkyBackground)
+    {
+        agpuUsePipelineState(commandList, agpu->daySkyPipeline);
+        agpuDrawArrays(commandList, 3, 1, 0, 0);
+    }
 
     // Draw the opaque elements.
     agpuUsePipelineState(commandList, agpu->opaqueColorPipeline);
@@ -1460,6 +1501,12 @@ static void beacon_agpuWindowRenderer_emit3DFrameRendering(beacon_context_t *con
     agpuBeginRenderPass(commandList, renderer->mainDepthColorRenderPass, renderer->hdrFramebuffer, false);
     agpuSetViewport(commandList, 0, 0, displayWidth, displayHeight);
     agpuSetScissor(commandList, 0, 0, displayWidth, displayHeight);
+
+    if(renderer->useEditorGrid)
+    {
+        agpuUsePipelineState(commandList, agpu->editorGridPipeline);
+        agpuDrawArrays(commandList, 4, 1, 0, 0);    
+    }
 
     // TODO: Render the translucent objects with color.
     agpuEndRenderPass(commandList);
@@ -2273,6 +2320,9 @@ void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context)
 
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "begin3DFrameRenderingWithWidth:height:", 2, beacon_agpuWindowRenderer_begin3DFrameRendering);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "end3DFrameRendering", 0, beacon_agpuWindowRenderer_end3DFrameRendering);
+
+    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addEditorGrid", 0, beacon_agpuWindowRenderer_addEditorGrid);
+    beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "useDayNightBackground", 0, beacon_agpuWindowRenderer_useDayNightBackground);
 
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addSceneCamera:", 1, beacon_agpuWindowRenderer_addSceneCamera);
     beacon_addPrimitiveToClass(context, context->classes.agpuWindowRendererClass, "addRenderObject:", 1, beacon_agpuWindowRenderer_addRenderObject);

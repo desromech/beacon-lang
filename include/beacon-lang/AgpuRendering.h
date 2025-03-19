@@ -240,6 +240,7 @@ typedef struct beacon_AGPU_s
     agpu_pipeline_state *guiPipelineState;
 
     agpu_pipeline_state *opaqueDepthOnlyPipeline;
+    agpu_pipeline_state *editorGridPipeline;
     agpu_pipeline_state *daySkyPipeline;
     agpu_pipeline_state *toneMappingPipeline;
 
@@ -370,6 +371,8 @@ typedef struct beacon_AGPUWindowRenderer_s
 
     uint32_t renderingFrameIndex;
     bool hasPending3DRenderingCommands;
+    bool useDayNightSkyBackground;
+    bool useEditorGrid;
 } beacon_AGPUWindowRenderer_t;
 
 agpu_platform *beacon_agpu_getPlatform(beacon_context_t *context, beacon_AGPU_t *agpu);
