@@ -205,6 +205,13 @@ boundingBox: aBoundingBox
 ].
 
 RenderObject3D ![
+initialize
+    super initialize.
+    isSelected := false.
+    selectionColor := Color yellow.
+].
+
+RenderObject3D ![
 model
     ^ model
 ].
