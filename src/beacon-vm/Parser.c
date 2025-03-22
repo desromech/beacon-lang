@@ -534,15 +534,16 @@ beacon_ParseTreeNode_t *parser_parseBlockClosure(beacon_parserState_t *state)
 
 beacon_ParseTreeNode_t *parser_parseMethodBlock(beacon_parserState_t *state)
 {
-    size_t startingPosition = state->position;
     beacon_ScannerToken_t *token = parserState_next(state);
     BeaconAssert(state->context, beacon_decodeSmallInteger(token->kind) == BeaconTokenBangLeftBracket);
 
+    size_t startingPosition = state->position;
 
     beacon_ParseTreeNode_t *methodNode = parser_parseMethodSyntaxWithDelimiter(state, BeaconTokenRightBracket);
+    methodNode->sourcePosition = parserState_sourcePositionFrom(state, startingPosition);
+
     methodNode = parserState_expectAddingErrorToNode(state, BeaconTokenRightBracket, methodNode);
 
-    methodNode->sourcePosition = parserState_sourcePositionFrom(state, startingPosition);
     return methodNode;
 }
 
