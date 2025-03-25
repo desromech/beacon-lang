@@ -337,6 +337,7 @@ typedef struct beacon_BytecodeCode_s
     beacon_oop_t captureCount;
     beacon_Array_t *literals;
     beacon_ByteArray_t *bytecodes;
+    beacon_Array_t *sourcePositions;
 } beacon_BytecodeCode_t;
 
 typedef struct beacon_String_s
@@ -572,6 +573,7 @@ typedef struct beacon_BytecodeCodeBuilder_t
     beacon_ArrayList_t *literals;
     beacon_ArrayList_t *captures;
     beacon_ByteArrayList_t *bytecodes;
+    beacon_ArrayList_t *sourcePositions;
     beacon_oop_t parentBuilder;
 } beacon_BytecodeCodeBuilder_t;
 

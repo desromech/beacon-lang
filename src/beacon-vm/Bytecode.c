@@ -28,6 +28,7 @@ beacon_BytecodeCodeBuilder_t *beacon_BytecodeCodeBuilder_new(beacon_context_t *c
     builder->literals = beacon_ArrayList_new(context);
     builder->captures = beacon_ArrayList_new(context);
     builder->bytecodes = beacon_ByteArrayList_new(context);
+    builder->sourcePositions = beacon_ArrayList_new(context);
     builder->parentBuilder = (beacon_oop_t)parentBuilder;
     return builder;
 }
@@ -39,6 +40,7 @@ beacon_BytecodeCode_t *beacon_BytecodeCodeBuilder_finish(beacon_context_t *conte
     code->temporaryCount = beacon_encodeSmallInteger(beacon_ArrayList_size(builder->temporaries));
     code->literals = beacon_ArrayList_asArray(context, builder->literals);
     code->bytecodes = beacon_ByteArrayList_asByteArray(context, builder->bytecodes);
+    code->sourcePositions = beacon_ArrayList_asArray(context, builder->sourcePositions);
     return code;
 }
 
@@ -101,16 +103,28 @@ uint16_t beacon_BytecodeCodeBuilder_label(beacon_BytecodeCodeBuilder_t *methodBu
     return beacon_ByteArrayList_size(methodBuilder->bytecodes);
 }
 
-void beacon_BytecodeCodeBuilder_nop(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder)
+void beacon_BytecodeCodeBuilder_addOpcode(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, uint8_t opcode, beacon_SourcePosition_t *sourcePosition)
 {
-    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, BeaconBytecodeNop);
+    if(sourcePosition)
+    {
+        intptr_t index = beacon_ByteArrayList_size(methodBuilder->bytecodes);
+        beacon_ArrayList_add(context, methodBuilder->sourcePositions, beacon_encodeSmallInteger(index));
+        beacon_ArrayList_add(context, methodBuilder->sourcePositions, (beacon_oop_t)sourcePosition);    
+    }
+
+    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, opcode);
 }
 
-uint16_t beacon_BytecodeCodeBuilder_jump(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, uint16_t targetLabel)
+void beacon_BytecodeCodeBuilder_nop(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_SourcePosition_t *sourcePosition)
+{
+    beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, BeaconBytecodeNop, sourcePosition);
+}
+
+uint16_t beacon_BytecodeCodeBuilder_jump(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, uint16_t targetLabel, beacon_SourcePosition_t *sourcePosition)
 {
     uint16_t currentPosition = beacon_ByteArrayList_size(methodBuilder->bytecodes);
     int16_t delta = targetLabel - currentPosition;
-    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, 0x10 | BeaconBytecodeJump);
+    beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, 0x10 | BeaconBytecodeJump, sourcePosition);
     beacon_ByteArrayList_addInt16(context, methodBuilder->bytecodes, beacon_BytecodeValue_encode(delta, BytecodeArgumentTypeJumpDelta));
     return currentPosition;
 }
@@ -125,21 +139,21 @@ void beacon_BytecodeCodeBuilder_fixup_jump(beacon_context_t *context, beacon_Byt
     beacon_ByteArrayList_atPut(context, methodBuilder->bytecodes, branchLabel + 3, deltaHigh);
 }
 
-uint16_t beacon_BytecodeCodeBuilder_jumpIfTrue(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t condition, uint16_t targetLabel)
+uint16_t beacon_BytecodeCodeBuilder_jumpIfTrue(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t condition, uint16_t targetLabel, beacon_SourcePosition_t *sourcePosition)
 {
     uint16_t currentPosition = beacon_ByteArrayList_size(methodBuilder->bytecodes);
     int16_t delta = targetLabel - currentPosition;
-    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, 0x20 | BeaconBytecodeJumpIfTrue);
+    beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, 0x20 | BeaconBytecodeJumpIfTrue, sourcePosition);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, condition);
     beacon_ByteArrayList_addInt16(context, methodBuilder->bytecodes, beacon_BytecodeValue_encode(delta, BytecodeArgumentTypeJumpDelta));
     return currentPosition;
 }
 
-uint16_t beacon_BytecodeCodeBuilder_jumpIfFalse(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t condition, uint16_t targetLabel)
+uint16_t beacon_BytecodeCodeBuilder_jumpIfFalse(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t condition, uint16_t targetLabel, beacon_SourcePosition_t *sourcePosition)
 {
     uint16_t currentPosition = beacon_ByteArrayList_size(methodBuilder->bytecodes);
     int16_t delta = targetLabel - currentPosition;
-    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, 0x20 | BeaconBytecodeJumpIfFalse);
+    beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, 0x20 | BeaconBytecodeJumpIfFalse, sourcePosition);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, condition);
     beacon_ByteArrayList_addInt16(context, methodBuilder->bytecodes, beacon_BytecodeValue_encode(delta, BytecodeArgumentTypeJumpDelta));
     return currentPosition;
@@ -165,10 +179,10 @@ uint8_t beacon_BytecodeCodeBuilder_extendArgumentsIfNeeded(beacon_context_t *con
     return (argumentCount & 0xF) << 4;
 }
 
-void beacon_BytecodeCodeBuilder_sendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t receiver, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments)
+void beacon_BytecodeCodeBuilder_sendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t receiver, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments, beacon_SourcePosition_t *sourcePosition)
 {
     uint8_t argumentCountBits = beacon_BytecodeCodeBuilder_extendArgumentsIfNeeded(context, methodBuilder, 2 + argumentCount);
-    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, argumentCountBits | BeaconBytecodeSendMessage);
+    beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, argumentCountBits | BeaconBytecodeSendMessage, sourcePosition);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultTemporary);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, receiver);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, selector);
@@ -176,10 +190,10 @@ void beacon_BytecodeCodeBuilder_sendMessage(beacon_context_t *context, beacon_By
         beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, arguments[i]);
 }
 
-void beacon_BytecodeCodeBuilder_superSendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t receiverClass, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments)
+void beacon_BytecodeCodeBuilder_superSendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t receiverClass, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments, beacon_SourcePosition_t *sourcePosition)
 {
     uint8_t argumentCountBits = beacon_BytecodeCodeBuilder_extendArgumentsIfNeeded(context, methodBuilder, 2 + argumentCount);
-    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, argumentCountBits | BeaconBytecodeSuperSendMessage);
+    beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, argumentCountBits | BeaconBytecodeSuperSendMessage, sourcePosition);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultTemporary);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, receiverClass);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, selector);
@@ -187,38 +201,38 @@ void beacon_BytecodeCodeBuilder_superSendMessage(beacon_context_t *context, beac
         beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, arguments[i]);
 }
 
-void beacon_BytecodeCodeBuilder_storeValue(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t valueToStore)
+void beacon_BytecodeCodeBuilder_storeValue(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t valueToStore, beacon_SourcePosition_t *sourcePosition)
 {
-    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, 0x10 | BeaconBytecodeStoreValue);
+    beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, 0x10 | BeaconBytecodeStoreValue, sourcePosition);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultTemporary);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, valueToStore);
 }
 
-void beacon_BytecodeCodeBuilder_localReturn(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultValue)
+void beacon_BytecodeCodeBuilder_localReturn(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultValue, beacon_SourcePosition_t *sourcePosition)
 {
-    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, 0x10 | BeaconBytecodeLocalReturn);
+    beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, 0x10 | BeaconBytecodeLocalReturn, sourcePosition);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultValue);
 }
 
-void beacon_BytecodeCodeBuilder_nonLocalReturn(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultValue)
+void beacon_BytecodeCodeBuilder_nonLocalReturn(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultValue, beacon_SourcePosition_t *sourcePosition)
 {
-    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, 0x10 | BeaconBytecodeNonLocalReturn);
+    beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, 0x10 | BeaconBytecodeNonLocalReturn, sourcePosition);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultValue);
 }
 
-void beacon_BytecodeCodeBuilder_makeArray(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, size_t elementCount, beacon_BytecodeValue_t *arguments)
+void beacon_BytecodeCodeBuilder_makeArray(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, size_t elementCount, beacon_BytecodeValue_t *arguments, beacon_SourcePosition_t *sourcePosition)
 {
     uint8_t argumentCountBits = beacon_BytecodeCodeBuilder_extendArgumentsIfNeeded(context, methodBuilder, elementCount);
-    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, argumentCountBits | BeaconBytecodeMakeArray);
+    beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, argumentCountBits | BeaconBytecodeMakeArray, sourcePosition);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultTemporary);
     for(size_t i = 0; i < elementCount; ++i)
         beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, arguments[i]);
 }
 
-void beacon_BytecodeCodeBuilder_makeClosureInstance(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t closure, size_t captureCount, beacon_BytecodeValue_t *captures)
+void beacon_BytecodeCodeBuilder_makeClosureInstance(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t closure, size_t captureCount, beacon_BytecodeValue_t *captures, beacon_SourcePosition_t *sourcePosition)
 {
     uint8_t argumentCountBits = beacon_BytecodeCodeBuilder_extendArgumentsIfNeeded(context, methodBuilder, 1 + captureCount);
-    beacon_ByteArrayList_add(context, methodBuilder->bytecodes, argumentCountBits | BeaconBytecodeMakeClosureInstance);
+    beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, argumentCountBits | BeaconBytecodeMakeClosureInstance, sourcePosition);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultTemporary);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, closure);
     for(size_t i = 0; i < captureCount; ++i)
