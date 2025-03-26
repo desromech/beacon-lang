@@ -634,6 +634,7 @@ typedef struct beacon_Exception_s
 {
     beacon_Object_t super;
     beacon_String_t *messageText;
+    beacon_SourcePosition_t *sourcePosition;
 } beacon_Exception_t;
 
 typedef struct beacon_Abort_s

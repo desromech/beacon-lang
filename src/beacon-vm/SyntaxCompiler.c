@@ -112,6 +112,14 @@ static beacon_oop_t beacon_SyntaxCompiler_evaluateIdentifierReference(beacon_con
 
     beacon_ParseTreeIdentifierReferenceNode_t *identifierReferenceNode = (beacon_ParseTreeIdentifierReferenceNode_t*)receiver;
     beacon_oop_t result = beacon_performWith(context, (beacon_oop_t)environment, context->roots.lookupSymbolRecursivelySelector, identifierReferenceNode->identifier);
+    if(result == context->roots.symbolNotFoundToken)
+    {
+        beacon_Symbol_t *symbol = (beacon_Symbol_t *)identifierReferenceNode->identifier;
+        char errorBuffer[256];
+        snprintf(errorBuffer, sizeof(errorBuffer), "Symbol binding not found for #%.*s.", symbol->super.super.super.super.super.header.slotCount, symbol->data);
+        beacon_exception_errorAtSourcePosition(context, errorBuffer, identifierReferenceNode->super.sourcePosition);
+    }
+
     if(beacon_getClass(context, result) == context->classes.associationClass)
     {
         beacon_Association_t *assoc = (beacon_Association_t*)result;
@@ -179,7 +187,7 @@ static beacon_oop_t beacon_SyntaxCompiler_error(beacon_context_t *context, beaco
     BeaconAssert(context, argumentCount == 2);
     char buffer[256];
     snprintf(buffer, sizeof(buffer), "Parse error %.*s\n", errorNode->errorMessage->super.super.super.super.super.header.slotCount, errorNode->errorMessage->data);
-    beacon_exception_error(context, buffer);
+    beacon_exception_errorAtSourcePosition(context, buffer, errorNode->super.sourcePosition);
     return 0;
 }
 
@@ -694,7 +702,7 @@ static beacon_oop_t beacon_SyntaxCompiler_identifierReference(beacon_context_t *
         beacon_Symbol_t *symbol = (beacon_Symbol_t *)identifierReference->identifier;
         char errorBuffer[256];
         snprintf(errorBuffer, sizeof(errorBuffer), "Symbol binding not found for #%.*s.", symbol->super.super.super.super.super.header.slotCount, symbol->data);
-        beacon_exception_error(context, errorBuffer);
+        beacon_exception_errorAtSourcePosition(context, errorBuffer, identifierReference->super.sourcePosition);
     }
 
     return result;
@@ -711,7 +719,9 @@ static beacon_oop_t beacon_SyntaxCompiler_temporaryAssignment(beacon_context_t *
     beacon_BytecodeValue_t storage = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, assignmentNode->storage, environment, builder);
     if(beacon_BytecodeValue_getType(storage) != BytecodeArgumentTypeTemporary &&
        beacon_BytecodeValue_getType(storage) != BytecodeArgumentTypeReceiverSlot)
-        beacon_exception_error(context, "Cannot assign to non temporary variable, or a receiver slot.");
+    {
+        beacon_exception_errorAtSourcePosition(context, "Cannot assign to non temporary variable, or a receiver slot.", assignmentNode->super.sourcePosition);
+    }
 
     beacon_BytecodeCodeBuilder_storeValue(context, builder, storage, valueToStore, assignmentNode->super.sourcePosition);
     return beacon_encodeSmallInteger(valueToStore);
@@ -1215,7 +1225,7 @@ static beacon_oop_t beacon_EmptyCompilationEnvironment_lookupSymbolRecursively(b
     (void)receiver;
     (void)argumentCount;
     (void)arguments;
-    return 0;
+    return context->roots.symbolNotFoundToken;
 }
 
 static beacon_oop_t beacon_SystemCompilationEnvironment_lookupSymbolRecursively(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)

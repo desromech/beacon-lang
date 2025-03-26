@@ -177,6 +177,7 @@ struct beacon_context_s
         beacon_oop_t doesNotUnderstandSelector;
         beacon_oop_t compileWithEnvironmentAndBytecodeBuilderSelector;
         beacon_oop_t compileInlineBlockWithArgumentsWithEnvironmentAndBytecodeBuilderSelector;
+        beacon_oop_t symbolNotFoundToken;
         beacon_oop_t lookupSymbolRecursivelySelector;
         beacon_oop_t lookupSymbolRecursivelyWithBytecodeBuilderSelector;
         beacon_oop_t evaluateWithEnvironmentSelector;

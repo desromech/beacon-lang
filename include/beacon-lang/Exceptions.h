@@ -17,6 +17,7 @@ void beacon_displayExceptionStackTrace(beacon_context_t *context);
 void beacon_exception_signal(beacon_context_t *context, beacon_Exception_t *exception);
 
 void beacon_exception_error(beacon_context_t *context, const char *errorMessage);
+void beacon_exception_errorAtSourcePosition(beacon_context_t *context, const char *errorMessage, beacon_SourcePosition_t *sourcePosition);
 void beacon_exception_assertionFailure(beacon_context_t *context, const char *errorMessage);
 
 void beacon_exception_scannerError(beacon_context_t *context, beacon_ScannerToken_t *token);

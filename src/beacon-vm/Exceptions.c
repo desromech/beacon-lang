@@ -7,12 +7,21 @@
 #include <stdio.h>
 
 void beacon_displayExceptionStackTrace(beacon_context_t *context);
+static void beacon_displaySourcePosition(beacon_context_t *context, beacon_SourcePosition_t *sourcePosition);
 
 void beacon_exception_signal(beacon_context_t *context, beacon_Exception_t *exception)
 {
     (void)context;
     size_t messageTextSize = exception->messageText->super.super.super.super.super.header.slotCount;
-    fprintf(stderr, "Exception: %.*s\n", (int)messageTextSize, exception->messageText->data);
+    if(exception->sourcePosition)
+    {
+        beacon_displaySourcePosition(context, exception->sourcePosition);
+        fprintf(stderr, ": Exception: %.*s\n", (int)messageTextSize, exception->messageText->data);
+    }
+    else
+    {
+        fprintf(stderr, "Exception: %.*s\n", (int)messageTextSize, exception->messageText->data);
+    }
     beacon_displayExceptionStackTrace(context);
     abort();
 }
@@ -23,6 +32,15 @@ void beacon_exception_error(beacon_context_t *context, const char *errorMessage)
     error->super.messageText = beacon_importCString(context, errorMessage);
     beacon_exception_signal(context, &error->super);
 }
+
+void beacon_exception_errorAtSourcePosition(beacon_context_t *context, const char *errorMessage, beacon_SourcePosition_t *sourcePosition)
+{
+    beacon_Error_t *error = beacon_allocateObjectWithBehavior(context->heap, context->classes.errorClass, sizeof(beacon_Error_t), BeaconObjectKindPointers);
+    error->super.messageText = beacon_importCString(context, errorMessage);
+    error->super.sourcePosition = sourcePosition;
+    beacon_exception_signal(context, &error->super);
+}
+
 
 void beacon_exception_assertionFailure(beacon_context_t *context, const char *errorMessage)
 {
@@ -64,7 +82,7 @@ static void beacon_displaySourcePosition(beacon_context_t *context, beacon_Sourc
     if(sourcePosition->sourceCode->directory)
     {
         int directorySize = sourcePosition->sourceCode->directory->super.super.super.super.super.header.slotCount;
-        fprintf(stderr, "%.*s%.*s:%d.%d-%d.%d\n",
+        fprintf(stderr, "%.*s%.*s:%d.%d-%d.%d",
             directorySize, sourcePosition->sourceCode->directory->data,
             nameSize, sourcePosition->sourceCode->name->data,
             (int)beacon_decodeSmallInteger(sourcePosition->startLine), (int)beacon_decodeSmallInteger(sourcePosition->startColumn),
@@ -72,7 +90,7 @@ static void beacon_displaySourcePosition(beacon_context_t *context, beacon_Sourc
     }
     else
     {
-        fprintf(stderr, "%.*s:%d.%d-%d.%d\n",
+        fprintf(stderr, "%.*s:%d.%d-%d.%d",
             nameSize, sourcePosition->sourceCode->name->data,
             (int)beacon_decodeSmallInteger(sourcePosition->startLine), (int)beacon_decodeSmallInteger(sourcePosition->startColumn),
             (int)beacon_decodeSmallInteger(sourcePosition->endLine), (int)beacon_decodeSmallInteger(sourcePosition->endColumn));
@@ -97,6 +115,7 @@ void beacon_displayExceptionStackTrace(beacon_context_t *context)
             }
 
             beacon_displaySourcePosition(context, sourcePosition);
+            fprintf(stderr, "\n");
         }
         default:
             break;

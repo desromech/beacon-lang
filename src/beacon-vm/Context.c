@@ -296,7 +296,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "parent", "behavior", NULL);
 
     context->classes.exceptionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Exception", sizeof(beacon_Exception_t), BeaconObjectKindPointers,
-        "messageText", NULL);
+        "messageText", "sourcePosition", NULL);
     context->classes.errorClass = beacon_context_createClassAndMetaclass(context, context->classes.exceptionClass, "Error", sizeof(beacon_Error_t), BeaconObjectKindPointers, NULL);
     context->classes.assertionFailureClass = beacon_context_createClassAndMetaclass(context, context->classes.errorClass, "AssertionFailure", sizeof(beacon_AssertionFailure_t), BeaconObjectKindPointers, NULL);
     context->classes.messageNotUnderstoodClass = beacon_context_createClassAndMetaclass(context, context->classes.errorClass, "MessageNotUnderstood", sizeof(beacon_MessageNotUnderstood_t), BeaconObjectKindPointers,
@@ -412,6 +412,7 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
     context->roots.compileInlineBlockWithArgumentsWithEnvironmentAndBytecodeBuilderSelector = (beacon_oop_t)beacon_internCString(context, "compileInlineBlockWithArguments:environment:andBytecodeBuilder:");
     
     context->roots.lookupSymbolRecursivelyWithBytecodeBuilderSelector = (beacon_oop_t)beacon_internCString(context, "lookupSymbolRecursively:withBytecodeBuilder:");
+    context->roots.symbolNotFoundToken = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.objectClass, sizeof(beacon_Object_t), BeaconObjectKindPointers);
     context->roots.lookupSymbolRecursivelySelector = (beacon_oop_t)beacon_internCString(context, "lookupSymbolRecursively:");
     context->roots.evaluateWithEnvironmentSelector = (beacon_oop_t)beacon_internCString(context, "evaluateWithEnvironment:");
     context->roots.addCompiledMethodSelector = (beacon_oop_t)beacon_internCString(context, "addCompiledMethod:");
