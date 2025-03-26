@@ -67,6 +67,7 @@ typedef struct beacon_StackFrameRecord_s
             beacon_oop_t captures;
             beacon_oop_t returnResultValue;
             jmp_buf nonLocalReturnJumpBuffer;
+            uint32_t pc;
         } bytecodeMethodStackRecord;
 
         struct

@@ -248,7 +248,6 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
     intptr_t temporaryCount = beacon_decodeSmallInteger(code->temporaryCount);
     BeaconAssert(context, temporaryCount >= 0);
 
-    uint32_t pc = 0;
     uint8_t *bytecodes = code->bytecodes->elements;
     size_t bytecodesSize = code->bytecodes->super.super.super.super.super.header.slotCount;
     uint8_t extendedArgumentCount = 0;
@@ -283,6 +282,7 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
             .decodedArgumentsTemporaryZoneSize = BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS,
             .decodedArgumentsTemporaryZone = bytecodeDecodedArguments,
             .captures = captures,
+            .pc = 0,
         }
     };
 
@@ -294,12 +294,12 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
 
     beacon_pushStackFrameRecord(&stackFrameRecord);
     
-    while(pc < bytecodesSize)
+    while(stackFrameRecord.bytecodeMethodStackRecord.pc < bytecodesSize)
     {
-        uint32_t instructionPC = pc;
+        uint32_t instructionPC = stackFrameRecord.bytecodeMethodStackRecord.pc;
         int16_t branchDestinationDelta = 0;
         uint32_t branchDestinationPC = instructionPC;
-        uint8_t instruction = bytecodes[pc++];
+        uint8_t instruction = bytecodes[stackFrameRecord.bytecodeMethodStackRecord.pc++];
 
         uint8_t instructionArgumentCount = (extendedArgumentCount << 4) | beacon_getBytecodeArgumentCount(instruction);
         BeaconAssert(context, instructionArgumentCount <= BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS);
@@ -318,8 +318,8 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
         bool resultTemporaryIsReceiverSlot = false;
         if(writesToTemporary)
         {
-            beacon_BytecodeValue_t bytecodeResultTemporary = bytecodes[pc++];
-            bytecodeResultTemporary |= (bytecodes[pc++]) << 8;
+            beacon_BytecodeValue_t bytecodeResultTemporary = bytecodes[stackFrameRecord.bytecodeMethodStackRecord.pc++];
+            bytecodeResultTemporary |= (bytecodes[stackFrameRecord.bytecodeMethodStackRecord.pc++]) << 8;
             BeaconAssert(context, beacon_BytecodeValue_getType(bytecodeResultTemporary) == BytecodeArgumentTypeTemporary ||
                                   beacon_BytecodeValue_getType(bytecodeResultTemporary) == BytecodeArgumentTypeReceiverSlot);
             resultTemporaryOrInstanceVarIndex = beacon_BytecodeValue_getIndex(bytecodeResultTemporary);
@@ -329,8 +329,8 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
         // Fetch all of the instruction arguments.
         for(uint8_t i = 0; i < instructionArgumentCount; ++i)
         {
-            beacon_BytecodeValue_t bytecodeArgument = bytecodes[pc++];
-            bytecodeArgument |= (bytecodes[pc++]) << 8;
+            beacon_BytecodeValue_t bytecodeArgument = bytecodes[stackFrameRecord.bytecodeMethodStackRecord.pc++];
+            bytecodeArgument |= (bytecodes[stackFrameRecord.bytecodeMethodStackRecord.pc++]) << 8;
 
             uint16_t bytecodeArgumentIndex = beacon_BytecodeValue_getIndex(bytecodeArgument);
             int16_t bytecodeArgumentSignedIndex = beacon_BytecodeValue_getSignedIndex(bytecodeArgument);
@@ -380,14 +380,14 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
             // Nothing is required here.
             break;
         case BeaconBytecodeJump:
-            pc = branchDestinationPC;
+            stackFrameRecord.bytecodeMethodStackRecord.pc = branchDestinationPC;
             if(branchDestinationDelta < 0)
                 beacon_memoryHeapSafepoint(context);
             break;
         case BeaconBytecodeJumpIfTrue:
             if(bytecodeDecodedArguments[0] == context->roots.trueValue)
             {
-                pc = branchDestinationPC;
+                stackFrameRecord.bytecodeMethodStackRecord.pc = branchDestinationPC;
                 if(branchDestinationDelta < 0)
                     beacon_memoryHeapSafepoint(context);
             }
@@ -395,7 +395,7 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
         case BeaconBytecodeJumpIfFalse:
             if(bytecodeDecodedArguments[0] == context->roots.falseValue)
             {
-                pc = branchDestinationPC;
+                stackFrameRecord.bytecodeMethodStackRecord.pc = branchDestinationPC;
                 if(branchDestinationDelta < 0)
                     beacon_memoryHeapSafepoint(context);
             }
