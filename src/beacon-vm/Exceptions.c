@@ -1,5 +1,6 @@
 #include "beacon-lang/Exceptions.h"
 #include "beacon-lang/ObjectModel.h"
+#include "beacon-lang/Bytecode.h"
 #include "beacon-lang/Memory.h"
 #include "beacon-lang/Context.h"
 #include <stdlib.h>
@@ -56,6 +57,9 @@ static beacon_oop_t beacon_Exception_displayException(beacon_context_t *context,
 
 static void beacon_displaySourcePosition(beacon_context_t *context, beacon_SourcePosition_t *sourcePosition)
 {
+    if(!sourcePosition)
+        return;
+
     int nameSize = sourcePosition->sourceCode->name->super.super.super.super.super.header.slotCount;
     if(sourcePosition->sourceCode->directory)
     {
@@ -83,8 +87,17 @@ void beacon_displayExceptionStackTrace(beacon_context_t *context)
         switch(record->kind)
         {
         case StackFrameBytecodeMethodRecord:
-            beacon_displaySourcePosition(context, record->bytecodeMethodStackRecord.code->sourcePosition);
-            break;
+        {
+            beacon_SourcePosition_t *sourcePosition = record->bytecodeMethodStackRecord.code->sourcePosition;
+            if(record->bytecodeMethodStackRecord.code->bytecodeImplementation)
+            {
+                beacon_SourcePosition_t *codeSourcePosition = beacon_bytecodeCode_findSourcePositionForPC(context, record->bytecodeMethodStackRecord.code->bytecodeImplementation, record->bytecodeMethodStackRecord.pc);
+                if(codeSourcePosition)
+                    sourcePosition = codeSourcePosition;
+            }
+
+            beacon_displaySourcePosition(context, sourcePosition);
+        }
         default:
             break;
         }

@@ -168,6 +168,11 @@ void beacon_BytecodeCodeBuilder_makeArray(beacon_context_t *context, beacon_Byte
 void beacon_BytecodeCodeBuilder_makeClosureInstance(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t closure, size_t captureCount, beacon_BytecodeValue_t *captures, beacon_SourcePosition_t *sourcePosition);
 
 /**
+ * Find source position for PC
+ */
+beacon_SourcePosition_t *beacon_bytecodeCode_findSourcePositionForPC(beacon_context_t *context, beacon_BytecodeCode_t *code, uint32_t pc);
+
+/**
  * Bytecode interpretation.
  */
 beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_CompiledCode_t *method, beacon_oop_t receiver, beacon_oop_t selector, beacon_oop_t captures, size_t argumentCount, beacon_oop_t *arguments);

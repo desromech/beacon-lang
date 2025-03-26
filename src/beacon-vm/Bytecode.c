@@ -239,6 +239,24 @@ void beacon_BytecodeCodeBuilder_makeClosureInstance(beacon_context_t *context, b
         beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, captures[i]);
 }
 
+beacon_SourcePosition_t *beacon_bytecodeCode_findSourcePositionForPC(beacon_context_t *context, beacon_BytecodeCode_t *code, uint32_t pc)
+{
+    if(!code->sourcePositions)
+        return NULL;
+
+    size_t entryCount = code->sourcePositions->super.super.super.super.super.header.slotCount / 2;
+    beacon_SourcePosition_t *bestFound = NULL;
+    for(size_t i = 0; i < entryCount; ++i)
+    {
+        uint32_t entryPC = beacon_decodeSmallInteger(code->sourcePositions->elements[i*2]);
+        if(entryPC > pc)
+            return bestFound;
+        bestFound = (beacon_SourcePosition_t *)code->sourcePositions->elements[i*2 + 1];
+    }
+    
+    return bestFound;
+}
+
 beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_CompiledCode_t *method, beacon_oop_t receiver, beacon_oop_t selector, beacon_oop_t captures, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)selector;
