@@ -6,8 +6,13 @@
 #include <math.h>
 
 #ifdef _MSC_VER
+#define GCC_ALIGNED(x)
 #else
 #define GCC_ALIGNED(x) __attribute__((aligned(x)))
+#endif
+
+#ifdef _MSC_VER
+#pragma pack(push, 8)
 #endif
 
 typedef struct beacon_RenderVector2_s
@@ -15,10 +20,19 @@ typedef struct beacon_RenderVector2_s
     float x, y;
 } beacon_RenderVector2_t GCC_ALIGNED(8);
 
+#ifdef _MSC_VER
+#pragma pack(pop)
+#pragma pack(push, 16)
+#endif
+
 typedef struct beacon_RenderVector3_s
 {
     float x, y, z, padding;
 } beacon_RenderVector3_t GCC_ALIGNED(16);
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 static inline beacon_RenderVector3_t beacon_RenderVector3_make(float x, float y, float z)
 {
@@ -31,6 +45,10 @@ typedef struct beacon_RenderPackedVector3_s
     float x, y, z;
 } beacon_RenderPackedVector3_t;
 
+#ifdef _MSC_VER
+#pragma pack(push, 16)
+#endif
+
 typedef union beacon_RenderVector4_s
 {
     struct
@@ -39,6 +57,11 @@ typedef union beacon_RenderVector4_s
 	};
 
 } beacon_RenderVector4_t GCC_ALIGNED(16);
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#pragma pack(push, 16)
+#endif
 
 typedef union beacon_RenderQuaternion_s
 {
@@ -49,11 +72,19 @@ typedef union beacon_RenderQuaternion_s
 
 } beacon_RenderQuaternion_t GCC_ALIGNED(16);
 
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
+
 static inline beacon_RenderQuaternion_t beacon_RenderQuaternion_conjugated(const beacon_RenderQuaternion_t quat)
 {
 	beacon_RenderQuaternion_t result = {-quat.x, -quat.y, -quat.z, quat.w};
 	return result;
 }
+
+#ifdef _MSC_VER
+#pragma pack(push, 16)
+#endif
 
 typedef union beacon_RenderMatrix3x3_s
 {
@@ -67,6 +98,10 @@ typedef union beacon_RenderMatrix3x3_s
 	beacon_RenderVector3_t columns[3];
 } beacon_RenderMatrix3x3_t GCC_ALIGNED(16);
 
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
+
 static inline beacon_RenderMatrix3x3_t beacon_RenderMatrix3x3_makeWithColumns(beacon_RenderVector3_t first, beacon_RenderVector3_t second, beacon_RenderVector3_t third)
 {
 	beacon_RenderMatrix3x3_t result = {
@@ -74,6 +109,10 @@ static inline beacon_RenderMatrix3x3_t beacon_RenderMatrix3x3_makeWithColumns(be
 	};
 	return result;
 }
+
+#ifdef _MSC_VER
+#pragma pack(push, 16)
+#endif
 
 typedef union beacon_RenderMatrix4x4_s
 {
@@ -86,6 +125,10 @@ typedef union beacon_RenderMatrix4x4_s
 
 	beacon_RenderVector4_t columns[4];
 } beacon_RenderMatrix4x4_t GCC_ALIGNED(16);
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 typedef struct beacon_AABox3_s
 {

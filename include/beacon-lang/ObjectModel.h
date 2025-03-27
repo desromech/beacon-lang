@@ -71,7 +71,7 @@ static inline beacon_oop_t beacon_encodeCharacter(uint32_t character)
 
 static inline uint32_t beacon_decodeCharacter(beacon_oop_t oop)
 {
-    return oop >> 3;
+    return (uint32_t)(oop >> 3);
 }
 
 static inline bool beacon_isNil(beacon_oop_t oop)

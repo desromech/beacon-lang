@@ -11,7 +11,12 @@
 #include <stdarg.h>
 #include <string.h>
 #include <math.h>
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN 
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context);
 void beacon_context_registerArrayListPrimitive(beacon_context_t *context);
@@ -420,6 +425,25 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
     context->roots.emptyArray = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t), BeaconObjectKindPointers);
     context->roots.weakTombstone = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.weakTombstoneClass, sizeof(beacon_WeakTombstone_t), BeaconObjectKindPointers);
 
+#ifdef _WIN32
+{
+    beacon_StdioStream_t *stdioStdin = beacon_allocateObjectWithBehavior(context->heap, context->classes.stdioStreamClass, sizeof(beacon_StdioStream_t), BeaconObjectKindPointers);
+    stdioStdin->super.handle = beacon_boxExternalAddress(context, GetStdHandle(STD_INPUT_HANDLE));
+    context->roots.stdinStream = (beacon_oop_t)stdioStdin;
+}
+
+{
+    beacon_StdioStream_t *stdioStdout = beacon_allocateObjectWithBehavior(context->heap, context->classes.stdioStreamClass, sizeof(beacon_StdioStream_t), BeaconObjectKindPointers);
+    stdioStdout->super.handle = beacon_boxExternalAddress(context, GetStdHandle(STD_OUTPUT_HANDLE));
+    context->roots.stdoutStream = (beacon_oop_t)stdioStdout;
+}
+
+{
+    beacon_StdioStream_t *stderrStdout = beacon_allocateObjectWithBehavior(context->heap, context->classes.stdioStreamClass, sizeof(beacon_StdioStream_t), BeaconObjectKindPointers);
+    stderrStdout->super.handle = beacon_boxExternalAddress(context, GetStdHandle(STD_ERROR_HANDLE));
+    context->roots.stdoutStream = (beacon_oop_t)stderrStdout;
+}
+#else
     {
         beacon_StdioStream_t *stdioStdin = beacon_allocateObjectWithBehavior(context->heap, context->classes.stdioStreamClass, sizeof(beacon_StdioStream_t), BeaconObjectKindPointers);
         stdioStdin->super.handle = beacon_encodeSmallInteger(STDIN_FILENO);
@@ -437,6 +461,8 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
         stderrStdout->super.handle = beacon_encodeSmallInteger(STDERR_FILENO);
         context->roots.stdoutStream = (beacon_oop_t)stderrStdout;
     }
+
+#endif
 
     {
         context->roots.ifTrueSelector = (beacon_oop_t)beacon_internCString(context, "ifTrue:");
@@ -1363,11 +1389,17 @@ static beacon_oop_t beacon_AbstractBinaryFileStream_nextPut(beacon_context_t *co
     BeaconAssert(context, argumentCount == 1);
     BeaconAssert(context, beacon_isImmediate(arguments[0]));
     beacon_AbstractBinaryFileStream_t *stream = (beacon_AbstractBinaryFileStream_t *)receiver;
+#ifdef _WIN32
+    HANDLE handle = beacon_unboxExternalAddress(context, stream->handle);
+    uint8_t value = beacon_decodeSmallInteger(arguments[0]);
+    WriteFile(handle, &value, 1, NULL, NULL);
+#else
     int fd = beacon_decodeSmallInteger(stream->handle);
     uint8_t value = beacon_decodeSmallInteger(arguments[0]);
     
     ssize_t writtenCount = write(fd, &value, 1);
     BeaconAssert(context, writtenCount == 1);
+#endif
     return receiver;
 }
 
@@ -1379,15 +1411,21 @@ static beacon_oop_t beacon_AbstractBinaryFileStream_nextPutAll(beacon_context_t 
     BeaconAssert(context, argumentCount == 1);
     
     beacon_ObjectHeader_t *header = (beacon_ObjectHeader_t *)arguments[0];
-    ssize_t objectSize = header->slotCount;
+    size_t objectSize = header->slotCount;
     BeaconAssert(context, header->objectKind == BeaconObjectKindBytes);
     uint8_t *objectData = (uint8_t *)(header + 1);
 
     beacon_AbstractBinaryFileStream_t *stream = (beacon_AbstractBinaryFileStream_t *)receiver;
+#ifdef _WIN32
+    HANDLE handle = beacon_unboxExternalAddress(context, stream->handle);
+    uint8_t value = beacon_decodeSmallInteger(arguments[0]);
+    WriteFile(handle, objectData, objectSize, NULL, NULL);
+#else
     int fd = beacon_decodeSmallInteger(stream->handle);
     
     ssize_t writtenCount = write(fd, objectData, objectSize);
     BeaconAssert(context, writtenCount == objectSize);
+#endif
     return receiver;
 }
 
@@ -1399,12 +1437,12 @@ static beacon_oop_t beacon_String_concatenate(beacon_context_t *context, beacon_
     BeaconAssert(context, argumentCount == 1);
 
     beacon_ObjectHeader_t *receiverHeader = (beacon_ObjectHeader_t *)receiver;
-    ssize_t receiverSize = receiverHeader->slotCount;
+    size_t receiverSize = receiverHeader->slotCount;
     if(receiverSize == 0)
         return arguments[0];
 
     beacon_ObjectHeader_t *header = (beacon_ObjectHeader_t *)arguments[0];
-    ssize_t objectSize = header->slotCount;
+    size_t objectSize = header->slotCount;
     if(objectSize == 0)
         return receiver;
 

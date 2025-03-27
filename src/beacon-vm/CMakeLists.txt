@@ -18,7 +18,14 @@ set(BeaconVM_Sources
 )
 
 
-if(SDL2_LIBRARY AND SDL2_INCLUDE_DIR)
+if(WIN32)
+    set(BeaconVM_Win32Source
+        Win32Window.c
+    )
+
+    add_library(BeaconVMCore ${BeaconVM_Sources} ${BeaconVM_Win32Source})
+    target_link_libraries(BeaconVMCore Agpu)
+elseif(SDL2_LIBRARY AND SDL2_INCLUDE_DIR)
     set(BeaconVM_SDL2Sources
         SDL2Window.c
     )

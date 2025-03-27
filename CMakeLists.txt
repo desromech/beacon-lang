@@ -62,7 +62,9 @@ if(WIN32)
 else()
     set(SDL2_MAIN_LIBRARY "")
 endif()
-include_directories("${SDL2_INCLUDE_DIR}")
+if(SDL2_INCLUDE_DIR)
+	include_directories("${SDL2_INCLUDE_DIR}")
+endif()
 
 add_subdirectory(third-party)
 

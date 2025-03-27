@@ -515,7 +515,7 @@ static beacon_oop_t beacon_SyntaxCompiler_messageSend(beacon_context_t *context,
     beacon_BytecodeValue_t selectorValue = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, messageSendNode->selector, environment, builder);
     beacon_BytecodeValue_t resultValue = beacon_BytecodeCodeBuilder_newTemporary(context, builder, 0);
 
-    beacon_BytecodeValue_t argumentValues[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS] = {};
+    beacon_BytecodeValue_t argumentValues[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS] = {0};
 
     for(size_t i = 0; i < argumentValueCount; ++i)
         argumentValues[i] = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[i] , environment, builder);
@@ -618,7 +618,7 @@ static beacon_oop_t beacon_SyntaxCompiler_evaluateMessageSend(beacon_context_t *
         return context->roots.nilValue;
     }
 
-    beacon_oop_t argumentValues[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS] = {};
+    beacon_oop_t argumentValues[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS] = {0};
 
     for(size_t i = 0; i < argumentValueCount; ++i)
         argumentValues[i] = beacon_evaluateNodeWithEnvironment(context, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[i] , environment);
@@ -648,7 +648,7 @@ static beacon_oop_t beacon_SyntaxCompiler_messageCascade(beacon_context_t *conte
 
         size_t argumentValueCount = cascadedMessage->arguments->super.super.super.super.super.header.slotCount;
         BeaconAssert(context, argumentValueCount <= BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS);
-        beacon_BytecodeValue_t argumentValues[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS] = {};
+        beacon_BytecodeValue_t argumentValues[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS] = {0};
 
         for(size_t i = 0; i < argumentValueCount; ++i)
             argumentValues[i] = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, (beacon_ParseTreeNode_t*)cascadedMessage->arguments->elements[i] , environment, builder);
@@ -678,7 +678,7 @@ static beacon_oop_t beacon_SyntaxCompiler_evaluateMessageCascade(beacon_context_
 
         size_t argumentValueCount = cascadedMessage->arguments->super.super.super.super.super.header.slotCount;
         BeaconAssert(context, argumentValueCount <= BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS);
-        beacon_oop_t argumentValues[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS] = {};
+        beacon_oop_t argumentValues[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS] = {0};
 
         for(size_t i = 0; i < argumentValueCount; ++i)
             argumentValues[i] = beacon_evaluateNodeWithEnvironment(context, (beacon_ParseTreeNode_t*)cascadedMessage->arguments->elements[i] , environment);

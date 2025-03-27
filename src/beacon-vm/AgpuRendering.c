@@ -3,6 +3,7 @@
 #include "Exceptions.h"
 #include <stdio.h>
 #include <stdlib.h>
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include "stb_truetype.h"
 
@@ -99,7 +100,7 @@ agpu_device *beacon_agpu_getDevice(beacon_context_t *context, beacon_AGPU_t *agp
     if(!platform)
         return 0;
     
-    agpu_device_open_info openInfo = {};
+    agpu_device_open_info openInfo = {0};
     openInfo.gpu_index = agpu->deviceIndex;
     openInfo.debug_layer = agpu->debugLayerEnabled;
 
@@ -785,7 +786,7 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
     }
 
     {
-        agpu_buffer_description desc = {};
+        agpu_buffer_description desc = {0};
         desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
         desc.usage_modes = AGPU_STORAGE_BUFFER | AGPU_DRAW_INDIRECT_BUFFER;
         desc.main_usage_mode = AGPU_DRAW_INDIRECT_BUFFER;
@@ -795,7 +796,7 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
     }
 
     {
-        agpu_buffer_description desc = {};
+        agpu_buffer_description desc = {0};
         desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
         desc.usage_modes = AGPU_STORAGE_BUFFER;
         desc.main_usage_mode = AGPU_STORAGE_BUFFER;
@@ -804,7 +805,7 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
     }
 
     {
-        agpu_buffer_description desc = {};
+        agpu_buffer_description desc = {0};
         desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
         desc.usage_modes = AGPU_STORAGE_BUFFER;
         desc.main_usage_mode = AGPU_STORAGE_BUFFER;
@@ -813,7 +814,7 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
     }
 
     {
-        agpu_buffer_description desc = {};
+        agpu_buffer_description desc = {0};
         desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
         desc.usage_modes = AGPU_STORAGE_BUFFER;
         desc.main_usage_mode = AGPU_STORAGE_BUFFER;
@@ -822,7 +823,7 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
     }
 
     {
-        agpu_buffer_description desc = {};
+        agpu_buffer_description desc = {0};
         desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
         desc.usage_modes = AGPU_STORAGE_BUFFER;
         desc.main_usage_mode = AGPU_STORAGE_BUFFER;
@@ -831,7 +832,7 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
     }
 
     {
-        agpu_buffer_description desc = {};
+        agpu_buffer_description desc = {0};
         desc.heap_type = AGPU_MEMORY_HEAP_TYPE_DEVICE_LOCAL;
         desc.usage_modes = AGPU_STORAGE_BUFFER;
         desc.main_usage_mode = AGPU_STORAGE_BUFFER;
@@ -846,12 +847,12 @@ void beacon_agpu_initializeUpdateBuffers(beacon_context_t *context, beacon_AGPU_
     agpuBindStorageBufferRange(agpu->renderingDataBinding, 3, agpu->gpu3DRenderingDataBuffer, agpu->renderMaterialsAttributes.offset,     agpu->renderMaterialsAttributes.byteCapacity);
     agpuBindStorageBufferRange(agpu->renderingDataBinding, 4, agpu->gpu3DRenderingDataBuffer, agpu->renderLightSourceAttributes.offset,   agpu->renderLightSourceAttributes.byteCapacity);
 
-    agpuBindStorageBufferRange(agpu->renderingDataBinding, 5,  agpu->gpu3DRenderingDataBuffer, agpu->vertexPositions.offset, agpu->vertexPositions.byteCapacity);
-    agpuBindStorageBufferRange(agpu->renderingDataBinding, 6,  agpu->gpu3DRenderingDataBuffer, agpu->vertexNormals.offset, agpu->vertexNormals.byteCapacity);
-    agpuBindStorageBufferRange(agpu->renderingDataBinding, 7,  agpu->gpu3DRenderingDataBuffer, agpu->vertexTexcoords.offset, agpu->vertexTexcoords.byteCapacity);
-    agpuBindStorageBufferRange(agpu->renderingDataBinding, 8,  agpu->gpu3DRenderingDataBuffer, agpu->vertexTangent4.offset, agpu->vertexTangent4.byteCapacity);
-    agpuBindStorageBufferRange(agpu->renderingDataBinding, 9,  agpu->gpu3DRenderingDataBuffer, agpu->vertexBoneIndices.offset, agpu->vertexBoneIndices.byteCapacity);
-    agpuBindStorageBufferRange(agpu->renderingDataBinding, 10, agpu->gpu3DRenderingDataBuffer, agpu->vertexBoneWeights.offset, agpu->vertexBoneWeights.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 5,  agpu->gpu3DRenderingDataBuffer, (agpu_size)agpu->vertexPositions.offset,   (agpu_size)agpu->vertexPositions.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 6,  agpu->gpu3DRenderingDataBuffer, (agpu_size)agpu->vertexNormals.offset,     (agpu_size)agpu->vertexNormals.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 7,  agpu->gpu3DRenderingDataBuffer, (agpu_size)agpu->vertexTexcoords.offset,   (agpu_size)agpu->vertexTexcoords.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 8,  agpu->gpu3DRenderingDataBuffer, (agpu_size)agpu->vertexTangent4.offset,    (agpu_size)agpu->vertexTangent4.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 9,  agpu->gpu3DRenderingDataBuffer, (agpu_size)agpu->vertexBoneIndices.offset, (agpu_size)agpu->vertexBoneIndices.byteCapacity);
+    agpuBindStorageBufferRange(agpu->renderingDataBinding, 10, agpu->gpu3DRenderingDataBuffer, (agpu_size)agpu->vertexBoneWeights.offset, (agpu_size)agpu->vertexBoneWeights.byteCapacity);
 
     agpuBindStorageBuffer(agpu->renderingDataBinding, 11, agpu->renderDrawIndirectBuffer);
     agpuBindStorageBuffer(agpu->renderingDataBinding, 12, agpu->renderChunkDataBuffer);
@@ -984,14 +985,14 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
     // Create the render pass
     if(!renderer->mainDepthRenderPass)
     {
-        agpu_renderpass_depth_stencil_description depthAttachment = {};
+        agpu_renderpass_depth_stencil_description depthAttachment = {0};
         depthAttachment.format = BEACON_AGPU_DEPTH_FORMAT;
         depthAttachment.begin_action = AGPU_ATTACHMENT_CLEAR;
         depthAttachment.end_action = AGPU_ATTACHMENT_KEEP;
         depthAttachment.clear_value.depth = 0.0;
         depthAttachment.sample_count = 1;
 
-        agpu_renderpass_description description = {};
+        agpu_renderpass_description description = {0};
         description.depth_stencil_attachment = &depthAttachment;
 
         renderer->mainDepthRenderPass = agpuCreateRenderPass(device, &description);
@@ -999,14 +1000,14 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
 
     if(!renderer->shadowMapAtlasRenderPass)
     {
-        agpu_renderpass_depth_stencil_description depthAttachment = {};
+        agpu_renderpass_depth_stencil_description depthAttachment = {0};
         depthAttachment.format = BEACON_AGPU_DEPTH_FORMAT;
         depthAttachment.begin_action = AGPU_ATTACHMENT_KEEP;
         depthAttachment.end_action = AGPU_ATTACHMENT_KEEP;
         depthAttachment.clear_value.depth = 0.0;
         depthAttachment.sample_count = 1;
 
-        agpu_renderpass_description description = {};
+        agpu_renderpass_description description = {0};
         description.depth_stencil_attachment = &depthAttachment;
 
         renderer->shadowMapAtlasRenderPass = agpuCreateRenderPass(device, &description);
@@ -1014,7 +1015,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
 
     if(!renderer->mainDepthColorOpaqueRenderPass)
     {
-        agpu_renderpass_color_attachment_description colorAttachments[3] = {};
+        agpu_renderpass_color_attachment_description colorAttachments[3] = {0};
 
         colorAttachments[0].format = BEACON_AGPU_COLOR_FORMAT;
         colorAttachments[0].begin_action = AGPU_ATTACHMENT_CLEAR;
@@ -1045,14 +1046,14 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
         colorAttachments[2].clear_value.a = 0;
         colorAttachments[2].sample_count = 1;
 
-        agpu_renderpass_depth_stencil_description depthAttachment = {};
+        agpu_renderpass_depth_stencil_description depthAttachment = {0};
         depthAttachment.format = BEACON_AGPU_DEPTH_FORMAT;
         depthAttachment.begin_action = AGPU_ATTACHMENT_KEEP;
         depthAttachment.end_action = AGPU_ATTACHMENT_KEEP;
         depthAttachment.clear_value.depth = 0.0;
         depthAttachment.sample_count = 1;
 
-        agpu_renderpass_description description = {};
+        agpu_renderpass_description description = {0};
         description.color_attachment_count = 3;
         description.color_attachments = colorAttachments;
         description.depth_stencil_attachment = &depthAttachment;
@@ -1062,7 +1063,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
 
     if(!renderer->mainDepthColorRenderPass)
     {
-        agpu_renderpass_color_attachment_description colorAttachment = {};
+        agpu_renderpass_color_attachment_description colorAttachment = {0};
         colorAttachment.format = BEACON_AGPU_COLOR_FORMAT;
         colorAttachment.begin_action = AGPU_ATTACHMENT_KEEP;
         colorAttachment.end_action = AGPU_ATTACHMENT_KEEP;
@@ -1072,14 +1073,14 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
         colorAttachment.clear_value.a = 0;
         colorAttachment.sample_count = 1;
 
-        agpu_renderpass_depth_stencil_description depthAttachment = {};
+        agpu_renderpass_depth_stencil_description depthAttachment = {0};
         depthAttachment.format = BEACON_AGPU_DEPTH_FORMAT;
         depthAttachment.begin_action = AGPU_ATTACHMENT_KEEP;
         depthAttachment.end_action = AGPU_ATTACHMENT_KEEP;
         depthAttachment.clear_value.depth = 0.0;
         depthAttachment.sample_count = 1;
 
-        agpu_renderpass_description description = {};
+        agpu_renderpass_description description = {0};
         description.color_attachment_count = 1;
         description.color_attachments = &colorAttachment;
         description.depth_stencil_attachment = &depthAttachment;
@@ -1090,7 +1091,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
     // Create the output render pass
     if(!renderer->outputRenderPass)
     {
-        agpu_renderpass_color_attachment_description colorAttachment = {};
+        agpu_renderpass_color_attachment_description colorAttachment = {0};
         colorAttachment.format = BEACON_AGPU_SWAP_CHAIN_COLOR_FORMAT;
         colorAttachment.begin_action = AGPU_ATTACHMENT_CLEAR;
         colorAttachment.end_action = AGPU_ATTACHMENT_KEEP;
@@ -1100,7 +1101,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
         colorAttachment.clear_value.a = 0;
         colorAttachment.sample_count = 1;
 
-        agpu_renderpass_description description = {};
+        agpu_renderpass_description description = {0};
         description.color_attachment_count = 1;
         description.color_attachments = &colorAttachment;
 
@@ -1142,7 +1143,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
         renderer->intermediateBufferHeight = displayHeight;
 
         {
-            agpu_texture_description desc = {};
+            agpu_texture_description desc = {0};
             desc.type = AGPU_TEXTURE_2D;
             desc.width = displayWidth;
             desc.height = displayHeight;
@@ -1161,7 +1162,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
         }
 
         {
-            agpu_texture_description desc = {};
+            agpu_texture_description desc = {0};
             desc.type = AGPU_TEXTURE_2D;
             desc.width = displayWidth;
             desc.height = displayHeight;
@@ -1179,7 +1180,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
         }
 
         {
-            agpu_texture_description desc = {};
+            agpu_texture_description desc = {0};
             desc.type = AGPU_TEXTURE_2D;
             desc.width = displayWidth;
             desc.height = displayHeight;
@@ -1197,7 +1198,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
         }
 
         {
-            agpu_texture_description desc = {};
+            agpu_texture_description desc = {0};
             desc.type = AGPU_TEXTURE_2D;
             desc.width = displayWidth;
             desc.height = displayHeight;
@@ -1215,7 +1216,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
         }
 
         {
-            agpu_texture_description desc = {};
+            agpu_texture_description desc = {0};
             desc.type = AGPU_TEXTURE_2D;
             desc.width = displayWidth;
             desc.height = displayHeight;
@@ -1232,27 +1233,27 @@ static beacon_oop_t beacon_agpuWindowRenderer_begin3DFrameRendering(beacon_conte
             renderer->outputTexture = agpuCreateTexture(device, &desc);
         }
         {
-            agpu_texture_view_description depthBufferViewDesc = {};
+            agpu_texture_view_description depthBufferViewDesc = {0};
             agpuGetTextureFullViewDescription(renderer->mainDepthBuffer, &depthBufferViewDesc);
             depthBufferViewDesc.usage_mode = AGPU_TEXTURE_USAGE_DEPTH_ATTACHMENT;
             agpu_texture_view *depthBufferAttachmentView = agpuCreateTextureView(renderer->mainDepthBuffer, &depthBufferViewDesc);
 
-            agpu_texture_view_description colorBufferViewDesc = {};
+            agpu_texture_view_description colorBufferViewDesc = {0};
             agpuGetTextureFullViewDescription(renderer->hdrColorBuffer, &colorBufferViewDesc);
             colorBufferViewDesc.usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
             agpu_texture_view *hdrColorAttachmentView = agpuCreateTextureView(renderer->hdrColorBuffer, &colorBufferViewDesc);
 
-            agpu_texture_view_description normalBufferViewDesc = {};
+            agpu_texture_view_description normalBufferViewDesc = {0};
             agpuGetTextureFullViewDescription(renderer->normalGBuffer, &normalBufferViewDesc);
             normalBufferViewDesc.usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
             agpu_texture_view *normalGBufferAttachmentView = agpuCreateTextureView(renderer->normalGBuffer, &normalBufferViewDesc);
 
-            agpu_texture_view_description specularityGBufferViewDesc = {};
+            agpu_texture_view_description specularityGBufferViewDesc = {0};
             agpuGetTextureFullViewDescription(renderer->specularityGBuffer, &specularityGBufferViewDesc);
             specularityGBufferViewDesc.usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
             agpu_texture_view *specularityGBufferAttachmentView = agpuCreateTextureView(renderer->specularityGBuffer, &specularityGBufferViewDesc);
 
-            agpu_texture_view_description outputTextureViewDesc = {};
+            agpu_texture_view_description outputTextureViewDesc = {0};
             agpuGetTextureFullViewDescription(renderer->outputTexture, &outputTextureViewDesc);
             outputTextureViewDesc.usage_mode = AGPU_TEXTURE_USAGE_COLOR_ATTACHMENT;
             agpu_texture_view *outputTextureAttachmentView = agpuCreateTextureView(renderer->outputTexture, &outputTextureViewDesc);
@@ -1612,7 +1613,7 @@ static void beacon_agpuWindowRenderer_renderText(beacon_context_t *context, beac
         if(c < ' ')
             continue;
 
-        stbtt_aligned_quad quadToDraw = {};
+        stbtt_aligned_quad quadToDraw = {0};
         stbtt_GetBakedQuad((stbtt_bakedchar*)fontFace->charData->elements, formWidth, formHeight, c - 31, &baselineX, &baselineY, &quadToDraw, true);
 
         beacon_GuiRenderingElement_t quad = {
@@ -1937,10 +1938,10 @@ static beacon_oop_t beacon_agpuWindowRenderer_addSceneCamera(beacon_context_t *c
         .viewMatrix = viewMatrix,
         .inverseViewMatrix = inverseViewMatrix,
     };
-    beacon_Frustum_t viewFrustum = {};
+    beacon_Frustum_t viewFrustum = {0};
     beacon_Frustum_setPerspective(&viewFrustum, fovY, aspectRatio, nearDistance, farDistance);
     
-    beacon_Frustum_t worldFrustum = {};
+    beacon_Frustum_t worldFrustum = {0};
     beacon_Frustum_transformWithMatrix4x4(&worldFrustum, &viewFrustum, inverseViewMatrix);
     
     cameraRenderState.worldFrustum = worldFrustum;
@@ -2138,7 +2139,7 @@ static beacon_oop_t beacon_agpuWindowRenderer_addLightSource(beacon_context_t *c
         {
             shadowMapPartCount = 4;
             renderLightSource.shadowMapNormalBiasFactor = beacon_decodeNumberAsDouble(context, lightSource->shadowMapNormalBiasFactor);
-            beacon_RenderCameraState_t cameraRenderState = {};
+            beacon_RenderCameraState_t cameraRenderState = {0};
             if(agpu->cameraState.size > 0)
                 cameraRenderState = ((beacon_RenderCameraState_t*)agpu->cameraState.thisFrameBuffer)[agpu->cameraState.size - 1];
 

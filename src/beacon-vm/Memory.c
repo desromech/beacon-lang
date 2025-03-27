@@ -3,7 +3,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#ifdef _WIN32
+__declspec(thread) beacon_StackFrameRecord_t *beaconCurrentTopStackFrameRecord = 0;
+#else
 _Thread_local beacon_StackFrameRecord_t *beaconCurrentTopStackFrameRecord = 0;
+#endif
 
 beacon_StackFrameRecord_t *beacon_getTopStackFrameRecord()
 {
@@ -318,7 +322,7 @@ void *beacon_allocateObjectWithBehavior(beacon_MemoryHeap_t *heap, beacon_Behavi
     header->behavior = behavior;
     header->objectKind = kind;
     header->gcColor = heap->whiteGCColor;
-    header->slotCount = size - sizeof(beacon_ObjectHeader_t);
+    header->slotCount = (uint32_t)(size - sizeof(beacon_ObjectHeader_t));
     if(kind != BeaconObjectKindBytes)
         header->slotCount /= sizeof(beacon_oop_t);
 

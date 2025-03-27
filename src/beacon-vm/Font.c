@@ -114,7 +114,7 @@ beacon_oop_t beacon_FontFace_measureTextExtent(beacon_context_t *context, beacon
     int formHeight = beacon_decodeSmallInteger(atlasForm->height);
 
     // TODO: Decode UTF8
-    BeaconGlyphRectange_t rectangle = {};
+    BeaconGlyphRectange_t rectangle = {0};
     float baselineX = 0;
     float baselineY = 0;
     for(size_t i = 0; i < stringSize; ++i)
@@ -125,7 +125,7 @@ beacon_oop_t beacon_FontFace_measureTextExtent(beacon_context_t *context, beacon
             continue;
         }
 
-        stbtt_aligned_quad quadToDraw = {};
+        stbtt_aligned_quad quadToDraw = {0};
         stbtt_GetBakedQuad((stbtt_bakedchar*)fontFace->charData->elements, formWidth, formHeight, c - 31, &baselineX, &baselineY, &quadToDraw, true);
 
         glyphRectangle_addPoint(&rectangle, quadToDraw.x0, quadToDraw.y0);
@@ -155,7 +155,7 @@ beacon_oop_t beacon_FontFace_measureTextExtentUntil(beacon_context_t *context, b
     int formHeight = beacon_decodeSmallInteger(atlasForm->height);
 
     // TODO: Decode UTF8
-    BeaconGlyphRectange_t rectangle = {};
+    BeaconGlyphRectange_t rectangle = {0};
     float baselineX = 0;
     float baselineY = 0;
     for(size_t i = 0; i < stringSize && i < untilColumn; ++i)
@@ -164,7 +164,7 @@ beacon_oop_t beacon_FontFace_measureTextExtentUntil(beacon_context_t *context, b
         if(c < ' ')
             continue;
 
-        stbtt_aligned_quad quadToDraw = {};
+        stbtt_aligned_quad quadToDraw = {0};
         stbtt_GetBakedQuad((stbtt_bakedchar*)fontFace->charData->elements, formWidth, formHeight, c - 31, &baselineX, &baselineY, &quadToDraw, true);
 
         glyphRectangle_addPoint(&rectangle, quadToDraw.x0, quadToDraw.y0);

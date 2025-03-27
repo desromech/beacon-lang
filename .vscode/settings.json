@@ -64,6 +64,10 @@
         "ostream": "c",
         "stdexcept": "c",
         "streambuf": "c",
-        "chrono": "c"
+        "chrono": "c",
+        "optional": "c",
+        "xlocmon": "c",
+        "xtr1common": "c",
+        "xutility": "c"
     }
 }

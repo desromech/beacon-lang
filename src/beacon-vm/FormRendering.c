@@ -217,7 +217,7 @@ beacon_oop_t beacon_TextRenderingElement_drawInForm(beacon_context_t *context, b
         if(c < ' ')
             continue;
 
-        stbtt_aligned_quad quadToDraw = {};
+        stbtt_aligned_quad quadToDraw = {0};
         stbtt_GetBakedQuad((stbtt_bakedchar*)fontFace->charData->elements, 1, 1, c - 31, &baselineX, &baselineY, &quadToDraw, true);
 
         beacon_TextRenderingElement_drawCharacterInForm(context,

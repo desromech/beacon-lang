@@ -283,7 +283,13 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
 
     beacon_oop_t bytecodeDecodedArguments[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS];
     memset(bytecodeDecodedArguments, 0, sizeof(bytecodeDecodedArguments));
+#ifdef _WIN32
+    BeaconAssert(context, temporaryCount <= 128);
+    beacon_oop_t temporaryStorage[128];
+#else
     beacon_oop_t temporaryStorage[temporaryCount];
+#endif
+    
     memset(temporaryStorage, 0, sizeof(temporaryStorage));
 
     beacon_StackFrameRecord_t stackFrameRecord = {
