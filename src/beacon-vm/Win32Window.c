@@ -62,6 +62,7 @@ static void registerWindowClass()
 
     WNDCLASSEXW class = {
         .cbSize = sizeof(WNDCLASSEXW),
+        .style = CS_OWNDC | CS_VREDRAW | CS_HREDRAW,
         .lpfnWndProc = beacon_Window_proc,
         .hInstance = GetModuleHandle(NULL),
         .lpszClassName = L"BeaconLangWindowClass",
@@ -73,11 +74,17 @@ static void registerWindowClass()
 
 static void beacon_win32_updateDisplayTextureExtent(beacon_context_t *context, beacon_Window_t *beaconWindow)
 {
-    if(beaconWindow->width == beaconWindow->textureWidth && beaconWindow->height == beaconWindow->textureHeight)
+    RECT clientRect;
+    GetClientRect(beacon_unboxExternalAddress(context, beaconWindow->handle), &clientRect);
+    int clientWidth = clientRect.right - clientRect.left;
+    int clientHeight = clientRect.bottom - clientRect.top;
+
+    if(beaconWindow->textureWidth && clientWidth == beacon_decodeSmallInteger(beaconWindow->textureWidth) &&
+        beaconWindow->textureHeight && clientHeight == beacon_decodeSmallInteger(beaconWindow->textureHeight))
         return;
 
-    beaconWindow->textureWidth = beaconWindow->width;
-    beaconWindow->textureHeight = beaconWindow->height;
+    beaconWindow->textureWidth = beacon_encodeSmallInteger(clientWidth);
+    beaconWindow->textureHeight = beacon_encodeSmallInteger(clientHeight);
 }
 
 static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
@@ -118,6 +125,44 @@ static beacon_oop_t beacon_Window_displayForm(beacon_context_t *context, beacon_
 
     HWND window = beacon_unboxExternalAddress(context, beaconWindow->handle);
     beacon_WindowUserData_t *userData = (beacon_WindowUserData_t*)GetWindowLongPtrA(window, GWLP_USERDATA);
+
+    int formWidth = (int)beacon_decodeSmallInteger(form->width);
+    int formHeight = (int)beacon_decodeSmallInteger(form->height);
+    int formDepth = (int)beacon_decodeSmallInteger(form->depth);
+    BeaconAssert(context, formDepth == 32);
+
+    RECT clientRect;
+    GetClientRect(window, &clientRect);
+    int windowWidth = clientRect.right - clientRect.left; 
+    int windowHeight = clientRect.bottom - clientRect.top;
+
+    BITMAPINFO bitmap = {
+        .bmiHeader = {
+            .biSize = sizeof(BITMAPINFOHEADER),
+            .biWidth = formWidth,
+            .biHeight = -formHeight,
+            .biPlanes = 1,
+            .biBitCount = 32,
+            .biCompression = BI_RGB,
+        }
+    };
+
+    if(userData->paintDC )
+    {
+        printf("StretchDIBits dc\n");   
+        StretchDIBits(userData->paintDC, 0, 0, windowWidth, windowHeight,
+            0, 0, formWidth, formHeight,
+            form->bits->elements, &bitmap, DIB_RGB_COLORS, SRCCOPY);
+    }
+    else
+    {
+        printf("Get dc\n");   
+        HDC dc =GetDC(window);
+        StretchDIBits(userData->paintDC, 0, 0, windowWidth, windowHeight,
+            0, 0, formWidth, formHeight,
+            form->bits->elements, &bitmap, DIB_RGB_COLORS, SRCCOPY);
+        ReleaseDC(window, dc);
+    }
 
     return receiver;
 }
