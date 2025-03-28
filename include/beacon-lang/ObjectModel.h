@@ -117,7 +117,7 @@ static inline double beacon_decodeSmallNumber(intptr_t encodedNumber)
 {
     intptr_t tag = encodedNumber & ImmediateObjectTag_BitMask;
     if(tag == ImmediateObjectTag_SmallInteger)
-        return beacon_decodeSmallInteger(encodedNumber);
+        return (double)beacon_decodeSmallInteger(encodedNumber);
     else if(tag == ImmediateObjectTag_SmallFloat)
         return beacon_decodeSmallFloat(encodedNumber);
     else
