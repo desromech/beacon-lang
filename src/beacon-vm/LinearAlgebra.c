@@ -226,6 +226,29 @@ static beacon_oop_t beacon_Vector3_reciprocal(beacon_context_t *context, beacon_
     return (beacon_oop_t)resultVector;
 }
 
+static beacon_oop_t beacon_Vector3_floor(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 0);
+
+    beacon_Vector3_t *operandVector = (beacon_Vector3_t *)receiver;
+    beacon_Vector3_t *resultVector = beacon_allocateObjectWithBehavior(context->heap, context->classes.vector3Class, sizeof(beacon_Vector3_t), BeaconObjectKindBytes);
+    resultVector->x = floor(operandVector->x);
+    resultVector->y = floor(operandVector->y);
+    resultVector->z = floor(operandVector->z);
+    return (beacon_oop_t)resultVector;
+}
+
+static beacon_oop_t beacon_Vector3_ceiling(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    BeaconAssert(context, argumentCount == 0);
+
+    beacon_Vector3_t *operandVector = (beacon_Vector3_t *)receiver;
+    beacon_Vector3_t *resultVector = beacon_allocateObjectWithBehavior(context->heap, context->classes.vector3Class, sizeof(beacon_Vector3_t), BeaconObjectKindBytes);
+    resultVector->x = ceil(operandVector->x);
+    resultVector->y = ceil(operandVector->y);
+    resultVector->z = ceil(operandVector->z);
+    return (beacon_oop_t)resultVector;
+}
 
 static beacon_oop_t beacon_Vector3_interpolateToAt(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
@@ -1386,6 +1409,8 @@ void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "negated", 0, beacon_Vector3_negated);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "normalized", 0, beacon_Vector3_normalized);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "reciprocal", 0, beacon_Vector3_reciprocal);
+    beacon_addPrimitiveToClass(context, context->classes.vector3Class, "floor", 0, beacon_Vector3_floor);
+    beacon_addPrimitiveToClass(context, context->classes.vector3Class, "ceiling", 0, beacon_Vector3_ceiling);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "interpolateTo:at:", 2, beacon_Vector3_interpolateToAt);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "min:", 1, beacon_Vector3_min);
     beacon_addPrimitiveToClass(context, context->classes.vector3Class, "max:", 1, beacon_Vector3_max);
