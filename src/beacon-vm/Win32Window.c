@@ -18,6 +18,8 @@ typedef struct beacon_WindowUserData_s
     HDC paintDC;
 } beacon_WindowUserData_t;
 
+static void beacon_win32_updateDisplayExtent(beacon_context_t *context, beacon_Window_t *beaconWindow);
+
 static LRESULT CALLBACK beacon_Window_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     if(message == WM_CREATE)
@@ -36,6 +38,10 @@ static LRESULT CALLBACK beacon_Window_proc(HWND hWnd, UINT message, WPARAM wPara
 
     switch(message)
     {
+    case WM_SIZE:
+        beacon_win32_updateDisplayExtent(context, beaconWindow);
+        beacon_perform(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onSizeChanged"));
+        break;
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
@@ -72,12 +78,15 @@ static void registerWindowClass()
     hasRegisteredWindowClass = true;
 }
 
-static void beacon_win32_updateDisplayTextureExtent(beacon_context_t *context, beacon_Window_t *beaconWindow)
+static void beacon_win32_updateDisplayExtent(beacon_context_t *context, beacon_Window_t *beaconWindow)
 {
     RECT clientRect;
-    GetClientRect(beacon_unboxExternalAddress(context, beaconWindow->handle), &clientRect);
+    HWND window = beacon_unboxExternalAddress(context, beaconWindow->handle);
+    GetClientRect(window, &clientRect);
     int clientWidth = clientRect.right - clientRect.left;
     int clientHeight = clientRect.bottom - clientRect.top;
+    beaconWindow->width = beacon_encodeSmallInteger(clientWidth);
+    beaconWindow->height = beacon_encodeSmallInteger(clientHeight);
 
     if(beaconWindow->textureWidth && clientWidth == beacon_decodeSmallInteger(beaconWindow->textureWidth) &&
         beaconWindow->textureHeight && clientHeight == beacon_decodeSmallInteger(beaconWindow->textureHeight))
@@ -109,7 +118,7 @@ static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t r
     if(!windowHandle)
         beacon_exception_error(context, "Failed to create Win32 window.");
     beaconWindow->handle = beacon_boxExternalAddress(context, windowHandle);
-    beacon_win32_updateDisplayTextureExtent(context, beaconWindow);
+    beacon_win32_updateDisplayExtent(context, beaconWindow);
 
     ShowWindow(windowHandle, SW_NORMAL);
     UpdateWindow(windowHandle);
@@ -136,7 +145,7 @@ static beacon_oop_t beacon_Window_displayForm(beacon_context_t *context, beacon_
     int windowWidth = clientRect.right - clientRect.left; 
     int windowHeight = clientRect.bottom - clientRect.top;
 
-    BITMAPINFO bitmap = {
+    BITMAPINFO bitmapInfo = {
         .bmiHeader = {
             .biSize = sizeof(BITMAPINFOHEADER),
             .biWidth = formWidth,
@@ -147,20 +156,21 @@ static beacon_oop_t beacon_Window_displayForm(beacon_context_t *context, beacon_
         }
     };
 
-    if(userData->paintDC )
+    if(userData->paintDC)
     {
-        printf("StretchDIBits dc\n");   
-        StretchDIBits(userData->paintDC, 0, 0, windowWidth, windowHeight,
+        StretchDIBits(userData->paintDC,
+            0, 0, windowWidth, windowHeight,
             0, 0, formWidth, formHeight,
-            form->bits->elements, &bitmap, DIB_RGB_COLORS, SRCCOPY);
+            form->bits->elements,
+            &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
     }
     else
     {
-        printf("Get dc\n");   
-        HDC dc =GetDC(window);
-        StretchDIBits(userData->paintDC, 0, 0, windowWidth, windowHeight,
+        HDC dc = GetDC(window);
+        StretchDIBits(dc,
+            0, 0, windowWidth, windowHeight,
             0, 0, formWidth, formHeight,
-            form->bits->elements, &bitmap, DIB_RGB_COLORS, SRCCOPY);
+            form->bits->elements, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
         ReleaseDC(window, dc);
     }
 
