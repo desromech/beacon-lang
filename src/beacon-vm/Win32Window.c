@@ -7,24 +7,43 @@
 #include <windows.h>
 #endif
 #include <stdio.h>
+#include <stdlib.h>
 
 static bool hasRegisteredWindowClass;
 
+typedef struct beacon_WindowUserData_s
+{
+    beacon_context_t *context;
+    beacon_Window_t *beaconWindow;
+    HDC paintDC;
+} beacon_WindowUserData_t;
+
 static LRESULT CALLBACK beacon_Window_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    beacon_Window_t *beaconWindow = (beacon_Window_t*)GetWindowLongPtrA(hWnd, GWLP_USERDATA);
+    if(message == WM_CREATE)
+    {
+        CREATESTRUCTW *createParam = (CREATESTRUCTW *)lParam;
+        createParam->lpCreateParams;
+        SetWindowLongPtrA(hWnd, GWLP_USERDATA, (LONG_PTR)createParam->lpCreateParams);
+    }
+
+    beacon_WindowUserData_t *userData = (beacon_WindowUserData_t*)GetWindowLongPtrA(hWnd, GWLP_USERDATA);
+    if(!userData)
+        return DefWindowProcW(hWnd, message, wParam, lParam);
+
+    beacon_context_t *context = userData->context;
+    beacon_Window_t *beaconWindow = userData->beaconWindow;
 
     switch(message)
     {
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            if(beaconWindow)
-            {
-            }
-            printf("WM Paint\n");
+            userData->paintDC = BeginPaint(hWnd, &ps);
+            beacon_WindowExposeEvent_t *event = beacon_allocateObjectWithBehavior(context->heap, context->classes.windowExposeEventClass, sizeof(beacon_WindowExposeEvent_t), BeaconObjectKindPointers);
+            beacon_performWith(userData->context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onExpose:"), (beacon_oop_t)event);
             EndPaint(hWnd, &ps);
+            userData->paintDC = NULL;
         }
         break;
     case WM_DESTROY:
@@ -52,6 +71,15 @@ static void registerWindowClass()
     hasRegisteredWindowClass = true;
 }
 
+static void beacon_win32_updateDisplayTextureExtent(beacon_context_t *context, beacon_Window_t *beaconWindow)
+{
+    if(beaconWindow->width == beaconWindow->textureWidth && beaconWindow->height == beaconWindow->textureHeight)
+        return;
+
+    beaconWindow->textureWidth = beaconWindow->width;
+    beaconWindow->textureHeight = beaconWindow->height;
+}
+
 static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)argumentCount;
@@ -66,11 +94,15 @@ static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t r
     // Disable accelerated rendering for now..
     beaconWindow->useAcceleratedRendering = context->roots.falseValue;
 
-    HWND windowHandle = CreateWindowExW(0, L"BeaconLangWindowClass", L"Beacon Window", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, NULL, NULL, GetModuleHandle(NULL), NULL);
+    beacon_WindowUserData_t *windowUserData = calloc(1, sizeof(beacon_WindowUserData_t));
+    windowUserData->context = context;
+    windowUserData->beaconWindow = beaconWindow;
+
+    HWND windowHandle = CreateWindowExW(0, L"BeaconLangWindowClass", L"Beacon Window", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, NULL, NULL, GetModuleHandle(NULL), windowUserData);
     if(!windowHandle)
         beacon_exception_error(context, "Failed to create Win32 window.");
-    SetWindowLongPtrA(windowHandle, GWLP_USERDATA, (LONG_PTR)beaconWindow);
     beaconWindow->handle = beacon_boxExternalAddress(context, windowHandle);
+    beacon_win32_updateDisplayTextureExtent(context, beaconWindow);
 
     ShowWindow(windowHandle, SW_NORMAL);
     UpdateWindow(windowHandle);
@@ -83,6 +115,10 @@ static beacon_oop_t beacon_Window_displayForm(beacon_context_t *context, beacon_
     BeaconAssert(context, argumentCount == 1);
     beacon_Window_t *beaconWindow = (beacon_Window_t *)receiver;
     beacon_Form_t *form = (beacon_Form_t*)arguments[0];
+
+    HWND window = beacon_unboxExternalAddress(context, beaconWindow->handle);
+    beacon_WindowUserData_t *userData = (beacon_WindowUserData_t*)GetWindowLongPtrA(window, GWLP_USERDATA);
+
     return receiver;
 }
 
@@ -93,7 +129,12 @@ static beacon_oop_t beacon_Window_close(beacon_context_t *context, beacon_oop_t 
 
     beacon_Window_t *beaconWindow = (beacon_Window_t *)receiver;
     if(beaconWindow->handle)
-        DestroyWindow(beacon_unboxExternalAddress(context, beaconWindow->handle));
+    {
+        HWND window = beacon_unboxExternalAddress(context, beaconWindow->handle);
+        beacon_WindowUserData_t *userData = (beacon_WindowUserData_t*)GetWindowLongPtrA(window, GWLP_USERDATA);
+        free(userData);
+        DestroyWindow(window);
+    }
     beaconWindow->handle = 0;
     return receiver;
 }
