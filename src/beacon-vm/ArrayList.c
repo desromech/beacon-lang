@@ -174,14 +174,43 @@ void beacon_ByteArrayList_add(beacon_context_t *context, beacon_ByteArrayList_t 
 
 void beacon_ByteArrayList_addInt16(beacon_context_t *context, beacon_ByteArrayList_t *collection, int16_t element)
 {
-    beacon_ByteArrayList_add(context, collection, element & 0xFF);
-    beacon_ByteArrayList_add(context, collection, (element >> 8) & 0xFF);
+    beacon_ByteArrayList_addUInt16(context, collection, (uint16_t)element);
 }
 
 void beacon_ByteArrayList_addUInt16(beacon_context_t *context, beacon_ByteArrayList_t *collection, uint16_t element)
 {
     beacon_ByteArrayList_add(context, collection, element & 0xFF);
     beacon_ByteArrayList_add(context, collection, (element >> 8) & 0xFF);
+}
+
+void beacon_ByteArrayList_addInt32(beacon_context_t *context, beacon_ByteArrayList_t *collection, int32_t element)
+{
+    beacon_ByteArrayList_addUInt32(context, collection, (uint16_t)element);
+}
+
+void beacon_ByteArrayList_addUInt32(beacon_context_t *context, beacon_ByteArrayList_t *collection, uint32_t element)
+{
+    beacon_ByteArrayList_add(context, collection, element & 0xFF);
+    beacon_ByteArrayList_add(context, collection, (element >> 8) & 0xFF);
+    beacon_ByteArrayList_add(context, collection, (element >> 16) & 0xFF);
+    beacon_ByteArrayList_add(context, collection, (element >> 24) & 0xFF);
+}
+
+void beacon_ByteArrayList_addInt64(beacon_context_t *context, beacon_ByteArrayList_t *collection, int64_t element)
+{
+    beacon_ByteArrayList_addUInt64(context, collection, (uint64_t)element);
+}
+
+void beacon_ByteArrayList_addUInt64(beacon_context_t *context, beacon_ByteArrayList_t *collection, uint64_t element)
+{
+    beacon_ByteArrayList_add(context, collection, element & 0xFF);
+    beacon_ByteArrayList_add(context, collection, (element >> 8) & 0xFF);
+    beacon_ByteArrayList_add(context, collection, (element >> 16) & 0xFF);
+    beacon_ByteArrayList_add(context, collection, (element >> 24) & 0xFF);
+    beacon_ByteArrayList_add(context, collection, (element >> 32) & 0xFF);
+    beacon_ByteArrayList_add(context, collection, (element >> 40) & 0xFF);
+    beacon_ByteArrayList_add(context, collection, (element >> 48) & 0xFF);
+    beacon_ByteArrayList_add(context, collection, (element >> 56) & 0xFF);
 }
 
 beacon_ByteArray_t *beacon_ByteArrayList_asByteArray(beacon_context_t *context, beacon_ByteArrayList_t *collection)

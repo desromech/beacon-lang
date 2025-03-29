@@ -64,6 +64,11 @@ elementAtIndex: index
         ifFalse: [nil]
 ].
 
+SimpleTableDataSource ![
+displayStringFor: anElement
+    ^ anElement asString
+].
+
 BorderedMorph subclass: #TableContainerMorph instanceVariables: #().
 TableContainerMorph class ![
 defaultColor

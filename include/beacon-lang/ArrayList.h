@@ -63,15 +63,34 @@ beacon_ByteArrayList_t *beacon_ByteArrayList_new(beacon_context_t *context);
 void beacon_ByteArrayList_add(beacon_context_t *context, beacon_ByteArrayList_t *collection, uint8_t element);
 
 /**
- * Adds a single element to the array list.
+ * Adds an int16_t element to the array list.
  */
 void beacon_ByteArrayList_addInt16(beacon_context_t *context, beacon_ByteArrayList_t *collection, int16_t element);
 
 /**
- * Adds a single element to the array list.
+ * Adds an uint16_t element to the array list.
  */
 void beacon_ByteArrayList_addUInt16(beacon_context_t *context, beacon_ByteArrayList_t *collection, uint16_t element);
 
+/**
+ * Adds an int32_t element to the array list.
+ */
+void beacon_ByteArrayList_addInt32(beacon_context_t *context, beacon_ByteArrayList_t *collection, int32_t element);
+
+/**
+ * Adds an uint32_t element to the array list.
+ */
+void beacon_ByteArrayList_addUInt32(beacon_context_t *context, beacon_ByteArrayList_t *collection, uint32_t element);
+
+/**
+ * Adds an int64_t element to the array list.
+ */
+void beacon_ByteArrayList_addInt64(beacon_context_t *context, beacon_ByteArrayList_t *collection, int64_t element);
+
+/**
+ * Adds an uint64_t element to the array list.
+ */
+void beacon_ByteArrayList_addUInt64(beacon_context_t *context, beacon_ByteArrayList_t *collection, uint64_t element);
 
 /**
  * Gets the size of the array list.

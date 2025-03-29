@@ -474,7 +474,12 @@ static beacon_oop_t beacon_SyntaxCompiler_messageSend(beacon_context_t *context,
     bool isSuperSend = beacon_BytecodeValue_getType(receiverValue) == BytecodeArgumentTypeSuperReceiver;
     if(!isSuperSend)
     {
-        if(selectorEvaluatedValue == context->roots.ifTrueSelector)
+        if(selectorEvaluatedValue == context->roots.yourselfSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 0);
+            return beacon_encodeSmallInteger(receiverValue);
+        }
+        else if(selectorEvaluatedValue == context->roots.ifTrueSelector)
         {
             BeaconAssert(context, argumentValueCount == 1);
             return beacon_SyntaxCompiler_ifTrue(context, environment, builder, receiverValue, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0], messageSendNode->super.sourcePosition);

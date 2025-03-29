@@ -8,7 +8,7 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug",
-            "program": "${workspaceFolder}/build/dist/Debug/beacon-vm",
+            "program": "${workspaceFolder}/build/dist/beacon-vm",
             //"args": ["-eval", "AGPU"],
             //"args": ["scripts/runtime/Runtime.st"],
             //"args": ["scripts/runtime/Runtime.st", "-eval", "CubeMorph new openInWindow. Window enterMainLoop"],

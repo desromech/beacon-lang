@@ -120,6 +120,7 @@ static beacon_oop_t beacon_MethodDictionaryPrimitive_keys(beacon_context_t *cont
     for(size_t i = 0; i < capacity; ++i)
     {
         beacon_oop_t key = storage->elements[i*2];
+        beacon_oop_t value = storage->elements[i*2 + 1];
         if(key)
             beacon_ArrayList_add(context, arrayList, key);
     }

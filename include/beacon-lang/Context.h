@@ -174,6 +174,9 @@ struct beacon_context_s
         beacon_oop_t nilValue;
         beacon_oop_t trueValue;
         beacon_oop_t falseValue;
+        beacon_oop_t yourselfSelector;
+        beacon_oop_t identityEqualsSelector;
+        beacon_oop_t identityNotEqualsSelector;
         beacon_oop_t doesNotUnderstandSelector;
         beacon_oop_t compileWithEnvironmentAndBytecodeBuilderSelector;
         beacon_oop_t compileInlineBlockWithArgumentsWithEnvironmentAndBytecodeBuilderSelector;

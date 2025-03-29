@@ -51,7 +51,7 @@ onClassTableSelectionChanged: selectedElements
     clazz methodDict ~~ nil ifTrue: [
         selectors := clazz methodDict keys.
     ].
-    
+
     methodTableMorph dataSource: (SimpleTableDataSource elements: selectors).
     currentClass := clazz.
     self changed

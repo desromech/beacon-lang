@@ -30,6 +30,7 @@ void beacon_context_registerWindowSystemPrimitives(beacon_context_t *context);
 void beacon_context_registerSourceCodePrimitives(beacon_context_t *context);
 void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *context);
 void beacon_context_registerLinearAlgebraPrimitives(beacon_context_t *context);
+void beacon_context_fixEarlySymbols(beacon_context_t *context);
 
 static size_t beacon_context_computeBehaviorSlotCount(beacon_context_t *context, beacon_Behavior_t *behavior)
 {
@@ -194,6 +195,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     beacon_context_fixEarlyObjectClasses(context, context->classes.arrayedCollectionClass);
     beacon_context_fixEarlyObjectClasses(context, context->classes.arrayClass);
     beacon_context_fixEarlyObjectClasses(context, context->classes.symbolClass);
+    beacon_context_fixEarlySymbols(context);
     
     context->classes.byteArrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "ByteArray", sizeof(beacon_ByteArray_t), BeaconObjectKindBytes, NULL);
     context->classes.uint16ArrayClass = beacon_context_createClassAndMetaclass(context, context->classes.arrayedCollectionClass, "UInt16Array", sizeof(beacon_UInt16Array_t), BeaconObjectKindBytes, NULL);
@@ -412,6 +414,9 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
 {
     context->roots.trueValue = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.trueClass, sizeof(beacon_True_t), BeaconObjectKindPointers);
     context->roots.falseValue = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.falseClass, sizeof(beacon_False_t), BeaconObjectKindPointers);
+    context->roots.yourselfSelector = (beacon_oop_t)beacon_internCString(context, "yourself");
+    context->roots.identityEqualsSelector = (beacon_oop_t)beacon_internCString(context, "==");
+    context->roots.identityNotEqualsSelector = (beacon_oop_t)beacon_internCString(context, "~~");
     context->roots.doesNotUnderstandSelector = (beacon_oop_t)beacon_internCString(context, "doesNotUnderstand:");
     context->roots.compileWithEnvironmentAndBytecodeBuilderSelector = (beacon_oop_t)beacon_internCString(context, "compileWithEnvironment:andBytecodeBuilder:");
     context->roots.compileInlineBlockWithArgumentsWithEnvironmentAndBytecodeBuilderSelector = (beacon_oop_t)beacon_internCString(context, "compileInlineBlockWithArguments:environment:andBytecodeBuilder:");
@@ -636,6 +641,18 @@ beacon_Symbol_t *beacon_internStringWithSize(beacon_context_t *context, size_t s
     );
 
     return internedSymbol;
+}
+
+void beacon_context_fixEarlySymbols(beacon_context_t *context)
+{
+    size_t capacity = context->roots.internedSymbolSet->super.array->super.super.super.super.super.header.slotCount;
+    for(size_t i = 0; i < capacity; ++i)
+    {
+        beacon_ObjectHeader_t *header = (beacon_ObjectHeader_t*)context->roots.internedSymbolSet->super.array->elements[i];
+        if(header)
+            header->behavior = context->classes.symbolClass;
+
+    }
 }
 
 beacon_Symbol_t *beacon_internCString(beacon_context_t *context, const char *string)

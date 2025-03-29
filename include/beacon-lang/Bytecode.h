@@ -22,6 +22,8 @@ typedef enum beacon_BytecodeOpcode_e
     BeaconBytecodeStoreValue,
     BeaconBytecodeMakeArray,
     BeaconBytecodeMakeClosureInstance,
+    BeaconBytecodeIdentityEquals,
+    BeaconBytecodeIdentityNotEquals,
     BeaconBytecodeExtendArguments,
 } beacon_BytecodeOpcode_t;
 
@@ -166,6 +168,16 @@ void beacon_BytecodeCodeBuilder_makeArray(beacon_context_t *context, beacon_Byte
  * Makes a closure instance
  */
 void beacon_BytecodeCodeBuilder_makeClosureInstance(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t closure, size_t captureCount, beacon_BytecodeValue_t *captures, beacon_SourcePosition_t *sourcePosition);
+
+/**
+ * Identity equals
+ */
+void beacon_BytecodeCodeBuilder_identityEquals(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t leftOperand, beacon_BytecodeValue_t rightOperand, beacon_SourcePosition_t *sourcePosition);
+
+/**
+ * Identity not equals
+ */
+void beacon_BytecodeCodeBuilder_identityNotEquals(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t leftOperand, beacon_BytecodeValue_t rightOperand, beacon_SourcePosition_t *sourcePosition);
 
 /**
  * Find source position for PC

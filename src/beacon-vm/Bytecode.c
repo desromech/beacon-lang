@@ -14,6 +14,8 @@ static inline bool beacon_bytecodeWritesToTemporary(beacon_BytecodeOpcode_t opco
     case BeaconBytecodeStoreValue:
     case BeaconBytecodeMakeArray:
     case BeaconBytecodeMakeClosureInstance:
+    case BeaconBytecodeIdentityEquals:
+    case BeaconBytecodeIdentityNotEquals:
         return true;
     default:
         return false;
@@ -237,6 +239,22 @@ void beacon_BytecodeCodeBuilder_makeClosureInstance(beacon_context_t *context, b
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, closure);
     for(size_t i = 0; i < captureCount; ++i)
         beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, captures[i]);
+}
+
+void beacon_BytecodeCodeBuilder_identityEquals(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t leftOperand, beacon_BytecodeValue_t rightOperand, beacon_SourcePosition_t *sourcePosition)
+{
+    beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, 0x20 | BeaconBytecodeIdentityEquals, sourcePosition);
+    beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultTemporary);
+    beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, leftOperand);
+    beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, rightOperand);
+}
+
+void beacon_BytecodeCodeBuilder_identityNotEquals(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t leftOperand, beacon_BytecodeValue_t rightOperand, beacon_SourcePosition_t *sourcePosition)
+{
+    beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, 0x20 | BeaconBytecodeIdentityNotEquals, sourcePosition);
+    beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultTemporary);
+    beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, leftOperand);
+    beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, rightOperand);
 }
 
 beacon_SourcePosition_t *beacon_bytecodeCode_findSourcePositionForPC(beacon_context_t *context, beacon_BytecodeCode_t *code, uint32_t pc)
@@ -464,6 +482,20 @@ beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_Co
 
                 instructionExecutionResult = (beacon_oop_t)blockClosure;
             }
+            break;
+        case BeaconBytecodeIdentityEquals:
+            BeaconAssert(context, writesToTemporary);
+            if(bytecodeDecodedArguments[0] == bytecodeDecodedArguments[1])
+                instructionExecutionResult = context->roots.trueValue;
+            else
+                instructionExecutionResult = context->roots.falseValue;
+            break;
+        case BeaconBytecodeIdentityNotEquals:
+            BeaconAssert(context, writesToTemporary);
+            if(bytecodeDecodedArguments[0] != bytecodeDecodedArguments[1])
+                instructionExecutionResult = context->roots.trueValue;
+            else
+                instructionExecutionResult = context->roots.falseValue;
             break;
         default:
             {
