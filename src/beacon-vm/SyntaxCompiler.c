@@ -479,6 +479,24 @@ static beacon_oop_t beacon_SyntaxCompiler_messageSend(beacon_context_t *context,
             BeaconAssert(context, argumentValueCount == 0);
             return beacon_encodeSmallInteger(receiverValue);
         }
+        else if(selectorEvaluatedValue == context->roots.identityEqualsSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 1);
+            beacon_BytecodeValue_t resultValue = beacon_BytecodeCodeBuilder_newTemporary(context, builder, 0);
+            beacon_BytecodeValue_t leftOperand = receiverValue;
+            beacon_BytecodeValue_t rightOperand = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0] , environment, builder);
+            beacon_BytecodeCodeBuilder_identityEquals(context, builder, resultValue, leftOperand, rightOperand, messageSendNode->super.sourcePosition);
+            return beacon_encodeSmallInteger(resultValue);
+        }
+        else if(selectorEvaluatedValue == context->roots.identityNotEqualsSelector)
+        {
+            BeaconAssert(context, argumentValueCount == 1);
+            beacon_BytecodeValue_t resultValue = beacon_BytecodeCodeBuilder_newTemporary(context, builder, 0);
+            beacon_BytecodeValue_t leftOperand = receiverValue;
+            beacon_BytecodeValue_t rightOperand = beacon_compileNodeWithEnvironmentAndBytecodeBuilder(context, (beacon_ParseTreeNode_t*)messageSendNode->arguments->elements[0] , environment, builder);
+            beacon_BytecodeCodeBuilder_identityNotEquals(context, builder, resultValue, leftOperand, rightOperand, messageSendNode->super.sourcePosition);
+            return beacon_encodeSmallInteger(resultValue);
+        }
         else if(selectorEvaluatedValue == context->roots.ifTrueSelector)
         {
             BeaconAssert(context, argumentValueCount == 1);
