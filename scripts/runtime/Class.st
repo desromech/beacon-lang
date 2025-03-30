@@ -45,6 +45,8 @@ subclass: subclassName instanceVariables: instanceVariables metaInstanceVariable
     subclass objectKind: self objectKind.
     subclass name: subclassName.
     subclass setSlotsWithInstanceVariableNames: instanceVariables.
+    subclass subclasses: #().
+    subclasses := subclasses copyWith: subclass.
 
     SystemDictionary at: subclassName put: subclass.
 
@@ -65,3 +67,8 @@ Class ![
 subclasses
     ^ subclasses
 ].
+
+Class ![
+subclasses: anArray
+    subclasses := anArray
+]
