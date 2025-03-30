@@ -41,6 +41,7 @@ FilesToLoad := #(
     'MorphicWindow.st'
     'MorphicTable.st'
     'MorphicText.st'
+    'MorphicToolBar.st'
     'MorphicCode.st'
     'MorphicMenuBar.st'
     'MorphicStatusBar.st'
