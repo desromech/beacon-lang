@@ -887,6 +887,7 @@ typedef struct beacon_TestAsserter_s
 typedef struct beacon_TestCase_t
 {
     beacon_TestAsserter_t super;
+    beacon_Symbol_t testSelector;
 } beacon_TestCase_t;
 
 typedef struct beacon_AbstractPrimitiveTensor_s

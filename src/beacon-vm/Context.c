@@ -367,7 +367,8 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "text", NULL);
 
     context->classes.testAsserterClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "TestAsserter", sizeof(beacon_TestAsserter_t), BeaconObjectKindPointers, NULL);
-    context->classes.testCaseClass = beacon_context_createClassAndMetaclass(context, context->classes.testAsserterClass, "TestCase", sizeof(beacon_TestCase_t), BeaconObjectKindPointers, NULL);
+    context->classes.testCaseClass = beacon_context_createClassAndMetaclass(context, context->classes.testAsserterClass, "TestCase", sizeof(beacon_TestCase_t), BeaconObjectKindPointers,
+        "testSelector", NULL);
 
     context->classes.abstractPrimitiveTensorClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AbstractPrimitiveTensor", sizeof(beacon_AbstractPrimitiveTensor_t), BeaconObjectKindBytes,  NULL);
     context->classes.abstractPrimitiveMatrixClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractPrimitiveTensorClass, "AbstractPrimitiveMatrix", sizeof(beacon_AbstractPrimitiveMatrix_t), BeaconObjectKindBytes,  NULL);
