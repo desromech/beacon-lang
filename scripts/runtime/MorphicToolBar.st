@@ -1,4 +1,4 @@
-BorderedMorph subclass: #ToolBarMorph instanceVariables: #(elements isMenuOpen).
+BorderedMorph subclass: #ToolBarMorph instanceVariables: #(isMenuOpen).
 
 ToolBarMorph class ![
 defaultColor
@@ -13,8 +13,16 @@ defaultExtent
 ToolBarMorph ![
 initialize
     super initialize.
-    elements := ArrayList new.
-    isMenuOpen := false.
 
     self layout: HorizontalMorphPackingLayout new.
+].
+
+
+ToolBarMorph ![
+addButtonWithLabel: label andAction: aBlock
+    | button |
+    button := SimpleButtonMorph new label: label; onClickAction: aBlock.
+    self addMorph: button.
+    self layout addMorph: button proportion: 0 expanded: true.
+    self updateLayout
 ].

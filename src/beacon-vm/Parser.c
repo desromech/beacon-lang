@@ -72,21 +72,26 @@ beacon_ParseTreeNode_t *parserState_advanceWithExpectedError(beacon_parserState_
     if (parserState_peekKind(state, 0) == BeaconTokenError)
     {
         beacon_ScannerToken_t *errorToken = parserState_next(state);
-        beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeNode_t), BeaconObjectKindBytes);
+        beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeErrorNode_t), BeaconObjectKindPointers);
         errorNode->errorMessage = errorToken->errorMessage;
+        errorNode->super.sourcePosition = errorToken->sourcePosition;
         return &errorNode->super;
     }
     else if (parserState_atEnd(state))
     {
-        beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeNode_t), BeaconObjectKindBytes);
+        beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeErrorNode_t), BeaconObjectKindPointers);
+        assert(state->tokenCount > 0);
+        beacon_ScannerToken_t *lastToken = (beacon_ScannerToken_t *)state->tokens->array->elements[state->tokenCount - 1];
         errorNode->errorMessage = beacon_importCString(state->context, message);
+        errorNode->super.sourcePosition = lastToken->sourcePosition;
         return &errorNode->super;
     }
     else
     {
-        beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeNode_t), BeaconObjectKindBytes);
-        parserState_advance(state);
+        beacon_ScannerToken_t *errorToken = parserState_next(state);
+        beacon_ParseTreeErrorNode_t *errorNode = beacon_allocateObjectWithBehavior(state->context->heap, state->context->classes.parseTreeErrorNodeClass, sizeof(beacon_ParseTreeErrorNode_t), BeaconObjectKindPointers);
         errorNode->errorMessage = beacon_importCString(state->context, message);
+        errorNode->super.sourcePosition = errorToken->sourcePosition;
         return &errorNode->super;
     }
 }
