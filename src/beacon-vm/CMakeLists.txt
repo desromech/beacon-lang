@@ -1,6 +1,7 @@
 set(BeaconVM_Sources
     AgpuRendering.c
     Context.c
+    DynArray.c
     Exceptions.c
     Font.c
     FormRendering.c
@@ -10,10 +11,12 @@ set(BeaconVM_Sources
     ArrayList.c
     ArrayPrimitives.c
     Dictionary.c
+    Dwarf.c
     SourceCode.c
     Scanner.c
     Parser.c
     Bytecode.c
+    BytecodeJit.c
     SyntaxCompiler.c
 )
 
