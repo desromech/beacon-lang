@@ -72,6 +72,23 @@ static inline int16_t beacon_BytecodeValue_encode(uint16_t index, beacon_Bytecod
     return (index << 3) | type;
 }
 
+static inline bool beacon_bytecodeWritesToTemporary(beacon_BytecodeOpcode_t opcode)
+{
+    switch(opcode)
+    {
+    case BeaconBytecodeSendMessage:
+    case BeaconBytecodeSuperSendMessage:
+    case BeaconBytecodeStoreValue:
+    case BeaconBytecodeMakeArray:
+    case BeaconBytecodeMakeClosureInstance:
+    case BeaconBytecodeIdentityEquals:
+    case BeaconBytecodeIdentityNotEquals:
+        return true;
+    default:
+        return false;
+    }
+}
+
 beacon_BytecodeCodeBuilder_t *beacon_BytecodeCodeBuilder_new(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *parentBuilder);
 
 /**

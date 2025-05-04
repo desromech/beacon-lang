@@ -12,11 +12,12 @@ set(BeaconVM_Sources
     ArrayPrimitives.c
     Dictionary.c
     Dwarf.c
+    DynArray.c
     SourceCode.c
     Scanner.c
     Parser.c
     Bytecode.c
-    BytecodeJit.c
+    BytecodeJitCommon.c
     SyntaxCompiler.c
 )
 

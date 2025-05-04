@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void sysbvm_DynArray_initialize(beacon_DynArray_t *dynarray, size_t entrySize, size_t initialCapacity)
+void beacon_DynArray_initialize(beacon_DynArray_t *dynarray, size_t entrySize, size_t initialCapacity)
 {
     dynarray->entrySize = entrySize;
     dynarray->size = 0;
@@ -10,7 +10,7 @@ void sysbvm_DynArray_initialize(beacon_DynArray_t *dynarray, size_t entrySize, s
     dynarray->data = initialCapacity > 0 ? (uint8_t*)malloc(initialCapacity * entrySize) : NULL;
 }
 
-size_t sysbvm_DynArray_addAll(beacon_DynArray_t *dynarray, size_t entryCount, const void *newEntries)
+size_t beacon_DynArray_addAll(beacon_DynArray_t *dynarray, size_t entryCount, const void *newEntries)
 {
     size_t requiredCapacity = dynarray->size + entryCount;
     if(requiredCapacity > dynarray->capacity)
@@ -35,12 +35,12 @@ size_t sysbvm_DynArray_addAll(beacon_DynArray_t *dynarray, size_t entryCount, co
     return dynarray->size;
 }
 
-size_t sysbvm_DynArray_add(beacon_DynArray_t *dynarray, const void *newEntry)
+size_t beacon_DynArray_add(beacon_DynArray_t *dynarray, const void *newEntry)
 {
-    return sysbvm_DynArray_addAll(dynarray, 1, newEntry);
+    return beacon_DynArray_addAll(dynarray, 1, newEntry);
 }
 
-void sysbvm_DynArray_destroy(beacon_DynArray_t *dynarray)
+void beacon_DynArray_destroy(beacon_DynArray_t *dynarray)
 {
     free(dynarray->data);
 }

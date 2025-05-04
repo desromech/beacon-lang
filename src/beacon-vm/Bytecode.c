@@ -1,26 +1,10 @@
 #include "beacon-lang/Bytecode.h"
+#include "beacon-lang/BytecodeJit.h"
 #include "beacon-lang/Context.h"
 #include "beacon-lang/ArrayList.h"
 #include "beacon-lang/Exceptions.h"
 #include <stdlib.h>
 #include <stdio.h>
-
-static inline bool beacon_bytecodeWritesToTemporary(beacon_BytecodeOpcode_t opcode)
-{
-    switch(opcode)
-    {
-    case BeaconBytecodeSendMessage:
-    case BeaconBytecodeSuperSendMessage:
-    case BeaconBytecodeStoreValue:
-    case BeaconBytecodeMakeArray:
-    case BeaconBytecodeMakeClosureInstance:
-    case BeaconBytecodeIdentityEquals:
-    case BeaconBytecodeIdentityNotEquals:
-        return true;
-    default:
-        return false;
-    }
-}
 
 beacon_BytecodeCodeBuilder_t *beacon_BytecodeCodeBuilder_new(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *parentBuilder)
 {
@@ -277,8 +261,13 @@ beacon_SourcePosition_t *beacon_bytecodeCode_findSourcePositionForPC(beacon_cont
 
 beacon_oop_t beacon_interpretBytecodeMethod(beacon_context_t *context, beacon_CompiledCode_t *method, beacon_oop_t receiver, beacon_oop_t selector, beacon_oop_t captures, size_t argumentCount, beacon_oop_t *arguments)
 {
-    (void)selector;
     (void)captures;
+#ifdef BEACON_JIT_SUPPORTED
+    if(!method->nativeImplementation)
+        beacon_bytecodeJit_jit(context, method);
+#endif
+    if(method->nativeImplementation)
+        return method->nativeImplementation->nativeFunction(context, captures ? captures : receiver, argumentCount, arguments);
     beacon_BytecodeCode_t *code = method->bytecodeImplementation;
     BeaconAssert(context, beacon_decodeSmallInteger(code->argumentCount) == (intptr_t)argumentCount);
     intptr_t temporaryCount = beacon_decodeSmallInteger(code->temporaryCount);

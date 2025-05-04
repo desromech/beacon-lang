@@ -68,6 +68,7 @@
         "optional": "c",
         "xlocmon": "c",
         "xtr1common": "c",
-        "xutility": "c"
+        "xutility": "c",
+        "bytecodejit.h": "c"
     }
 }
