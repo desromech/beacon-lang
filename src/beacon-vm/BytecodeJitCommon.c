@@ -341,7 +341,11 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
     uint8_t extendedArgumentCount = 0;
     uint32_t pc = 0;
     
-    beacon_oop_t bytecodeDecodedArguments[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS];
+    size_t argumentCount = beacon_decodeSmallInteger(functionBytecode->argumentCount);
+    size_t captureCount = beacon_decodeSmallInteger(functionBytecode->captureCount);
+    size_t temporaryCount = beacon_decodeSmallInteger(functionBytecode->temporaryCount);
+
+    beacon_bytecodeJitDecodedArgument_t bytecodeDecodedArguments[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS];
     memset(bytecodeDecodedArguments, 0, sizeof(bytecodeDecodedArguments));
 
     while(pc < bytecodesSize)
@@ -384,45 +388,37 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
             beacon_BytecodeValue_t bytecodeArgument = bytecodes[pc++];
             bytecodeArgument |= (bytecodes[pc++]) << 8;
 
-            uint16_t bytecodeArgumentIndex = beacon_BytecodeValue_getIndex(bytecodeArgument);
-            int16_t bytecodeArgumentSignedIndex = beacon_BytecodeValue_getSignedIndex(bytecodeArgument);
-            beacon_oop_t *currentDecodedArgument = bytecodeDecodedArguments + i;
+            beacon_bytecodeJitDecodedArgument_t *currentDecodedArgument = bytecodeDecodedArguments + i;
+            currentDecodedArgument->type = beacon_BytecodeValue_getType(bytecodeArgument);
+            currentDecodedArgument->index = beacon_BytecodeValue_getIndex(bytecodeArgument);
+            currentDecodedArgument->signedIndex = beacon_BytecodeValue_getSignedIndex(bytecodeArgument);
 
-            /*switch(beacon_BytecodeValue_getType(bytecodeArgument))
+            switch(currentDecodedArgument->type)
             {
             case BytecodeArgumentTypeArgument:
-                BeaconAssert(context, bytecodeArgumentIndex <= argumentCount);
-                if(bytecodeArgumentIndex == 0)
-                    *currentDecodedArgument = receiver;
-                else
-                    *currentDecodedArgument = arguments[bytecodeArgumentIndex - 1];
+                BeaconAssert(context, currentDecodedArgument->index <= argumentCount);
                 break;
             case BytecodeArgumentTypeLiteral:
             case BytecodeArgumentTypeSuperReceiver:
-                BeaconAssert(context, bytecodeArgumentIndex <= code->literals->super.super.super.super.super.header.slotCount);
-                *currentDecodedArgument = bytecodeArgumentIndex == 0 ? 0 : code->literals->elements[bytecodeArgumentIndex - 1];
+                BeaconAssert(context, currentDecodedArgument->index <= functionBytecode->literals->super.super.super.super.super.header.slotCount);
                 break;
             case BytecodeArgumentTypeTemporary:
-                BeaconAssert(context, bytecodeArgumentIndex <= temporaryCount);
-                *currentDecodedArgument = bytecodeArgumentIndex == 0 ? 0 : temporaryStorage[bytecodeArgumentIndex - 1];
+                BeaconAssert(context, currentDecodedArgument->index <= temporaryCount);
                 break;
             case BytecodeArgumentTypeJumpDelta:
-                branchDestinationDelta = bytecodeArgumentSignedIndex;
+                branchDestinationDelta = currentDecodedArgument->signedIndex;
                 branchDestinationPC += branchDestinationDelta;
                 break;
             case BytecodeArgumentTypeCapture:
-                BeaconAssert(context, 0 < bytecodeArgumentIndex && bytecodeArgumentIndex <= captureCount);
-                *currentDecodedArgument = capturesArray->elements[bytecodeArgumentIndex - 1];
+                BeaconAssert(context, 0 < currentDecodedArgument->index && currentDecodedArgument->index <= captureCount);
                 break;
             case BytecodeArgumentTypeReceiverSlot:
-                BeaconAssert(context, 0 < bytecodeArgumentIndex && bytecodeArgumentIndex <= receiverSlotCount);
-                *currentDecodedArgument = receiverSlots[bytecodeArgumentIndex - 1];
+                BeaconAssert(context, 0 < currentDecodedArgument->index);
                 break;
             default:
                 beacon_exception_error(context, "Invalid bytecode value type");
                 break;
             }
-            */
         }
 
     }

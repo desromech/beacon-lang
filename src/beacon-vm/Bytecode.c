@@ -23,6 +23,7 @@ beacon_BytecodeCode_t *beacon_BytecodeCodeBuilder_finish(beacon_context_t *conte
 {
     beacon_BytecodeCode_t *code = beacon_allocateObjectWithBehavior(context->heap, context->classes.bytecodeCodeClass, sizeof(beacon_BytecodeCode_t), BeaconObjectKindPointers);
     code->argumentCount = beacon_encodeSmallInteger(beacon_ArrayList_size(builder->arguments));
+    code->captureCount = beacon_encodeSmallInteger(beacon_ArrayList_size(builder->captures));
     code->temporaryCount = beacon_encodeSmallInteger(beacon_ArrayList_size(builder->temporaries));
     code->literals = beacon_ArrayList_asArray(context, builder->literals);
     code->bytecodes = beacon_ByteArrayList_asByteArray(context, builder->bytecodes);

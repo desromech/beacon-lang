@@ -76,6 +76,13 @@ typedef struct beacon_jit_dwarfLineInfoEmissionState_s
     size_t pc;
 } beacon_jit_dwarfLineInfoEmissionState_t;
 
+typedef struct beacon_bytecodeJitDecodedArgument_s
+{
+    beacon_BytecodeValueType_t type;
+    uint16_t index;
+    int16_t signedIndex;
+} beacon_bytecodeJitDecodedArgument_t;
+
 typedef struct beacon_bytecodeJit_s
 {
     beacon_context_t *context;
