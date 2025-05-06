@@ -156,5 +156,15 @@ void beacon_bytecodeJit_jitFree(beacon_bytecodeJit_t *jit);
 
 bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *functionBytecode);
 
+// Backend specific methods.
+void beacon_jit_prologue(beacon_bytecodeJit_t *jit);
+bool beacon_jit_emitDebugLineInfo(beacon_bytecodeJit_t *jit);
+void beacon_jit_finish(beacon_bytecodeJit_t *jit);
+uint8_t *beacon_jit_installIn(beacon_bytecodeJit_t *jit, uint8_t *codeWriteablePointer, uint8_t *codeExecutablePointer);
+
+void beacon_jit_breakpoint(beacon_bytecodeJit_t *jit);
+void beacon_jit_unreachable(beacon_bytecodeJit_t *jit);
+
+
 #endif //BEACON_JIT_SUPPORTED
 #endif //BEACON_BYTECODE_JIT_H

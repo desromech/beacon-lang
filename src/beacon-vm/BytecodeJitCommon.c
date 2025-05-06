@@ -344,6 +344,13 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
     size_t argumentCount = beacon_decodeSmallInteger(functionBytecode->argumentCount);
     size_t captureCount = beacon_decodeSmallInteger(functionBytecode->captureCount);
     size_t temporaryCount = beacon_decodeSmallInteger(functionBytecode->temporaryCount);
+    size_t literalCount = functionBytecode->literals ? functionBytecode->literals->super.super.super.super.super.header.slotCount : 0;
+    jit.argumentCount = argumentCount;
+    jit.captureVectorSize = captureCount;
+    jit.literalCount = literalCount;
+    jit.localVectorSize = temporaryCount;
+
+    beacon_jit_prologue(&jit);
 
     beacon_bytecodeJitDecodedArgument_t bytecodeDecodedArguments[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS];
     memset(bytecodeDecodedArguments, 0, sizeof(bytecodeDecodedArguments));
@@ -359,7 +366,7 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
         BeaconAssert(context, instructionArgumentCount <= BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS);
         beacon_BytecodeOpcode_t opcode = beacon_getBytecodeOpcode(instruction);
 
-        printf("%03d: %d\n", instructionPC, opcode);
+        printf("%03d: [%02d]", instructionPC, opcode);
 
         // Special opcode.
         if(opcode == BeaconBytecodeExtendArguments)
@@ -400,7 +407,7 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
                 break;
             case BytecodeArgumentTypeLiteral:
             case BytecodeArgumentTypeSuperReceiver:
-                BeaconAssert(context, currentDecodedArgument->index <= functionBytecode->literals->super.super.super.super.super.header.slotCount);
+                BeaconAssert(context, currentDecodedArgument->index <= literalCount);
                 break;
             case BytecodeArgumentTypeTemporary:
                 BeaconAssert(context, currentDecodedArgument->index <= temporaryCount);
@@ -420,6 +427,67 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
                 break;
             }
         }
+
+        // Execute the instruction.
+        switch(opcode)
+        {
+        case BeaconBytecodeNop:
+            printf(" nop\n");
+            // Nothing is required here.
+            break;
+        case BeaconBytecodeJump:
+            printf(" jump\n");
+            // TODO
+            break;
+        case BeaconBytecodeJumpIfTrue:
+            printf(" jumpIfTrue\n");
+            // TODO
+            break;
+        case BeaconBytecodeJumpIfFalse:
+            printf(" jumpIfFalse\n");
+            // TODO
+            break;
+        case BeaconBytecodeSendMessage:
+            printf(" sendMessage\n");
+            // TODO
+            break;
+        case BeaconBytecodeSuperSendMessage:
+            printf(" superSendMessage\n");
+            // TODO
+            break;
+        case BeaconBytecodeStoreValue:
+            printf(" storeValue\n");
+            // TODO
+            break;
+        case BeaconBytecodeLocalReturn:
+            printf(" localReturn\n");
+            // TODO
+            break;
+        case BeaconBytecodeMakeArray:
+            printf(" makeArray\n");
+            // TODO
+            break;
+        case BeaconBytecodeMakeClosureInstance:
+            printf(" makeClosureInstance\n");
+            // TODO
+            break;
+        case BeaconBytecodeIdentityEquals:
+            printf(" ==\n");
+            // TODO
+            break;
+        case BeaconBytecodeIdentityNotEquals:
+            printf(" ~~\n");
+            // TODO
+            break;
+        default:
+            {
+                char buffer[64];
+                snprintf(buffer, sizeof(buffer), "Unsupported bytecode with opcode %x.\n", opcode);
+                beacon_exception_error(context, buffer);
+            }
+            break;
+        }
+
 
     }
 

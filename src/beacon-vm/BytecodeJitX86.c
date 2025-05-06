@@ -481,5 +481,43 @@ void beacon_jit_unreachable(beacon_bytecodeJit_t *jit)
     beacon_jit_x86_ud2(jit);
 }
 
+static void beacon_jit_cfi_beginPrologue(beacon_bytecodeJit_t *jit)
+{
+    beacon_dwarf_cie_t ehCie = {0};
+    ehCie.codeAlignmentFactor = 1;
+    ehCie.dataAlignmentFactor = -sizeof(uintptr_t);
+    ehCie.pointerSize = sizeof(uintptr_t);
+    ehCie.returnAddressRegister = sizeof(uintptr_t) == 8 ? DW_X64_REG_RA : DW_X86_REG_RA;
+    jit->dwarfEhBuilder.initialStackFrameSize = 1; // Return address
+    jit->dwarfEhBuilder.stackPointerRegister = sizeof(uintptr_t) == 8 ? DW_X64_REG_RSP : DW_X86_REG_ESP;
+    beacon_dwarf_cfi_beginCIE(&jit->dwarfEhBuilder, &ehCie);
+    beacon_dwarf_cfi_cfaInRegisterWithFactoredOffset(&jit->dwarfEhBuilder, jit->dwarfEhBuilder.stackPointerRegister, 1);
+    beacon_dwarf_cfi_registerValueAtFactoredOffset(&jit->dwarfEhBuilder, sizeof(uintptr_t) == 8 ? DW_X64_REG_RA : DW_X86_REG_RA, 1);
+
+    beacon_dwarf_cfi_endCIE(&jit->dwarfEhBuilder);
+    beacon_dwarf_cfi_beginFDE(&jit->dwarfEhBuilder, jit->instructions.size);
+}
+
+static void beacon_jit_cfi_pushRBP(beacon_bytecodeJit_t *jit)
+{
+#ifdef _WIN32
+    beacon_bytecodeJit_uwop_pushNonVol(jit, 5);
+#endif
+    beacon_dwarf_cfi_setPC(&jit->dwarfEhBuilder, jit->instructions.size);
+    beacon_dwarf_cfi_pushRegister(&jit->dwarfEhBuilder, sizeof(uintptr_t) == 8 ? DW_X64_REG_RBP : DW_X86_REG_EBP);
+}
+
+void beacon_jit_prologue(beacon_bytecodeJit_t *jit)
+{
+    beacon_jit_cfi_beginPrologue(jit);
+#ifndef _WIN32
+    beacon_jit_x86_endbr64(jit);
+#endif
+
+    //(beacon_context_t *context, beacon_tuple_t function, size_t argumentCount, beacon_tuple_t *arguments)
+    beacon_jit_x86_pushRegister(jit, BEACON_X86_RBP);
+    beacon_jit_cfi_pushRBP(jit);
+}
+
 
 #endif 
