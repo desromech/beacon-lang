@@ -18,6 +18,7 @@ set(BeaconVM_Sources
     Parser.c
     Bytecode.c
     BytecodeJitCommon.c
+    BytecodeJitX86.c
     SyntaxCompiler.c
 )
 

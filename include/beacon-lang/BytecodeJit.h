@@ -31,8 +31,8 @@
 
 typedef enum beacon_bytecodeJitRelocationType_e
 {
-    SYSBVM_BYTECODE_JIT_RELOCATION_RELATIVE32,
-    SYSBVM_BYTECODE_JIT_RELOCATION_RELATIVE64,
+    BEACON_BYTECODE_JIT_RELOCATION_RELATIVE32,
+    BEACON_BYTECODE_JIT_RELOCATION_RELATIVE64,
 } beacon_bytecodeJitRelocationType_t;
 
 typedef struct beacon_bytecodeJitRelocation_s
