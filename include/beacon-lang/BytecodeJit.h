@@ -99,7 +99,7 @@ typedef struct beacon_bytecodeJit_s
     int32_t localVectorOffset;
     int32_t argumentVectorOffset;
     int32_t literalVectorOffset;
-    int32_t captureVectorOffset;
+    int32_t captureVectorOrReceiverOffset;
     int32_t pcOffset;
     int32_t stackFrameRecordOffset;
     int32_t callArgumentVectorSizeOffset;

@@ -17,6 +17,6 @@ size_t beacon_DynArray_addAll(beacon_DynArray_t *dynarray, size_t entryCount, co
 size_t beacon_DynArray_add(beacon_DynArray_t *dynarray, const void *newEntry);
 void beacon_DynArray_destroy(beacon_DynArray_t *dynarray);
 
-#define beacon_dynarray_entryOfTypeAt(dynarray, entryType, index) (((entryType*)(dynarray).data) + index)
+#define beacon_DynArray_entryOfTypeAt(dynarray, entryType, index) (((entryType*)(dynarray).data) + index)
 
 #endif //beacon_DYNARRAY_CONTEXT_H

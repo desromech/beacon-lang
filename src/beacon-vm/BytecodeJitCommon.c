@@ -327,7 +327,7 @@ void beacon_bytecodeJit_jitFree(beacon_bytecodeJit_t *jit)
 
 bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *function)
 {
-    //return false;
+    return false;
     beacon_BytecodeCode_t *functionBytecode = function->bytecodeImplementation;
     if(!functionBytecode)
         return false;
@@ -502,31 +502,11 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
 
     }
 
+    beacon_jit_finish(&jit);
+
     beacon_bytecodeJit_jitFree(&jit);
     return false;
 #if 0
-
-    jit.sourcePosition = function->sourcePosition;
-    jit.compiledProgramEntity = function;
-
-    jit.literalVectorGCRoot = beacon_heap_allocateGCRootTableEntry(&context->heap);
-    *jit.literalVectorGCRoot = functionBytecode->literals;
-
-    size_t instructionsSize = beacon_tuple_getSizeInBytes(functionBytecode->instructions);
-    uint8_t *instructions = BEACON_CAST_OOP_TO_OBJECT_TUPLE(functionBytecode->instructions)->bytes;
-
-    int16_t decodedOperands[BEACON_BYTECODE_FUNCTION_OPERAND_REGISTER_FILE_SIZE] = {0};
-    jit.argumentCount = beacon_tuple_size_decode(functionBytecode->argumentCount);
-    jit.captureVectorSize = beacon_tuple_size_decode(functionBytecode->captureVectorSize);
-    jit.literalCount = beacon_tuple_getSizeInSlots(functionBytecode->literalVector);
-    jit.localVectorSize = beacon_tuple_size_decode(functionBytecode->localVectorSize);
-
-    jit.pcDestinations = (intptr_t*)malloc(sizeof(intptr_t)*instructionsSize);
-    memset(jit.pcDestinations, -1, sizeof(intptr_t)*instructionsSize);
-
-    beacon_jit_prologue(&jit);
-    beacon_jit_finish(&jit);
-
     size_t objectFileHeaderSize = beacon_sizeAlignedTo(jit.objectFileHeader.size, 16);
     size_t textSectionSize = beacon_sizeAlignedTo(jit.instructions.size, 16);
     size_t rodataSectionSize = beacon_sizeAlignedTo(jit.constants.size, 16);
