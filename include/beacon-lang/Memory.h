@@ -40,6 +40,7 @@ typedef struct beacon_MemoryHeap_s
 typedef enum beacon_StackFrameRecordKind_e
 {
     StackFrameBytecodeMethodRecord = 0,
+    StackFrameBytecodeJitMethodRecord,
     StackFrameSourceCompilationRoots,
     StackFramePrimitiveRoots,
     StackFrameEnsure,
@@ -69,6 +70,18 @@ typedef struct beacon_StackFrameRecord_s
             jmp_buf nonLocalReturnJumpBuffer;
             uint32_t pc;
         } bytecodeMethodStackRecord;
+
+        struct
+        {
+            beacon_oop_t receiverOrCaptures;
+            beacon_oop_t literals;
+            size_t argumentCount;
+            beacon_oop_t *arguments;
+            size_t temporaryCount;
+            beacon_oop_t *temporaries;
+            jmp_buf nonLocalReturnJumpBuffer;
+            uint32_t pc;
+        } bytecodeJitMethodStackRecord;
 
         struct
         {

@@ -15,7 +15,7 @@
 #endif
 
 #if defined(BEACON_ARCH_X86_64)
-#   define BEACON_JIT_SUPPORTED
+#   define BEACON_JIT_SUPPORTED 1
 #endif
 
 #ifdef BEACON_JIT_SUPPORTED
@@ -126,7 +126,7 @@ typedef struct beacon_bytecodeJit_s
 
     intptr_t *pcDestinations;
 
-    beacon_Array_t **literalVectorGCRoot;
+    beacon_Array_t *literalVector;
 } beacon_bytecodeJit_t;
 
 static inline size_t beacon_sizeAlignedTo(size_t pointer, size_t alignment)

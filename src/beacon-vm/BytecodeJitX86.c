@@ -1,4 +1,5 @@
 #include "beacon-lang/BytecodeJit.h"
+#include "beacon-lang/Memory.h"
 
 #if defined(BEACON_JIT_SUPPORTED) && defined(BEACON_ARCH_X86_64)
 
@@ -507,6 +508,32 @@ static void beacon_jit_cfi_pushRBP(beacon_bytecodeJit_t *jit)
     beacon_dwarf_cfi_pushRegister(&jit->dwarfEhBuilder, sizeof(uintptr_t) == 8 ? DW_X64_REG_RBP : DW_X86_REG_EBP);
 }
 
+static void beacon_jit_cfi_storeStackInFramePointer(beacon_bytecodeJit_t *jit, int32_t offset)
+{
+#ifdef _WIN32
+    SYSBVM_ASSERT((offset % 16) == 0);
+    jit->cfiFrameOffset = offset / 16;
+    beacon_bytecodeJit_uwop_setFPReg(jit);
+#endif
+    beacon_dwarf_cfi_setPC(&jit->dwarfEhBuilder, jit->instructions.size);
+    beacon_dwarf_cfi_saveFramePointerInRegister(&jit->dwarfEhBuilder, sizeof(uintptr_t) == 8 ? DW_X64_REG_RBP : DW_X86_REG_EBP, offset);
+}
+
+static void beacon_jit_cfi_subtract(beacon_bytecodeJit_t *jit, size_t subtractionAmount)
+{
+    if(!subtractionAmount) return;
+#ifdef _WIN32
+    beacon_bytecodeJit_uwop_alloc(jit, subtractionAmount);
+#endif
+    beacon_dwarf_cfi_stackSizeAdvance(&jit->dwarfEhBuilder, jit->instructions.size, subtractionAmount);
+}
+
+static void beacon_jit_cfi_endPrologue(beacon_bytecodeJit_t *jit)
+{
+    jit->prologueSize = jit->instructions.size;
+    beacon_dwarf_cfi_endPrologue(&jit->dwarfEhBuilder);
+}
+
 void beacon_jit_prologue(beacon_bytecodeJit_t *jit)
 {
     beacon_jit_cfi_beginPrologue(jit);
@@ -514,14 +541,107 @@ void beacon_jit_prologue(beacon_bytecodeJit_t *jit)
     beacon_jit_x86_endbr64(jit);
 #endif
 
+    // Allocate the stack storage.
+    size_t requiredStackSize = jit->localVectorSize * sizeof(intptr_t)
+        + (sizeof(beacon_StackFrameRecord_t) - sizeof(intptr_t));
+    jit->stackFrameSize = (requiredStackSize + 15) & (-16);
+    jit->stackFrameRecordOffset = 0;
+    jit->stackCallReservationSize = jit->maxCallArgumentCount *  sizeof(intptr_t);  
+    
     //(beacon_context_t *context, beacon_tuple_t function, size_t argumentCount, beacon_tuple_t *arguments)
     beacon_jit_x86_pushRegister(jit, BEACON_X86_RBP);
     beacon_jit_cfi_pushRBP(jit);
 
-    beacon_jit_x86_pushRegister(jit, BEACON_X86_64_ARG0); // Context
+#ifdef _WIN32
+    jit->stackCallReservationSize += BEACON_X86_64_CALL_SHADOW_SPACE;
+    beacon_jit_x86_subImmediate32(jit, BEACON_X86_RSP, jit->stackFrameSize + jit->stackCallReservationSize);
+    beacon_jit_cfi_subtract(jit, jit->stackFrameSize + jit->stackCallReservationSize);
+
+    beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_RBP, BEACON_X86_RSP, jit->stackCallReservationSize);
+    beacon_jit_cfi_storeStackInFramePointer(jit, jit->stackCallReservationSize);
+
+#else
+    beacon_jit_x86_mov64Register(jit, BEACON_X86_RBP, BEACON_X86_RSP);
+    beacon_jit_cfi_storeStackInFramePointer(jit, 0);
+
+    beacon_jit_x86_subImmediate32(jit, BEACON_X86_RSP, jit->stackFrameSize + jit->stackCallReservationSize);
+    beacon_jit_cfi_subtract(jit, jit->stackFrameSize + jit->stackCallReservationSize);
+    jit->stackFrameRecordOffset = -jit->stackFrameSize;
+#endif
+
+    beacon_jit_cfi_endPrologue(jit);
+
+    /*beacon_jit_x86_pushRegister(jit, BEACON_X86_64_ARG0); // Context
     beacon_jit_x86_pushRegister(jit, BEACON_X86_64_ARG1); // Receiver or captures
     beacon_jit_x86_pushRegister(jit, BEACON_X86_64_ARG2); // ArgumentCount
     beacon_jit_x86_pushRegister(jit, BEACON_X86_64_ARG3); // Arguments
+    */
+    // Build the stack frame record.
+    {
+        beacon_jit_x86_movS32IntoMemoryWithOffset(jit,
+            BEACON_X86_RBP, jit->stackFrameRecordOffset + offsetof(beacon_StackFrameRecord_t, previousRecord),
+            0);
+
+        jit->contextPointerOffset = jit->stackFrameRecordOffset + offsetof(beacon_StackFrameRecord_t, context);
+        beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, jit->contextPointerOffset, BEACON_X86_64_ARG0);
+    
+        beacon_jit_x86_movS32IntoMemoryWithOffset(jit,
+            BEACON_X86_RBP, jit->stackFrameRecordOffset + offsetof(beacon_StackFrameRecord_t, kind),
+            StackFrameBytecodeJitMethodRecord);
+
+        // ReceiverOrCapture
+        jit->captureVectorOffset = jit->stackFrameRecordOffset + offsetof(beacon_StackFrameRecord_t, bytecodeJitMethodStackRecord.receiverOrCaptures);
+        beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, jit->captureVectorOffset, BEACON_X86_64_ARG1);
+    
+        // Literal vector
+        beacon_jit_x86_mov64Absolute(jit, BEACON_X86_RAX, (uintptr_t)jit->literalVector); // Pointer to GC root with the literal vector.
+        jit->literalVectorOffset = jit->stackFrameRecordOffset + offsetof(beacon_StackFrameRecord_t, bytecodeJitMethodStackRecord.literals);
+        beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, jit->literalVectorOffset, BEACON_X86_RAX);
+
+        // Argument count
+        intptr_t argumentCountOffset = jit->stackFrameRecordOffset + offsetof(beacon_StackFrameRecord_t, bytecodeJitMethodStackRecord.argumentCount);
+        beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, argumentCountOffset, BEACON_X86_64_ARG2);
+
+        // Arguments
+        jit->argumentVectorOffset = jit->stackFrameRecordOffset + offsetof(beacon_StackFrameRecord_t, bytecodeJitMethodStackRecord.arguments);
+        beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, jit->argumentVectorOffset, BEACON_X86_64_ARG3);
+        
+        // PC
+        jit->pcOffset = jit->stackFrameRecordOffset + offsetof(beacon_StackFrameRecord_t, bytecodeJitMethodStackRecord.pc);
+        beacon_jit_x86_movS32IntoMemoryWithOffset(jit, BEACON_X86_RBP, jit->pcOffset, 0);
+
+        /*
+        jit->callArgumentVectorSizeOffset = jit->stackFrameRecordOffset + offsetof(beacon_stackFrameBytecodeFunctionJitActivationRecord_t, callArgumentVectorSize);
+        beacon_jit_x86_movS32IntoMemoryWithOffset(jit, BEACON_X86_RBP, jit->callArgumentVectorSizeOffset, 0);
+
+        jit->callArgumentVectorOffset = jit->stackFrameRecordOffset + offsetof(beacon_stackFrameBytecodeFunctionJitActivationRecord_t, callArgumentVector);
+        // This is not needed to be cleared.
+
+        jit->argumentVectorOffset = jit->stackFrameRecordOffset + offsetof(beacon_stackFrameBytecodeFunctionJitActivationRecord_t, arguments);
+        beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, jit->argumentVectorOffset, BEACON_X86_64_ARG3);
+
+        size_t inlineLocalVectorSizeOffset = jit->stackFrameRecordOffset + offsetof(beacon_stackFrameBytecodeFunctionJitActivationRecord_t, inlineLocalVectorSize);
+        beacon_jit_x86_movS32IntoMemoryWithOffset(jit, BEACON_X86_RBP, (int32_t)inlineLocalVectorSizeOffset, (int32_t)jit->localVectorSize);
+
+        jit->localVectorOffset = jit->stackFrameRecordOffset + offsetof(beacon_stackFrameBytecodeFunctionJitActivationRecord_t, inlineLocalVector);
+
+        // Initialize the locals
+        if(jit->localVectorSize > 0)
+        {
+            beacon_jit_x86_xorRegister(jit, BEACON_X86_RAX, BEACON_X86_RAX);
+            for(size_t i = 0; i < jit->localVectorSize; ++i)
+            {
+                size_t localOffset = jit->localVectorOffset + i*sizeof(void*);
+                beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, (int32_t)localOffset, BEACON_X86_RAX);
+            }
+        }
+
+        // Connect with the stack unwinder.
+        beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_64_ARG0, BEACON_X86_RBP, jit->stackFrameRecordOffset);
+        beacon_jit_x86_call(jit, &beacon_stackFrame_pushRecord);
+        */
+    }
+
 }
 
 

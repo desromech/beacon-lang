@@ -349,6 +349,7 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
     jit.argumentCount = argumentCount;
     jit.captureVectorSize = captureCount;
     jit.literalCount = literalCount;
+    jit.literalVector = functionBytecode->literals;
     jit.localVectorSize = temporaryCount;
     jit.maxCallArgumentCount = maxCallArgumentCount;
 
