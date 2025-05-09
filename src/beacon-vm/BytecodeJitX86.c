@@ -1,4 +1,5 @@
 #include "beacon-lang/BytecodeJit.h"
+#include "beacon-lang/Context.h"
 #include "beacon-lang/Memory.h"
 #include <stdlib.h>
 
@@ -567,18 +568,93 @@ static void beacon_jit_epilogue(beacon_bytecodeJit_t *jit)
     beacon_jit_x86_ret(jit);
 }
 
+void beacon_jit_jumpRelative(beacon_bytecodeJit_t *jit, size_t targetPC)
+{
+    uint8_t instruction[] = {
+        0xE9, 0x00, 0x00, 0x00, 0x00,
+    };
+
+    size_t relocationOffset = beacon_bytecodeJit_addBytes(jit, sizeof(instruction), instruction) - 4;
+    beacon_bytecodeJitPCRelocation_t relocation = {
+        .offset = relocationOffset,
+        .targetPC = targetPC,
+        .addend = -4,
+    };
+    beacon_bytecodeJit_addPCRelocation(jit, relocation);
+}
+
+static void beacon_jit_x86_cmpRegister(beacon_bytecodeJit_t *jit, beacon_x86_register_t destination, beacon_x86_register_t source)
+{
+    uint8_t instruction[] = {
+        beacon_jit_x86_rex(true, destination > BEACON_X86_REG_HALF_MASK, false, source > BEACON_X86_REG_HALF_MASK),
+        0x39,
+        beacon_jit_x86_modRMRegister(source, destination),
+    };
+
+    beacon_bytecodeJit_addBytes(jit, sizeof(instruction), instruction);
+}
+
+void beacon_jit_jumpRelativeIfTrue(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t conditionOperand, size_t targetPC)
+{
+    beacon_jit_moveOperandToRegister(jit, BEACON_X86_64_SCRATCH_REG0, conditionOperand);
+    beacon_jit_x86_mov64Absolute(jit, BEACON_X86_64_SCRATCH_REG1, jit->context->roots.trueValue);
+    beacon_jit_x86_cmpRegister(jit, BEACON_X86_64_SCRATCH_REG0, BEACON_X86_64_SCRATCH_REG1);
+
+    uint8_t instruction[] = {
+        // Jeq
+        0x0F, 0x84, 0x00, 0x00, 0x00, 0x00,
+    };
+
+    size_t relocationOffset = beacon_bytecodeJit_addBytes(jit, sizeof(instruction), instruction) - 4;
+    beacon_bytecodeJitPCRelocation_t relocation = {
+        .offset = relocationOffset,
+        .targetPC = targetPC,
+        .addend = -4,
+    };
+    beacon_bytecodeJit_addPCRelocation(jit, relocation);
+
+}
+
+void beacon_jit_jumpRelativeIfFalse(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t conditionOperand, size_t targetPC)
+{
+    beacon_jit_moveOperandToRegister(jit, BEACON_X86_64_SCRATCH_REG0, conditionOperand);
+    beacon_jit_x86_mov64Absolute(jit, BEACON_X86_64_SCRATCH_REG1, jit->context->roots.falseValue);
+    beacon_jit_x86_cmpRegister(jit, BEACON_X86_64_SCRATCH_REG0, BEACON_X86_64_SCRATCH_REG1);
+
+    uint8_t instruction[] = {
+        // Jeq
+        0x0F, 0x84, 0x00, 0x00, 0x00, 0x00,
+    };
+
+    size_t relocationOffset = beacon_bytecodeJit_addBytes(jit, sizeof(instruction), instruction) - 4;
+    beacon_bytecodeJitPCRelocation_t relocation = {
+        .offset = relocationOffset,
+        .targetPC = targetPC,
+        .addend = -4,
+    };
+    beacon_bytecodeJit_addPCRelocation(jit, relocation);
+}
+
+void beacon_jit_safepoint(beacon_bytecodeJit_t *jit)
+{
+    beacon_jit_x86_jitLoadContextInRegister(jit, BEACON_X86_64_ARG0);
+    beacon_jit_x86_call(jit, &beacon_memoryHeapSafepoint);
+}
+
 void beacon_jit_sendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount)
 {
-    beacon_jit_x86_movImmediate32(jit, BEACON_X86_64_ARG0, totalArgumentCount);
-    beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_64_ARG1, BEACON_X86_RSP, BEACON_X86_64_CALL_SHADOW_SPACE);
+    beacon_jit_x86_jitLoadContextInRegister(jit, BEACON_X86_64_ARG0);
+    beacon_jit_x86_movImmediate32(jit, BEACON_X86_64_ARG1, totalArgumentCount);
+    beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_64_ARG2, BEACON_X86_RSP, BEACON_X86_64_CALL_SHADOW_SPACE);
     beacon_jit_x86_call(jit, &beacon_bytecodeJit_sendMessageTrampoline);
     beacon_jit_moveRegisterToOperand(jit, resultOperand, BEACON_X86_RAX);
 }
 
 void beacon_jit_superSendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount)
 {
-    beacon_jit_x86_movImmediate32(jit, BEACON_X86_64_ARG0, totalArgumentCount);
-    beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_64_ARG1, BEACON_X86_RSP, BEACON_X86_64_CALL_SHADOW_SPACE);
+    beacon_jit_x86_jitLoadContextInRegister(jit, BEACON_X86_64_ARG0);
+    beacon_jit_x86_movImmediate32(jit, BEACON_X86_64_ARG1, totalArgumentCount);
+    beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_64_ARG2, BEACON_X86_RSP, BEACON_X86_64_CALL_SHADOW_SPACE);
     beacon_jit_x86_call(jit, &beacon_bytecodeJit_superSendMessageTrampoline);
     beacon_jit_moveRegisterToOperand(jit, resultOperand, BEACON_X86_RAX);
 }

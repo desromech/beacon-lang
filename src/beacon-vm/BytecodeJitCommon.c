@@ -325,12 +325,12 @@ void beacon_bytecodeJit_jitFree(beacon_bytecodeJit_t *jit)
     beacon_DynArray_destroy(&jit->objectFileContent);
 }
 
-beacon_oop_t beacon_bytecodeJit_sendMessageTrampoline(size_t allArgumentsCount, beacon_oop_t *allArguments)
+beacon_oop_t beacon_bytecodeJit_sendMessageTrampoline(beacon_context_t *context, size_t allArgumentsCount, beacon_oop_t *allArguments)
 {
     abort();
 }
 
-beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(size_t allArgumentsCount, beacon_oop_t *allArguments)
+beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(beacon_context_t *context, size_t allArgumentsCount, beacon_oop_t *allArguments)
 {
     abort();
 }
@@ -452,16 +452,22 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
             // Nothing is required here.
             break;
         case BeaconBytecodeJump:
-            printf(" jump TODO\n");
-            // TODO
+            printf(" jump\n");
+            if(branchDestinationDelta < 0)
+                beacon_jit_safepoint(&jit);
+            beacon_jit_jumpRelative(&jit, branchDestinationPC);
             break;
         case BeaconBytecodeJumpIfTrue:
-            printf(" jumpIfTrue TODO\n");
-            // TODO
+            printf(" jumpIfTrue\n");
+            if(branchDestinationDelta < 0)
+                beacon_jit_safepoint(&jit);
+            beacon_jit_jumpRelativeIfTrue(&jit, bytecodeDecodedArguments[0], branchDestinationPC);
             break;
         case BeaconBytecodeJumpIfFalse:
-            printf(" jumpIfFalse TODO\n");
-            // TODO
+            printf(" jumpIfFalse\n");
+            if(branchDestinationDelta < 0)
+                beacon_jit_safepoint(&jit);
+            beacon_jit_jumpRelativeIfFalse(&jit, bytecodeDecodedArguments[0], branchDestinationPC);
             break;
         case BeaconBytecodeSendMessage:
             printf(" sendMessage\n");
@@ -477,7 +483,6 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
         case BeaconBytecodeStoreValue:
             printf(" storeValue\n");
             beacon_jit_moveOperandToOperand(&jit, resultOperand, bytecodeDecodedArguments[0]);
-            // TODO
             break;
         case BeaconBytecodeLocalReturn:
             printf(" localReturn\n");
@@ -485,22 +490,26 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
             break;
         case BeaconBytecodeNonLocalReturn:
             printf(" nonLocalReturn TODO\n");
-            // TODO
+            abort();
             break;
         case BeaconBytecodeMakeArray:
             printf(" makeArray TODO\n");
+            abort();
             // TODO
             break;
         case BeaconBytecodeMakeClosureInstance:
             printf(" makeClosureInstance TODO\n");
+            abort();
             // TODO
             break;
         case BeaconBytecodeIdentityEquals:
             printf(" == TODO\n");
+            abort();
             // TODO
             break;
         case BeaconBytecodeIdentityNotEquals:
             printf(" ~~ TODO\n");
+            abort();
             // TODO
             break;
         default:
