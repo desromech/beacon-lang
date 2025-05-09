@@ -79,7 +79,6 @@ typedef enum beacon_x86_register_e
 static void beacon_jit_x86_mov64Absolute(beacon_bytecodeJit_t *jit, beacon_x86_register_t destination, uint64_t value);
 static void beacon_jit_moveRegisterToOperand(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t operand, beacon_x86_register_t reg);
 static void beacon_jit_moveOperandToRegister(beacon_bytecodeJit_t *jit, beacon_x86_register_t reg, beacon_bytecodeJitDecodedOperand_t operand);
-static void beacon_jit_moveOperandToCallArgumentVector(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t operand, int32_t callArgumentVectorIndex);
 
 static uint8_t beacon_jit_x86_modRM(int8_t rm, uint8_t regOpcode, uint8_t mod)
 {
@@ -545,6 +544,12 @@ static void beacon_jit_moveOperandToRegister(beacon_bytecodeJit_t *jit, beacon_x
     }
 }
 
+void beacon_jit_moveOperandToCallArgumentVector(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t operand, int32_t callArgumentVectorIndex)
+{
+    beacon_jit_moveOperandToRegister(jit, BEACON_X86_64_SCRATCH_REG0, operand);
+    beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RSP, BEACON_X86_64_CALL_SHADOW_SPACE + callArgumentVectorIndex*sizeof(void*), BEACON_X86_64_SCRATCH_REG0);
+}
+
 void beacon_jit_moveOperandToOperand(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t destinationOperand, beacon_bytecodeJitDecodedOperand_t sourceOperand)
 {
     beacon_jit_moveOperandToRegister(jit, BEACON_X86_64_SCRATCH_REG0, sourceOperand);
@@ -560,6 +565,22 @@ static void beacon_jit_epilogue(beacon_bytecodeJit_t *jit)
 #endif
     beacon_jit_x86_popRegister(jit, BEACON_X86_RBP);
     beacon_jit_x86_ret(jit);
+}
+
+void beacon_jit_sendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount)
+{
+    beacon_jit_x86_movImmediate32(jit, BEACON_X86_64_ARG0, totalArgumentCount);
+    beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_64_ARG1, BEACON_X86_RSP, BEACON_X86_64_CALL_SHADOW_SPACE);
+    beacon_jit_x86_call(jit, &beacon_bytecodeJit_sendMessageTrampoline);
+    beacon_jit_moveRegisterToOperand(jit, resultOperand, BEACON_X86_RAX);
+}
+
+void beacon_jit_superSendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount)
+{
+    beacon_jit_x86_movImmediate32(jit, BEACON_X86_64_ARG0, totalArgumentCount);
+    beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_64_ARG1, BEACON_X86_RSP, BEACON_X86_64_CALL_SHADOW_SPACE);
+    beacon_jit_x86_call(jit, &beacon_bytecodeJit_superSendMessageTrampoline);
+    beacon_jit_moveRegisterToOperand(jit, resultOperand, BEACON_X86_RAX);
 }
 
 void beacon_jit_return(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t operand)

@@ -156,6 +156,8 @@ void beacon_bytecodeJit_addRelocation(beacon_bytecodeJit_t *jit, beacon_bytecode
 void beacon_bytecodeJit_jitFree(beacon_bytecodeJit_t *jit);
 
 bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *functionBytecode);
+beacon_oop_t beacon_bytecodeJit_sendMessageTrampoline(size_t allArgumentsCount, beacon_oop_t *allArguments);
+beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(size_t allArgumentsCount, beacon_oop_t *allArguments);
 
 // Backend specific methods.
 void beacon_jit_prologue(beacon_bytecodeJit_t *jit);
@@ -167,6 +169,10 @@ void beacon_jit_breakpoint(beacon_bytecodeJit_t *jit);
 void beacon_jit_unreachable(beacon_bytecodeJit_t *jit);
 
 void beacon_jit_moveOperandToOperand(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t destinationOperand, beacon_bytecodeJitDecodedOperand_t sourceOperand);
+void beacon_jit_moveOperandToCallArgumentVector(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t operand, int32_t callArgumentVectorIndex);
+
+void beacon_jit_sendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount);
+void beacon_jit_superSendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount);
 void beacon_jit_return(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t operand);
 void beacon_jit_storePC(beacon_bytecodeJit_t *jit, uint16_t pc);
 

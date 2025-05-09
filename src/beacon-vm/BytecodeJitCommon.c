@@ -325,6 +325,16 @@ void beacon_bytecodeJit_jitFree(beacon_bytecodeJit_t *jit)
     beacon_DynArray_destroy(&jit->objectFileContent);
 }
 
+beacon_oop_t beacon_bytecodeJit_sendMessageTrampoline(size_t allArgumentsCount, beacon_oop_t *allArguments)
+{
+    abort();
+}
+
+beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(size_t allArgumentsCount, beacon_oop_t *allArguments)
+{
+    abort();
+}
+
 bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *function)
 {
     return false;
@@ -385,7 +395,7 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
 
         // Decode the result destination.
         bool writesToTemporary = beacon_bytecodeWritesToTemporary(opcode);
-        beacon_bytecodeJitDecodedOperand_t resultOperand;
+        beacon_bytecodeJitDecodedOperand_t resultOperand = {};
         if(writesToTemporary)
         {
             beacon_BytecodeValue_t bytecodeResultTemporary = bytecodes[pc++];
@@ -454,13 +464,16 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
             // TODO
             break;
         case BeaconBytecodeSendMessage:
-            printf(" sendMessage TODO\n");
-            // TODO
+            printf(" sendMessage\n");
+            for(uint32_t i = 0; i < instructionArgumentCount; ++i)
+                beacon_jit_moveOperandToCallArgumentVector(&jit, bytecodeDecodedArguments[i], i);
+            beacon_jit_sendMessage(&jit, resultOperand, instructionArgumentCount);
             break;
         case BeaconBytecodeSuperSendMessage:
-            printf(" superSendMessage TODO\n");
-            // TODO
-            break;
+            printf(" superSendMessage\n");
+            for(uint32_t i = 0; i < instructionArgumentCount; ++i)
+                beacon_jit_moveOperandToCallArgumentVector(&jit, bytecodeDecodedArguments[i], i);
+            beacon_jit_superSendMessage(&jit, resultOperand, instructionArgumentCount);
         case BeaconBytecodeStoreValue:
             printf(" storeValue\n");
             beacon_jit_moveOperandToOperand(&jit, resultOperand, bytecodeDecodedArguments[0]);
