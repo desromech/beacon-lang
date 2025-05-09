@@ -79,6 +79,7 @@ typedef struct beacon_StackFrameRecord_s
             beacon_oop_t *arguments;
             size_t temporaryCount;
             beacon_oop_t *temporaries;
+            beacon_oop_t returnValue;
             jmp_buf nonLocalReturnJumpBuffer;
             uint32_t pc;
         } bytecodeJitMethodStackRecord;

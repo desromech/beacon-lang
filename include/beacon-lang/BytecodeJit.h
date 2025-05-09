@@ -81,7 +81,7 @@ typedef struct beacon_bytecodeJitDecodedArgument_s
     beacon_BytecodeValueType_t type;
     uint16_t index;
     int16_t signedIndex;
-} beacon_bytecodeJitDecodedArgument_t;
+} beacon_bytecodeJitDecodedOperand_t;
 
 typedef struct beacon_bytecodeJit_s
 {
@@ -165,6 +165,10 @@ uint8_t *beacon_jit_installIn(beacon_bytecodeJit_t *jit, uint8_t *codeWriteableP
 
 void beacon_jit_breakpoint(beacon_bytecodeJit_t *jit);
 void beacon_jit_unreachable(beacon_bytecodeJit_t *jit);
+
+void beacon_jit_moveOperandToOperand(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t destinationOperand, beacon_bytecodeJitDecodedOperand_t sourceOperand);
+void beacon_jit_return(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t operand);
+void beacon_jit_storePC(beacon_bytecodeJit_t *jit, uint16_t pc);
 
 
 #endif //BEACON_JIT_SUPPORTED

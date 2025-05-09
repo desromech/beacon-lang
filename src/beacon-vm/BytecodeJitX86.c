@@ -1,5 +1,6 @@
 #include "beacon-lang/BytecodeJit.h"
 #include "beacon-lang/Memory.h"
+#include <stdlib.h>
 
 #if defined(BEACON_JIT_SUPPORTED) && defined(BEACON_ARCH_X86_64)
 
@@ -67,9 +68,9 @@ typedef enum beacon_x86_register_e
 } beacon_x86_register_t;
 
 static void beacon_jit_x86_mov64Absolute(beacon_bytecodeJit_t *jit, beacon_x86_register_t destination, uint64_t value);
-static void beacon_jit_moveRegisterToOperand(beacon_bytecodeJit_t *jit, int16_t operand, beacon_x86_register_t reg);
-static void beacon_jit_moveOperandToRegister(beacon_bytecodeJit_t *jit, beacon_x86_register_t reg, int16_t operand);
-static void beacon_jit_moveOperandToCallArgumentVector(beacon_bytecodeJit_t *jit, int16_t operand, int32_t callArgumentVectorIndex);
+static void beacon_jit_moveRegisterToOperand(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t operand, beacon_x86_register_t reg);
+static void beacon_jit_moveOperandToRegister(beacon_bytecodeJit_t *jit, beacon_x86_register_t reg, beacon_bytecodeJitDecodedOperand_t operand);
+static void beacon_jit_moveOperandToCallArgumentVector(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t operand, int32_t callArgumentVectorIndex);
 
 static uint8_t beacon_jit_x86_modRM(int8_t rm, uint8_t regOpcode, uint8_t mod)
 {
@@ -482,6 +483,79 @@ void beacon_jit_unreachable(beacon_bytecodeJit_t *jit)
     beacon_jit_x86_ud2(jit);
 }
 
+
+static void beacon_jit_moveRegisterToOperand(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t operand, beacon_x86_register_t reg)
+{
+    int32_t vectorOffset = (int32_t)operand.index * sizeof(void*);
+    switch(operand.type)
+    {
+    case BytecodeArgumentTypeTemporary:
+        beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, jit->localVectorOffset + vectorOffset, reg);
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+static void beacon_jit_moveOperandToRegister(beacon_bytecodeJit_t *jit, beacon_x86_register_t reg, beacon_bytecodeJitDecodedOperand_t operand)
+{
+    int32_t vectorOffset = (int32_t)operand.index * sizeof(void*);
+    switch(operand.type)
+    {
+    case BytecodeArgumentTypeArgument:
+        beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, BEACON_X86_RBP, jit->argumentVectorOffset);
+        beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, reg, vectorOffset);
+        break;
+    case BytecodeArgumentTypeCapture:
+        beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, BEACON_X86_RBP, jit->captureVectorOffset);
+        beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, reg, sizeof(beacon_ObjectHeader_t) + vectorOffset);
+        break;
+    case BytecodeArgumentTypeLiteral:
+        beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, BEACON_X86_RBP, jit->literalVectorOffset);
+        beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, reg, sizeof(beacon_ObjectHeader_t) + vectorOffset);
+        break;
+    case BytecodeArgumentTypeTemporary:
+        beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, BEACON_X86_RBP, jit->localVectorOffset + vectorOffset);
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+void beacon_jit_moveOperandToOperand(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t destinationOperand, beacon_bytecodeJitDecodedOperand_t sourceOperand)
+{
+    beacon_jit_moveOperandToRegister(jit, BEACON_X86_RAX, sourceOperand);
+    beacon_jit_moveRegisterToOperand(jit, destinationOperand, BEACON_X86_RAX);
+}
+
+static void beacon_jit_epilogue(beacon_bytecodeJit_t *jit)
+{
+#ifdef _WIN32
+    beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_RSP, BEACON_X86_RBP, jit->stackFrameSize);
+#else
+    beacon_jit_x86_mov64Register(jit, BEACON_X86_RSP, BEACON_X86_RBP);
+#endif
+    beacon_jit_x86_popRegister(jit, BEACON_X86_RBP);
+    beacon_jit_x86_ret(jit);
+}
+
+void beacon_jit_return(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t operand)
+{
+    // Disconnect from the stack unwinder.
+    beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_64_ARG0, BEACON_X86_RBP, jit->stackFrameRecordOffset);
+    beacon_jit_x86_call(jit, &beacon_popStackFrameRecord);
+
+    beacon_jit_moveOperandToRegister(jit, BEACON_X86_RAX, operand);
+    beacon_jit_epilogue(jit);
+}
+
+void beacon_jit_storePC(beacon_bytecodeJit_t *jit, uint16_t pc)
+{
+    beacon_jit_x86_movImmediateI32IntoMemory64WithOffset(jit, BEACON_X86_RBP, jit->pcOffset, pc);
+}
+
 static void beacon_jit_cfi_beginPrologue(beacon_bytecodeJit_t *jit)
 {
     beacon_dwarf_cie_t ehCie = {0};
@@ -511,7 +585,7 @@ static void beacon_jit_cfi_pushRBP(beacon_bytecodeJit_t *jit)
 static void beacon_jit_cfi_storeStackInFramePointer(beacon_bytecodeJit_t *jit, int32_t offset)
 {
 #ifdef _WIN32
-    SYSBVM_ASSERT((offset % 16) == 0);
+    assert((offset % 16) == 0);
     jit->cfiFrameOffset = offset / 16;
     beacon_bytecodeJit_uwop_setFPReg(jit);
 #endif
@@ -542,8 +616,7 @@ void beacon_jit_prologue(beacon_bytecodeJit_t *jit)
 #endif
 
     // Allocate the stack storage.
-    size_t requiredStackSize = jit->localVectorSize * sizeof(intptr_t)
-        + (sizeof(beacon_StackFrameRecord_t) - sizeof(intptr_t));
+    size_t requiredStackSize = (sizeof(beacon_StackFrameRecord_t)) + jit->localVectorSize * sizeof(intptr_t);
     jit->stackFrameSize = (requiredStackSize + 15) & (-16);
     jit->stackFrameRecordOffset = 0;
     jit->stackCallReservationSize = jit->maxCallArgumentCount *  sizeof(intptr_t);  
@@ -571,11 +644,6 @@ void beacon_jit_prologue(beacon_bytecodeJit_t *jit)
 
     beacon_jit_cfi_endPrologue(jit);
 
-    /*beacon_jit_x86_pushRegister(jit, BEACON_X86_64_ARG0); // Context
-    beacon_jit_x86_pushRegister(jit, BEACON_X86_64_ARG1); // Receiver or captures
-    beacon_jit_x86_pushRegister(jit, BEACON_X86_64_ARG2); // ArgumentCount
-    beacon_jit_x86_pushRegister(jit, BEACON_X86_64_ARG3); // Arguments
-    */
     // Build the stack frame record.
     {
         beacon_jit_x86_movS32IntoMemoryWithOffset(jit,
@@ -616,14 +684,12 @@ void beacon_jit_prologue(beacon_bytecodeJit_t *jit)
 
         jit->callArgumentVectorOffset = jit->stackFrameRecordOffset + offsetof(beacon_stackFrameBytecodeFunctionJitActivationRecord_t, callArgumentVector);
         // This is not needed to be cleared.
+        */
 
-        jit->argumentVectorOffset = jit->stackFrameRecordOffset + offsetof(beacon_stackFrameBytecodeFunctionJitActivationRecord_t, arguments);
-        beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, jit->argumentVectorOffset, BEACON_X86_64_ARG3);
+        size_t localVectorSizeOffset = jit->stackFrameRecordOffset + offsetof(beacon_StackFrameRecord_t, bytecodeJitMethodStackRecord.temporaryCount);
+        beacon_jit_x86_movS32IntoMemoryWithOffset(jit, BEACON_X86_RBP, (int32_t)localVectorSizeOffset, (int32_t)jit->localVectorSize);
 
-        size_t inlineLocalVectorSizeOffset = jit->stackFrameRecordOffset + offsetof(beacon_stackFrameBytecodeFunctionJitActivationRecord_t, inlineLocalVectorSize);
-        beacon_jit_x86_movS32IntoMemoryWithOffset(jit, BEACON_X86_RBP, (int32_t)inlineLocalVectorSizeOffset, (int32_t)jit->localVectorSize);
-
-        jit->localVectorOffset = jit->stackFrameRecordOffset + offsetof(beacon_stackFrameBytecodeFunctionJitActivationRecord_t, inlineLocalVector);
+        jit->localVectorOffset = jit->stackFrameRecordOffset + sizeof(beacon_StackFrameRecord_t);
 
         // Initialize the locals
         if(jit->localVectorSize > 0)
@@ -638,8 +704,7 @@ void beacon_jit_prologue(beacon_bytecodeJit_t *jit)
 
         // Connect with the stack unwinder.
         beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_64_ARG0, BEACON_X86_RBP, jit->stackFrameRecordOffset);
-        beacon_jit_x86_call(jit, &beacon_stackFrame_pushRecord);
-        */
+        beacon_jit_x86_call(jit, &beacon_pushStackFrameRecord);
     }
 
 }
