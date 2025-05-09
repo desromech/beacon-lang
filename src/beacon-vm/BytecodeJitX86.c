@@ -517,6 +517,11 @@ void beacon_jit_prologue(beacon_bytecodeJit_t *jit)
     //(beacon_context_t *context, beacon_tuple_t function, size_t argumentCount, beacon_tuple_t *arguments)
     beacon_jit_x86_pushRegister(jit, BEACON_X86_RBP);
     beacon_jit_cfi_pushRBP(jit);
+
+    beacon_jit_x86_pushRegister(jit, BEACON_X86_64_ARG0); // Context
+    beacon_jit_x86_pushRegister(jit, BEACON_X86_64_ARG1); // Receiver or captures
+    beacon_jit_x86_pushRegister(jit, BEACON_X86_64_ARG2); // ArgumentCount
+    beacon_jit_x86_pushRegister(jit, BEACON_X86_64_ARG3); // Arguments
 }
 
 

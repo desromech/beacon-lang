@@ -335,6 +335,7 @@ typedef struct beacon_BytecodeCode_s
     beacon_oop_t argumentCount;
     beacon_oop_t temporaryCount;
     beacon_oop_t captureCount;
+    beacon_oop_t maxCallArgumentCount;
     beacon_Array_t *literals;
     beacon_ByteArray_t *bytecodes;
     beacon_Array_t *sourcePositions;
@@ -574,6 +575,7 @@ typedef struct beacon_BytecodeCodeBuilder_t
     beacon_ArrayList_t *captures;
     beacon_ByteArrayList_t *bytecodes;
     beacon_ArrayList_t *sourcePositions;
+    beacon_oop_t maxCallArgumentCount;
     beacon_oop_t parentBuilder;
 } beacon_BytecodeCodeBuilder_t;
 

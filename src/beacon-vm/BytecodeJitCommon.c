@@ -345,11 +345,15 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
     size_t captureCount = beacon_decodeSmallInteger(functionBytecode->captureCount);
     size_t temporaryCount = beacon_decodeSmallInteger(functionBytecode->temporaryCount);
     size_t literalCount = functionBytecode->literals ? functionBytecode->literals->super.super.super.super.super.header.slotCount : 0;
+    size_t maxCallArgumentCount = beacon_decodeSmallInteger(functionBytecode->maxCallArgumentCount);
     jit.argumentCount = argumentCount;
     jit.captureVectorSize = captureCount;
     jit.literalCount = literalCount;
     jit.localVectorSize = temporaryCount;
 
+    jit.pcDestinations = (intptr_t*)malloc(sizeof(intptr_t)*bytecodesSize);
+    memset(jit.pcDestinations, -1, sizeof(intptr_t)*bytecodesSize);
+    
     beacon_jit_prologue(&jit);
 
     beacon_bytecodeJitDecodedArgument_t bytecodeDecodedArguments[BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS];
@@ -432,7 +436,6 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
         switch(opcode)
         {
         case BeaconBytecodeNop:
-            printf(" nop\n");
             // Nothing is required here.
             break;
         case BeaconBytecodeJump:

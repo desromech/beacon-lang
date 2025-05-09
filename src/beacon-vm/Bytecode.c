@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+static inline intptr_t max(intptr_t a, intptr_t b)
+{
+    return a > b ? a : b;
+}
 beacon_BytecodeCodeBuilder_t *beacon_BytecodeCodeBuilder_new(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *parentBuilder)
 {
     beacon_BytecodeCodeBuilder_t *builder = beacon_allocateObjectWithBehavior(context->heap, context->classes.bytecodeCodeBuilderClass, sizeof(beacon_BytecodeCodeBuilder_t), BeaconObjectKindPointers);
@@ -15,6 +19,7 @@ beacon_BytecodeCodeBuilder_t *beacon_BytecodeCodeBuilder_new(beacon_context_t *c
     builder->captures = beacon_ArrayList_new(context);
     builder->bytecodes = beacon_ByteArrayList_new(context);
     builder->sourcePositions = beacon_ArrayList_new(context);
+    builder->maxCallArgumentCount = beacon_encodeSmallInteger(0);
     builder->parentBuilder = (beacon_oop_t)parentBuilder;
     return builder;
 }
@@ -25,6 +30,7 @@ beacon_BytecodeCode_t *beacon_BytecodeCodeBuilder_finish(beacon_context_t *conte
     code->argumentCount = beacon_encodeSmallInteger(beacon_ArrayList_size(builder->arguments));
     code->captureCount = beacon_encodeSmallInteger(beacon_ArrayList_size(builder->captures));
     code->temporaryCount = beacon_encodeSmallInteger(beacon_ArrayList_size(builder->temporaries));
+    code->maxCallArgumentCount = builder->maxCallArgumentCount;
     code->literals = beacon_ArrayList_asArray(context, builder->literals);
     code->bytecodes = beacon_ByteArrayList_asByteArray(context, builder->bytecodes);
     code->sourcePositions = beacon_ArrayList_asArray(context, builder->sourcePositions);
@@ -168,6 +174,8 @@ uint8_t beacon_BytecodeCodeBuilder_extendArgumentsIfNeeded(beacon_context_t *con
 
 void beacon_BytecodeCodeBuilder_sendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t receiver, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments, beacon_SourcePosition_t *sourcePosition)
 {
+    methodBuilder->maxCallArgumentCount = beacon_encodeSmallInteger(max(beacon_decodeSmallInteger(methodBuilder->maxCallArgumentCount), 2 + argumentCount));
+
     uint8_t argumentCountBits = beacon_BytecodeCodeBuilder_extendArgumentsIfNeeded(context, methodBuilder, 2 + argumentCount);
     beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, argumentCountBits | BeaconBytecodeSendMessage, sourcePosition);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultTemporary);
@@ -179,6 +187,8 @@ void beacon_BytecodeCodeBuilder_sendMessage(beacon_context_t *context, beacon_By
 
 void beacon_BytecodeCodeBuilder_superSendMessage(beacon_context_t *context, beacon_BytecodeCodeBuilder_t *methodBuilder, beacon_BytecodeValue_t resultTemporary, beacon_BytecodeValue_t receiverClass, beacon_BytecodeValue_t selector, size_t argumentCount, beacon_BytecodeValue_t *arguments, beacon_SourcePosition_t *sourcePosition)
 {
+    methodBuilder->maxCallArgumentCount = beacon_encodeSmallInteger(max(beacon_decodeSmallInteger(methodBuilder->maxCallArgumentCount), 2 + argumentCount));
+
     uint8_t argumentCountBits = beacon_BytecodeCodeBuilder_extendArgumentsIfNeeded(context, methodBuilder, 2 + argumentCount);
     beacon_BytecodeCodeBuilder_addOpcode(context, methodBuilder, argumentCountBits | BeaconBytecodeSuperSendMessage, sourcePosition);
     beacon_ByteArrayList_addUInt16(context, methodBuilder->bytecodes, resultTemporary);

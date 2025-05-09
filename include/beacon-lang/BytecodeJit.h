@@ -93,6 +93,7 @@ typedef struct beacon_bytecodeJit_s
     size_t captureVectorSize;
     size_t literalCount;
     size_t localVectorSize;
+    size_t maxCallArgumentCount;
 
     int32_t contextPointerOffset;
     int32_t localVectorOffset;
