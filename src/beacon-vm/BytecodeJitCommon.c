@@ -350,6 +350,7 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
     jit.captureVectorSize = captureCount;
     jit.literalCount = literalCount;
     jit.localVectorSize = temporaryCount;
+    jit.maxCallArgumentCount = maxCallArgumentCount;
 
     jit.pcDestinations = (intptr_t*)malloc(sizeof(intptr_t)*bytecodesSize);
     memset(jit.pcDestinations, -1, sizeof(intptr_t)*bytecodesSize);
