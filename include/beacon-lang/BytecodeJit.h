@@ -160,7 +160,7 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
 beacon_oop_t beacon_bytecodeJit_allocateClosureTrampoline(beacon_context_t *context, beacon_CompiledBlock_t *code, size_t captureCount);
 beacon_oop_t beacon_bytecodeJit_allocateArrayTrampoline(beacon_context_t *context, size_t arraySize);
 beacon_oop_t beacon_bytecodeJit_sendMessageTrampoline(beacon_context_t *context, size_t allArgumentsCount, beacon_oop_t *allArguments);
-beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(beacon_context_t *context, size_t allArgumentsCount, beacon_oop_t *allArguments);
+beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(beacon_context_t *context, beacon_oop_t receiver, size_t allArgumentsCount, beacon_oop_t *allArguments);
 
 // Backend specific methods.
 void beacon_jit_prologue(beacon_bytecodeJit_t *jit);
@@ -183,6 +183,9 @@ void beacon_jit_allocateArray(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecod
 
 void beacon_jit_allocateBlockClosure(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, beacon_bytecodeJitDecodedOperand_t code, uint32_t captureCount);
 void beacon_jit_setBlockClosureCaptures(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t closureOperand, beacon_bytecodeJitDecodedOperand_t *captures, uint32_t captureCount);
+
+void beacon_jit_identityEquals(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, beacon_bytecodeJitDecodedOperand_t leftOperand, beacon_bytecodeJitDecodedOperand_t rightOperand);
+void beacon_jit_identityNotEquals(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, beacon_bytecodeJitDecodedOperand_t leftOperand, beacon_bytecodeJitDecodedOperand_t rightOperand);
 
 void beacon_jit_sendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount);
 void beacon_jit_superSendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount);

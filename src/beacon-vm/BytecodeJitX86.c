@@ -706,9 +706,38 @@ void beacon_jit_sendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecoded
 void beacon_jit_superSendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount)
 {
     beacon_jit_x86_jitLoadContextInRegister(jit, BEACON_X86_64_ARG0);
-    beacon_jit_x86_movImmediate32(jit, BEACON_X86_64_ARG1, totalArgumentCount);
-    beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_64_ARG2, BEACON_X86_RSP, BEACON_X86_64_CALL_SHADOW_SPACE);
+    beacon_jit_x86_mov64FromMemoryWithOffset(jit, BEACON_X86_64_ARG1, BEACON_X86_RBP, jit->captureVectorOrReceiverOffset);
+    beacon_jit_x86_movImmediate32(jit, BEACON_X86_64_ARG2, totalArgumentCount);
+    beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_64_ARG3, BEACON_X86_RSP, BEACON_X86_64_CALL_SHADOW_SPACE);
     beacon_jit_x86_call(jit, &beacon_bytecodeJit_superSendMessageTrampoline);
+    beacon_jit_moveRegisterToOperand(jit, resultOperand, BEACON_X86_RAX);
+}
+
+static beacon_oop_t beacon_bytecodeJit_identityEqualsTrampoline(beacon_context_t *context, beacon_oop_t leftOperand, beacon_oop_t rightOperand)
+{
+    return leftOperand == rightOperand ? context->roots.trueValue : context->roots.falseValue;
+}
+
+static beacon_oop_t beacon_bytecodeJit_identityNotEqualsTrampoline(beacon_context_t *context, beacon_oop_t leftOperand, beacon_oop_t rightOperand)
+{
+    return leftOperand != rightOperand ? context->roots.trueValue : context->roots.falseValue;
+}
+
+void beacon_jit_identityEquals(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, beacon_bytecodeJitDecodedOperand_t leftOperand, beacon_bytecodeJitDecodedOperand_t rightOperand)
+{
+    beacon_jit_x86_jitLoadContextInRegister(jit, BEACON_X86_64_ARG0);
+    beacon_jit_moveOperandToRegister(jit, BEACON_X86_64_ARG1, leftOperand);
+    beacon_jit_moveOperandToRegister(jit, BEACON_X86_64_ARG2, rightOperand);
+    beacon_jit_x86_call(jit, &beacon_bytecodeJit_identityEqualsTrampoline);
+    beacon_jit_moveRegisterToOperand(jit, resultOperand, BEACON_X86_RAX);
+}
+
+void beacon_jit_identityNotEquals(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, beacon_bytecodeJitDecodedOperand_t leftOperand, beacon_bytecodeJitDecodedOperand_t rightOperand)
+{
+    beacon_jit_x86_jitLoadContextInRegister(jit, BEACON_X86_64_ARG0);
+    beacon_jit_moveOperandToRegister(jit, BEACON_X86_64_ARG1, leftOperand);
+    beacon_jit_moveOperandToRegister(jit, BEACON_X86_64_ARG2, rightOperand);
+    beacon_jit_x86_call(jit, &beacon_bytecodeJit_identityNotEqualsTrampoline);
     beacon_jit_moveRegisterToOperand(jit, resultOperand, BEACON_X86_RAX);
 }
 
