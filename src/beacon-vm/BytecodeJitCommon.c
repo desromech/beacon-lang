@@ -338,7 +338,7 @@ beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(beacon_context_t *con
 
 bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *function)
 {
-    //return false;
+    return false;
     beacon_BytecodeCode_t *functionBytecode = function->bytecodeImplementation;
     if(!functionBytecode)
         return false;
