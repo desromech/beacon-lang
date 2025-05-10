@@ -6,16 +6,22 @@
 #include "beacon-lang/ArrayList.h"
 #include "beacon-lang/SourceCode.h"
 #include "beacon-lang/AgpuRendering.h"
+#include "beacon-lang/Gdb.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include <math.h>
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 
 #include <windows.h>
 #else
 #include <unistd.h>
+#endif
+
+#ifndef _WIN32
+extern void __deregister_frame(const void*);
 #endif
 
 void beacon_context_registerObjectBasicPrimitives(beacon_context_t *context);
@@ -546,6 +552,9 @@ beacon_context_t *beacon_context_new(void)
     context->roots.internedSymbolSet = beacon_allocateObject(context->heap, sizeof(beacon_InternedSymbolSet_t), BeaconObjectKindPointers);
     context->roots.internedSymbolSet->super.array = beacon_allocateObject(context->heap, sizeof(beacon_Array_t) + sizeof(beacon_oop_t)*2048, BeaconObjectKindPointers);
     context->roots.internedSymbolSet->super.tally = beacon_encodeSmallInteger(0);
+    beacon_DynArray_initialize(&context->jittedObjectFileEntries, sizeof(beacon_gdb_jit_code_entry_t*), 1024);
+    beacon_DynArray_initialize(&context->jittedRegisteredFrames, sizeof(void*), 1024);
+
     beacon_context_createBaseClassHierarchy(context);
     beacon_context_createImportantRoots(context);
     beacon_context_createSystemDictionary(context);
@@ -555,6 +564,31 @@ beacon_context_t *beacon_context_new(void)
 
 void beacon_context_destroy(beacon_context_t *context)
 {
+    // Unregister the jitted object codes.
+    {
+        beacon_gdb_jit_code_entry_t **registeredEntries = (beacon_gdb_jit_code_entry_t**)context->jittedObjectFileEntries.data;
+        for(size_t i = 0; i < context->jittedObjectFileEntries.size; ++i)
+        {
+            beacon_gdb_jit_code_entry_t *entry = registeredEntries[i];
+            beacon_gdb_unregisterObjectFile(entry);
+            free(entry);
+        }
+        beacon_DynArray_destroy(&context->jittedObjectFileEntries);
+    }
+
+    // Unregister the jitted registered frames.
+    {
+        void **registeredFrames = (void **)context->jittedRegisteredFrames.data;
+        for(size_t i = 0; i < context->jittedRegisteredFrames.size; ++i)
+        {
+#ifdef _WIN32
+#else
+            __deregister_frame(registeredFrames[i]);
+#endif
+        }
+        beacon_DynArray_destroy(&context->jittedRegisteredFrames);
+    }
+
     beacon_destroyMemoryHeap(context->heap);
     free(context);
 }

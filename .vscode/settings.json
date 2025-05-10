@@ -71,6 +71,7 @@
         "xutility": "c",
         "bytecodejit.h": "c",
         "bytecode.h": "c",
-        "dynarray.h": "c"
+        "dynarray.h": "c",
+        "stdint.h": "c"
     }
 }

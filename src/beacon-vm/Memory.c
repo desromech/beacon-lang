@@ -39,6 +39,8 @@ beacon_MemoryHeap_t *beacon_createMemoryHeap(beacon_context_t *context)
     heap->markingStackCapacity = 512;
     heap->markingStackSize = 0;
     heap->markingStack = calloc(heap->markingStackCapacity, sizeof(beacon_oop_t));
+
+    beacon_chunkedAllocator_initialize(&heap->codeAllocator, BEACON_CHUNKED_ALLOCATOR_DEFAULT_CHUNK_SIZE, true);
     return heap;
 }
 

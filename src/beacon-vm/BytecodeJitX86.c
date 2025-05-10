@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifndef _WIN32
+extern void __register_frame(const void*);
+#endif
+
 #if defined(BEACON_JIT_SUPPORTED) && defined(BEACON_ARCH_X86_64)
 
 typedef enum beacon_x86_register_e
@@ -518,7 +522,10 @@ static void beacon_jit_moveRegisterToOperand(beacon_bytecodeJit_t *jit, beacon_b
 static void beacon_jit_moveOperandToRegister(beacon_bytecodeJit_t *jit, beacon_x86_register_t reg, beacon_bytecodeJitDecodedOperand_t operand)
 {
     if(operand.index == 0)
+    {
         beacon_jit_x86_xorRegister(jit, reg, reg);
+        return;
+    }
 
     int32_t vectorOffset = ((int32_t)operand.index - 1) * sizeof(void*);
     switch(operand.type)
@@ -1161,4 +1168,124 @@ void beacon_jit_finish(beacon_bytecodeJit_t *jit)
     beacon_jit_emitDebugInfo(jit);
     beacon_jit_emitObjectFile(jit);
 }
+
+uint8_t *beacon_jit_installIn(beacon_bytecodeJit_t *jit, uint8_t *codeWriteablePointer, uint8_t *codeExecutablePointer)
+{
+    size_t objectFileHeaderOffset = 0;
+    size_t codeOffset = beacon_sizeAlignedTo(jit->objectFileHeader.size, 16);
+    size_t constantsOffset = codeOffset + beacon_sizeAlignedTo(jit->instructions.size, 16);
+
+    size_t unwindInfoOffset = constantsOffset + beacon_sizeAlignedTo(jit->constants.size, 16);
+    size_t ehFrameOffset = unwindInfoOffset + beacon_sizeAlignedTo(jit->unwindInfo.size, 16);
+    size_t debugLineOffset = ehFrameOffset + beacon_sizeAlignedTo(jit->dwarfEhBuilder.buffer.size, 16);
+    size_t debugStrOffset = debugLineOffset + beacon_sizeAlignedTo(jit->dwarfDebugInfoBuilder.line.size, 16);
+    size_t debugAbbrevOffset = debugStrOffset + beacon_sizeAlignedTo(jit->dwarfDebugInfoBuilder.str.size, 16);
+    size_t debugInfoOffset = debugAbbrevOffset + beacon_sizeAlignedTo(jit->dwarfDebugInfoBuilder.abbrev.size, 16);
+
+    size_t objectFileContentOffset = debugInfoOffset + beacon_sizeAlignedTo(jit->dwarfDebugInfoBuilder.info.size, 16);
+
+    uint8_t *objectFileHeaderPointer = codeWriteablePointer + objectFileHeaderOffset;
+    uint8_t *objectFileHeaderExecutablePointer = codeExecutablePointer + objectFileHeaderOffset;
+    memcpy(objectFileHeaderPointer, jit->objectFileHeader.data, jit->objectFileHeader.size);
+
+    uint8_t *instructionsPointers = codeWriteablePointer + codeOffset;
+    uint8_t *instructionsExecutablePointers = codeExecutablePointer + codeOffset;
+    memcpy(instructionsPointers, jit->instructions.data, jit->instructions.size);
+
+    uint8_t *constantZonePointer = codeWriteablePointer + constantsOffset;
+    uint8_t *constantZoneExecutablePointer = codeExecutablePointer + constantsOffset;
+    memcpy(constantZonePointer, jit->constants.data, jit->constants.size);
+
+    for(size_t i = 0; i < jit->relocations.size; ++i)
+    {
+        beacon_bytecodeJitRelocation_t *relocation = beacon_DynArray_entryOfTypeAt(jit->relocations, beacon_bytecodeJitRelocation_t, i);
+        uint8_t *relocationTarget = instructionsPointers + relocation->offset;
+        uint8_t *relocationExecutableTarget = instructionsExecutablePointers + relocation->offset;
+        intptr_t relocationTargetAddress = (intptr_t)relocationExecutableTarget;
+
+        intptr_t relativeValue = (intptr_t)constantZoneExecutablePointer + relocation->value - relocationTargetAddress + relocation->addend;
+        switch(relocation->type)
+        {
+        case BEACON_BYTECODE_JIT_RELOCATION_RELATIVE32:
+            *((int32_t*)relocationTarget) = (int32_t)relativeValue;
+            break;
+        case BEACON_BYTECODE_JIT_RELOCATION_RELATIVE64:
+            *((int64_t*)relocationTarget) = (int64_t)relativeValue;
+            break;
+        }
+    }
+
+    uint8_t *unwindInfoZonePointer = codeWriteablePointer + unwindInfoOffset;
+    uint8_t *unwindInfoZoneExecutablePointer = codeExecutablePointer + unwindInfoOffset;
+    memcpy(unwindInfoZonePointer, jit->unwindInfo.data, jit->unwindInfo.size);
+
+    uint8_t *ehFrameZonePointer = codeWriteablePointer + ehFrameOffset;
+    uint8_t *ehFrameZoneExecutablePointer = codeExecutablePointer + ehFrameOffset;
+    memcpy(ehFrameZonePointer, jit->dwarfEhBuilder.buffer.data, jit->dwarfEhBuilder.buffer.size);
+
+    beacon_dwarf_debugInfo_patchTextAddressesRelativeTo(&jit->dwarfDebugInfoBuilder, (uintptr_t)instructionsExecutablePointers);
+
+    uint8_t *debugLineZonePointer = codeWriteablePointer + debugLineOffset;
+    uint8_t *debugLineZoneExecutablePointer = codeExecutablePointer + debugLineOffset;
+    memcpy(debugLineZonePointer, jit->dwarfDebugInfoBuilder.line.data, jit->dwarfDebugInfoBuilder.line.size);
+
+    uint8_t *debugStrZonePointer = codeWriteablePointer + debugStrOffset;
+    uint8_t *debugStrZoneExecutablePointer = codeExecutablePointer + debugStrOffset;
+    memcpy(debugStrZonePointer, jit->dwarfDebugInfoBuilder.str.data, jit->dwarfDebugInfoBuilder.str.size);
+
+    uint8_t *debugAbbrevZonePointer = codeWriteablePointer + debugAbbrevOffset;
+    uint8_t *debugAbbrevZoneExecutablePointer = codeExecutablePointer + debugAbbrevOffset;
+    memcpy(debugAbbrevZonePointer, jit->dwarfDebugInfoBuilder.abbrev.data, jit->dwarfDebugInfoBuilder.abbrev.size);
+
+    uint8_t *debugInfoZonePointer = codeWriteablePointer + debugInfoOffset;
+    uint8_t *debugInfoZoneExecutablePointer = codeExecutablePointer + debugInfoOffset;
+    memcpy(debugInfoZonePointer, jit->dwarfDebugInfoBuilder.info.data, jit->dwarfDebugInfoBuilder.info.size);
+
+    uint8_t *objectFileContentPointer = codeWriteablePointer + objectFileContentOffset;
+    uint8_t *objectFileContentExecutablePointer = codeExecutablePointer + objectFileContentOffset;
+    memcpy(objectFileContentPointer, jit->objectFileContent.data, jit->objectFileContent.size);
+
+    beacon_jit_fixupObjectFile(jit,
+        (beacon_elf64_header_t*)objectFileHeaderPointer,
+        (beacon_elf64_header_t*)objectFileHeaderExecutablePointer,
+        instructionsExecutablePointers,
+        ehFrameZonePointer, ehFrameZoneExecutablePointer,
+        debugLineZoneExecutablePointer,
+        debugStrZoneExecutablePointer,
+        debugAbbrevZoneExecutablePointer,
+        debugInfoZoneExecutablePointer,
+        objectFileContentExecutablePointer,
+        (beacon_jit_x64_elfContentFooter_t*) (objectFileContentPointer + jit->objectFileContent.size - sizeof(beacon_jit_x64_elfContentFooter_t))
+    );
+
+#ifdef _WIN32
+    RUNTIME_FUNCTION *runtimeFunction = (RUNTIME_FUNCTION*)unwindInfoZoneExecutablePointer;
+    runtimeFunction->UnwindInfoAddress = (DWORD)(sizeof(RUNTIME_FUNCTION) + unwindInfoZoneExecutablePointer - instructionsExecutablePointers);
+    if(RtlAddFunctionTable(runtimeFunction, 1, (DWORD64)(uintptr_t)instructionsExecutablePointers))
+    {
+        // Store the handle in the context for cleanup.
+    }
+#else
+    (void)unwindInfoZoneExecutablePointer;
+    if(jit->dwarfEhBuilder.buffer.size > 0)
+    {
+#   ifdef __APPLE__
+        // It takes the FDE parameter
+        if(jit->dwarfEhBuilder.fdeOffset > 0)
+        {
+            void *fdePointer = ehFrameZoneExecutablePointer + jit->dwarfEhBuilder.fdeOffset;
+            beacon_DynArray_add(&jit->context->jittedRegisteredFrames, &fdePointer);
+            __register_frame(fdePointer);
+        }
+#   else
+        // Send the eh_frame section.
+        beacon_DynArray_add(&jit->context->jittedRegisteredFrames, &ehFrameZoneExecutablePointer);
+        __register_frame(ehFrameZoneExecutablePointer);
+#   endif
+    }
+#endif
+
+    return instructionsExecutablePointers;
+}
+
 #endif 

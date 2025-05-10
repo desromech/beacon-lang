@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "ChunkedAllocator.h"
 #include "ObjectModel.h"
 #include <stddef.h>
 #include <setjmp.h>
@@ -35,6 +36,8 @@ typedef struct beacon_MemoryHeap_s
     size_t markingStackCapacity;
     size_t markingStackSize;
     beacon_oop_t *markingStack;
+
+    beacon_chunkedAllocator_t codeAllocator;
 } beacon_MemoryHeap_t;
 
 typedef enum beacon_StackFrameRecordKind_e

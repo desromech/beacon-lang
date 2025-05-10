@@ -3,6 +3,7 @@
 #include "beacon-lang/Memory.h"
 #include "beacon-lang/Exceptions.h"
 #include "beacon-lang/Gdb.h"
+#include "VirtualMemory.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -328,7 +329,10 @@ void beacon_bytecodeJit_jitFree(beacon_bytecodeJit_t *jit)
 
 beacon_oop_t beacon_bytecodeJit_sendMessageTrampoline(beacon_context_t *context, size_t allArgumentsCount, beacon_oop_t *allArguments)
 {
-    abort();
+    assert(allArgumentsCount >= 2);
+    beacon_oop_t receiver = allArguments[0];
+    beacon_oop_t selector = allArguments[1];
+    return beacon_performWithArguments(context, receiver, selector, allArgumentsCount - 2, allArguments + 2);
 }
 
 beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(beacon_context_t *context, size_t allArgumentsCount, beacon_oop_t *allArguments)
@@ -489,6 +493,7 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
             break;
         case BeaconBytecodeLocalReturn:
             printf(" localReturn\n");
+            beacon_jit_breakpoint(&jit);
             beacon_jit_return(&jit, bytecodeDecodedArguments[0]);
             break;
         case BeaconBytecodeNonLocalReturn:
@@ -542,14 +547,15 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
     size_t requiredCodeSize = objectFileHeaderSize + textSectionSize + rodataSectionSize + unwindInfoSize + debugInfoSize + objectFileContentSize;
     uint8_t *codeWriteablePointer = NULL;
     uint8_t *codeExecutablePointer = NULL;
-    /*beacon_chunkedAllocator_allocateExecutableMemory(&context->heap.codeAllocator, requiredCodeSize, 16, (void**)&codeWriteablePointer, (void**)&codeExecutablePointer);
+    beacon_chunkedAllocator_allocateWithDualMapping(&context->heap->codeAllocator, requiredCodeSize, 16, (void**)&codeWriteablePointer, (void**)&codeExecutablePointer);
     if(!beacon_virtualMemory_lockCodePagesForWriting(codeWriteablePointer, codeExecutablePointer, requiredCodeSize))
         abort();
 
     memset(codeWriteablePointer + objectFileHeaderSize, 0xcc, textSectionSize); // int3;
     memset(codeWriteablePointer + objectFileHeaderSize + textSectionSize, 0, rodataSectionSize); // int3;
     uint8_t *entryPointPointer = beacon_jit_installIn(&jit, codeWriteablePointer, codeExecutablePointer);
-    beacon_virtualMemory_unlockCodePagesForExecution(codeWriteablePointer, codeExecutablePointer, requiredCodeSize);
+    if(!beacon_virtualMemory_unlockCodePagesForExecution(codeWriteablePointer, codeExecutablePointer, requiredCodeSize))
+        abort();
 
     // Register the object file with gdb.
     if(jit.objectFileHeader.size > 0 && jit.objectFileContent.size > 0)
@@ -557,9 +563,14 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
         beacon_gdb_jit_code_entry_t *entry = (beacon_gdb_jit_code_entry_t*)calloc(1, sizeof(beacon_gdb_jit_code_entry_t));
         beacon_DynArray_add(&context->jittedObjectFileEntries, &entry);
         beacon_gdb_registerObjectFile(entry, codeExecutablePointer, requiredCodeSize);
-    }*/
+    }
 
     beacon_bytecodeJit_jitFree(&jit);
+
+    // Create the native code
+    beacon_NativeCode_t *nativeCode = beacon_allocateObjectWithBehavior(context->heap, context->classes.nativeCodeClass, sizeof(beacon_NativeCode_t), BeaconObjectKindBytes);
+    nativeCode->nativeFunction = (beacon_NativeCodeFunction_t)entryPointPointer;
+    function->nativeImplementation = nativeCode;
     return true;
 }
 

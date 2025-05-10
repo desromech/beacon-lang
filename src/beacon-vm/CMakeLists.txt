@@ -1,5 +1,6 @@
 set(BeaconVM_Sources
     AgpuRendering.c
+    ChunkedAllocator.c
     Context.c
     DynArray.c
     Exceptions.c
@@ -21,6 +22,7 @@ set(BeaconVM_Sources
     BytecodeJitCommon.c
     BytecodeJitX86.c
     SyntaxCompiler.c
+    VirtualMemory.c
 )
 
 

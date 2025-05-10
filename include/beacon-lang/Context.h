@@ -219,6 +219,7 @@ struct beacon_context_s
 
     beacon_MemoryHeap_t *heap;
     beacon_DynArray_t jittedObjectFileEntries;
+    beacon_DynArray_t jittedRegisteredFrames;
     void *userContextExtension;
     
 };
