@@ -673,6 +673,16 @@ void beacon_jit_allocateArray(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecod
     beacon_jit_moveRegisterToOperand(jit, resultOperand, BEACON_X86_RAX);
 }
 
+void beacon_jit_setArrayElements(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t size, beacon_bytecodeJitDecodedOperand_t *elements)
+{
+    beacon_jit_moveOperandToRegister(jit, BEACON_X86_64_SCRATCH_REG0, resultOperand);
+    for(uint32_t i = 0; i < size; ++i)
+    {
+        beacon_jit_moveOperandToRegister(jit, BEACON_X86_64_SCRATCH_REG1, elements[i]);
+        beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_64_SCRATCH_REG0, sizeof(beacon_ObjectHeader_t) + i*sizeof(beacon_oop_t), BEACON_X86_64_SCRATCH_REG1);
+    }
+}
+
 void beacon_jit_allocateBlockClosure(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, beacon_bytecodeJitDecodedOperand_t code, uint32_t captureCount)
 {
     beacon_jit_x86_jitLoadContextInRegister(jit, BEACON_X86_64_ARG0);
@@ -1027,13 +1037,26 @@ static size_t beacon_jit_emitObjectFileSourceFileName(beacon_bytecodeJit_t *jit)
 }
 
 
+static bool beacon_jit_emitObjectFileProgramEntityName(beacon_bytecodeJit_t *jit, beacon_CompiledCode_t *compiledCode)
+{
+    if(beacon_getClass(jit->context, (beacon_oop_t)compiledCode) != jit->context->classes.compiledMethodClass)
+        return false;
+
+    beacon_CompiledMethod_t *compiledMethod = (beacon_CompiledMethod_t*)compiledCode;
+    if(!compiledMethod->name)
+        return false;
+    
+    beacon_DynArray_addAll(&jit->objectFileContent, compiledMethod->name->super.super.super.super.super.header.slotCount, compiledMethod->name->data);
+    return true;
+}
+
 static size_t beacon_jit_emitObjectFileJittedFunctionName(beacon_bytecodeJit_t *jit)
 {
     size_t nameOffset = jit->objectFileContent.size;
     jit->objectFileContentJittedFunctionNameOffset = nameOffset;
 
     // Emit the program entity name;
-    bool hasEmittedName = false;
+    bool hasEmittedName = beacon_jit_emitObjectFileProgramEntityName(jit, jit->compiledProgramEntity);
 
     // Function source location and pointer number.
     if(!hasEmittedName)

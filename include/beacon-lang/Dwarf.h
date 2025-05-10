@@ -513,7 +513,7 @@ size_t beacon_dwarf_encodeCString(beacon_DynArray_t *buffer, const char *cstring
 size_t beacon_dwarf_encodeULEB128(beacon_DynArray_t *buffer, uintptr_t value);
 size_t beacon_dwarf_encodeSLEB128(beacon_DynArray_t *buffer, intptr_t value);
 size_t beacon_dwarf_encodeAlignment(beacon_DynArray_t *buffer, size_t alignment);
-size_t beacon_dwarf_encodeStringTupleWithDefaultString(beacon_DynArray_t *buffer, beacon_String_t *string, const char *defaultString);
+size_t beacon_dwarf_encodeStringObjectWithDefaultString(beacon_DynArray_t *buffer, beacon_String_t *string, const char *defaultString);
 
 void beacon_dwarf_cfi_create(beacon_dwarf_cfi_builder_t *cfi);
 void beacon_dwarf_cfi_destroy(beacon_dwarf_cfi_builder_t *cfi);

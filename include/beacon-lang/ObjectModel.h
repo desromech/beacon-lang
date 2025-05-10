@@ -339,6 +339,7 @@ typedef struct beacon_BytecodeCode_s
     beacon_Array_t *literals;
     beacon_ByteArray_t *bytecodes;
     beacon_Array_t *sourcePositions;
+    struct beacon_SourcePosition_s *sourcePosition;
 } beacon_BytecodeCode_t;
 
 typedef struct beacon_String_s

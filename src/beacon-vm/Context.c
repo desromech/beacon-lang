@@ -232,7 +232,7 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
 
     context->classes.nativeCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "NativeCode", sizeof(beacon_NativeCode_t), BeaconObjectKindBytes, NULL);
     context->classes.bytecodeCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "BytecodeCode", sizeof(beacon_BytecodeCode_t), BeaconObjectKindPointers,
-        "argumentCount", "temporaryCount", "captureCount", "maxCallArgumentCount", "literals", "bytecodes", "sourcePositions", NULL);
+        "argumentCount", "temporaryCount", "captureCount", "maxCallArgumentCount", "literals", "bytecodes", "sourcePositions", "sourcePosition", NULL);
     context->classes.bytecodeCodeBuilderClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "BytecodeCodeBuilder", sizeof(beacon_BytecodeCodeBuilder_t), BeaconObjectKindPointers,
         "arguments", "temporaries", "literals", "bytecodes", "sourcePositions", "maxCallArgumentCount", "parentBuilder", NULL);
     context->classes.compiledCodeClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "CompiledCode", sizeof(beacon_CompiledCode_t), BeaconObjectKindPointers,

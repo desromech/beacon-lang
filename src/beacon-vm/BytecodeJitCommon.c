@@ -120,12 +120,28 @@ beacon_bytecodeJit_addSourcePositionRecordWith(beacon_bytecodeJit_t *jit, size_t
     beacon_DynArray_add(&jit->sourcePositions, &newRecord);
 }
 
+beacon_SourcePosition_t *
+beacon_bytecode_findSourcePositionForPC(beacon_context_t *context, beacon_Array_t *pcWithPositions, uint16_t bytecodePC)
+{
+    size_t recordCount = pcWithPositions->super.super.super.super.super.header.slotCount / 2;
+    beacon_SourcePosition_t *bestSourcePosition = NULL;
+    // TODO: Use a binary search
+    for(size_t i = 0; i < recordCount; ++i)
+    {
+        uint32_t pc = beacon_decodeSmallInteger(pcWithPositions->elements[i*2]);
+        beacon_SourcePosition_t *sourcePosition = (beacon_SourcePosition_t*)pcWithPositions->elements[i*2 + 1];
+        if(pc <= bytecodePC)
+            bestSourcePosition = sourcePosition;
+    }
+    return bestSourcePosition;
+}
+
 void
 beacon_bytecodeJit_addSourcePositionRecord(beacon_bytecodeJit_t *jit, beacon_BytecodeCode_t *functionBytecode, uint16_t bytecodePC, size_t nativePC)
 {
-    /*if(functionBytecode->sourcePositions)
+    if(functionBytecode->sourcePositions)
     {
-        beacon_tuple_t foundDebugPosition = beacon_orderedOffsetTable_findValueWithOffset(jit->context, functionBytecode->debugSourcePositions, bytecodePC);
+        beacon_SourcePosition_t *foundDebugPosition = beacon_bytecode_findSourcePositionForPC(jit->context, functionBytecode->sourcePositions, bytecodePC);
         if(foundDebugPosition)
         {
             beacon_bytecodeJit_addSourcePositionRecordWith(jit, nativePC, foundDebugPosition);
@@ -135,7 +151,6 @@ beacon_bytecodeJit_addSourcePositionRecord(beacon_bytecodeJit_t *jit, beacon_Byt
 
     if(functionBytecode->sourcePosition)
         beacon_bytecodeJit_addSourcePositionRecordWith(jit, nativePC, functionBytecode->sourcePosition);
-    */
 }
 
 int
@@ -357,6 +372,21 @@ beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(beacon_context_t *con
     return beacon_performWithArgumentsInSuperclass(context, receiver, selector, allArgumentsCount - 2, allArguments + 2, superclass);
 }
 
+void sysbvm_jit_dumpCodeToFileNamed(const void *code, size_t codeSize, const char *fileName)
+{
+#ifdef _WIN32
+    FILE *file = NULL;
+    fopen_s(&file, fileName, "wb");
+#else
+    FILE *file = fopen(fileName, "wb");
+#endif
+    if(!file)
+        return;
+
+    (void)fwrite(code, codeSize, 1, file);
+    fclose(file);
+}
+
 bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *function)
 {
     return false;
@@ -399,6 +429,9 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
     {
         jit.pcDestinations[pc] = jit.instructions.size;
         beacon_jit_storePC(&jit, (uint16_t)pc);
+
+        beacon_bytecodeJit_addSourcePositionRecord(&jit, functionBytecode, (uint16_t)pc, jit.instructions.size);
+
         uint32_t instructionPC = pc;
         int16_t branchDestinationDelta = 0;
         uint32_t branchDestinationPC = instructionPC;
@@ -525,9 +558,11 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
             abort();
             break;
         case BeaconBytecodeMakeArray:
-            printf(" makeArray TODO\n");
-            abort();
-            // TODO
+        {
+            beacon_jit_allocateArray(&jit, resultOperand, instructionArgumentCount);
+            beacon_jit_setArrayElements(&jit, resultOperand, instructionArgumentCount, bytecodeDecodedArguments);
+            printf(" makeArray\n");
+        }
             break;
         case BeaconBytecodeMakeClosureInstance:
         {
@@ -539,12 +574,10 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
         case BeaconBytecodeIdentityEquals:
             printf(" == TODO\n");
             beacon_jit_identityEquals(&jit, resultOperand, bytecodeDecodedArguments[0], bytecodeDecodedArguments[1]);
-            // TODO
             break;
         case BeaconBytecodeIdentityNotEquals:
             printf(" ~~ TODO\n");
             beacon_jit_identityNotEquals(&jit, resultOperand, bytecodeDecodedArguments[0], bytecodeDecodedArguments[1]);
-            // TODO
             break;
         default:
             {
@@ -582,6 +615,8 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
     uint8_t *entryPointPointer = beacon_jit_installIn(&jit, codeWriteablePointer, codeExecutablePointer);
     if(!beacon_virtualMemory_unlockCodePagesForExecution(codeWriteablePointer, codeExecutablePointer, requiredCodeSize))
         abort();
+
+    //sysbvm_jit_dumpCodeToFileNamed(codeExecutablePointer, requiredCodeSize, "dump.elf");
 
     // Register the object file with gdb.
     if(jit.objectFileHeader.size > 0 && jit.objectFileContent.size > 0)

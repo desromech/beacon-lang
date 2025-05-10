@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 
 
 size_t beacon_dwarf_encodeDwarfPointer(beacon_DynArray_t *buffer, uint32_t value)
@@ -61,7 +62,7 @@ size_t beacon_dwarf_encodeCString(beacon_DynArray_t *buffer, const char *cstring
     return offset;
 }
 
-size_t beacon_dwarf_encodeStringTupleWithDefaultString(beacon_DynArray_t *buffer, beacon_String_t *string, const char *defaultString)
+size_t beacon_dwarf_encodeStringObjectWithDefaultString(beacon_DynArray_t *buffer, beacon_String_t *string, const char *defaultString)
 {
     size_t offset = buffer->size;
     if(string->super.super.super.super.super.header.slotCount > 0)
@@ -421,7 +422,7 @@ void beacon_dwarf_debugInfo_beginLineInformation(beacon_dwarf_debugInfo_builder_
 
 void beacon_dwarf_debugInfo_addDirectory(beacon_dwarf_debugInfo_builder_t *builder, beacon_String_t *directoryName)
 {
-    beacon_dwarf_encodeStringTupleWithDefaultString(&builder->line, directoryName, ".");
+    beacon_dwarf_encodeStringObjectWithDefaultString(&builder->line, directoryName, ".");
 }
 
 void beacon_dwarf_debugInfo_endDirectoryList(beacon_dwarf_debugInfo_builder_t *builder)
@@ -431,7 +432,7 @@ void beacon_dwarf_debugInfo_endDirectoryList(beacon_dwarf_debugInfo_builder_t *b
 
 void beacon_dwarf_debugInfo_addFile(beacon_dwarf_debugInfo_builder_t *builder, int directoryIndex, beacon_String_t *name)
 {
-    beacon_dwarf_encodeStringTupleWithDefaultString(&builder->line, name, "<unknown>");
+    beacon_dwarf_encodeStringObjectWithDefaultString(&builder->line, name, "<unknown>");
     beacon_dwarf_encodeULEB128(&builder->line, directoryIndex);
     beacon_dwarf_encodeULEB128(&builder->line, 0); // Last modification time.
     beacon_dwarf_encodeULEB128(&builder->line, 0); // Size in bytes.
@@ -592,7 +593,7 @@ void beacon_dwarf_debugInfo_attribute_stringTupleWithDefaultString(beacon_dwarf_
     beacon_dwarf_encodeULEB128(&builder->abbrev, attribute);
     beacon_dwarf_encodeULEB128(&builder->abbrev, DW_FORM_strp);
 
-    size_t stringOffset = beacon_dwarf_encodeStringTupleWithDefaultString(&builder->str, value, defaultString);
+    size_t stringOffset = beacon_dwarf_encodeStringObjectWithDefaultString(&builder->str, value, defaultString);
     beacon_dwarf_encodeDWord(&builder->info, (uint32_t)stringOffset);
 }
 

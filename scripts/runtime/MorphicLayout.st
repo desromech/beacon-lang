@@ -21,7 +21,7 @@ morph: aMorph
 
 MorphPackingLayoutElement ![
 initialize
-    super initialize
+    super initialize.
     proportion := 0.
     expanded := false.
 ].

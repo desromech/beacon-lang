@@ -965,6 +965,7 @@ static beacon_CompiledMethod_t *beacon_SyntaxCompiler_compileMethodNode(beacon_c
     beacon_BytecodeCodeBuilder_localReturn(context, methodBuilder, self, methodNode->super.sourcePosition);
 
     beacon_BytecodeCode_t *bytecode = beacon_BytecodeCodeBuilder_finish(context, methodBuilder);
+    bytecode->sourcePosition = methodNode->super.sourcePosition;
 
     beacon_CompiledMethod_t *compiledMethod = beacon_allocateObjectWithBehavior(context->heap, context->classes.compiledMethodClass, sizeof(beacon_CompiledMethod_t), BeaconObjectKindPointers);
     compiledMethod->name = methodNode->selector;
