@@ -156,6 +156,9 @@ void beacon_bytecodeJit_addRelocation(beacon_bytecodeJit_t *jit, beacon_bytecode
 void beacon_bytecodeJit_jitFree(beacon_bytecodeJit_t *jit);
 
 bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *functionBytecode);
+
+beacon_oop_t beacon_bytecodeJit_allocateClosureTrampoline(beacon_context_t *context, beacon_CompiledBlock_t *code, size_t captureCount);
+beacon_oop_t beacon_bytecodeJit_allocateArrayTrampoline(beacon_context_t *context, size_t arraySize);
 beacon_oop_t beacon_bytecodeJit_sendMessageTrampoline(beacon_context_t *context, size_t allArgumentsCount, beacon_oop_t *allArguments);
 beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(beacon_context_t *context, size_t allArgumentsCount, beacon_oop_t *allArguments);
 
@@ -176,6 +179,8 @@ void beacon_jit_jumpRelativeIfTrue(beacon_bytecodeJit_t *jit, beacon_bytecodeJit
 void beacon_jit_jumpRelativeIfFalse(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t conditionOperand, size_t targetPC);
 
 void beacon_jit_safepoint(beacon_bytecodeJit_t *jit);
+void beacon_jit_allocateArray(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t size);
+void beacon_jit_allocateBlockClosure(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, beacon_bytecodeJitDecodedOperand_t code, uint32_t captureCount);
 void beacon_jit_sendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount);
 void beacon_jit_superSendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount);
 void beacon_jit_return(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t operand);

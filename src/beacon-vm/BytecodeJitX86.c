@@ -665,6 +665,23 @@ void beacon_jit_safepoint(beacon_bytecodeJit_t *jit)
     beacon_jit_x86_call(jit, &beacon_memoryHeapSafepoint);
 }
 
+void beacon_jit_allocateArray(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t size)
+{
+    beacon_jit_x86_jitLoadContextInRegister(jit, BEACON_X86_64_ARG0);
+    beacon_jit_x86_movImmediate32(jit, BEACON_X86_64_ARG1, size);
+    beacon_jit_x86_call(jit, &beacon_bytecodeJit_allocateArrayTrampoline);
+    beacon_jit_moveRegisterToOperand(jit, resultOperand, BEACON_X86_RAX);
+}
+
+void beacon_jit_allocateBlockClosure(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, beacon_bytecodeJitDecodedOperand_t code, uint32_t captureCount)
+{
+    beacon_jit_x86_jitLoadContextInRegister(jit, BEACON_X86_64_ARG0);
+    beacon_jit_moveOperandToRegister(jit, BEACON_X86_64_ARG1, code);
+    beacon_jit_x86_movImmediate32(jit, BEACON_X86_64_ARG2, captureCount);
+    beacon_jit_x86_call(jit, &beacon_bytecodeJit_allocateClosureTrampoline);
+    beacon_jit_moveRegisterToOperand(jit, resultOperand, BEACON_X86_RAX);
+}
+
 void beacon_jit_sendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount)
 {
     beacon_jit_x86_jitLoadContextInRegister(jit, BEACON_X86_64_ARG0);

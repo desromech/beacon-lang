@@ -336,6 +336,21 @@ beacon_oop_t beacon_bytecodeJit_sendMessageTrampoline(beacon_context_t *context,
     return beacon_performWithArguments(context, receiver, selector, allArgumentsCount - 2, allArguments + 2);
 }
 
+beacon_oop_t beacon_bytecodeJit_allocateClosureTrampoline(beacon_context_t *context, beacon_CompiledBlock_t *code, size_t captureCount)
+{
+    beacon_BlockClosure_t *blockClosure = beacon_allocateObjectWithBehavior(context->heap, context->classes.blockClosureClass, sizeof(beacon_BlockClosure_t), BeaconObjectKindPointers);
+    blockClosure->code = code;
+    blockClosure->captures = (beacon_oop_t)beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t) + captureCount*sizeof(beacon_oop_t), BeaconObjectKindPointers);
+    return (beacon_oop_t)blockClosure;
+}
+
+beacon_oop_t beacon_bytecodeJit_allocateArrayTrampoline(beacon_context_t *context, size_t arraySize)
+{
+    beacon_Array_t *array = beacon_allocateObjectWithBehavior(context->heap, context->classes.arrayClass, sizeof(beacon_Array_t) + arraySize*sizeof(beacon_oop_t), BeaconObjectKindPointers);
+    return (beacon_oop_t)array;
+}
+
+
 beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(beacon_context_t *context, size_t allArgumentsCount, beacon_oop_t *allArguments)
 {
     abort();
@@ -343,7 +358,7 @@ beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(beacon_context_t *con
 
 bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *function)
 {
-    return false;
+    //return false;
     beacon_BytecodeCode_t *functionBytecode = function->bytecodeImplementation;
     if(!functionBytecode)
         return false;
@@ -514,9 +529,11 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
             // TODO
             break;
         case BeaconBytecodeMakeClosureInstance:
+        {
+            beacon_jit_allocateBlockClosure(&jit, resultOperand, bytecodeDecodedArguments[0], instructionArgumentCount - 1);
             printf(" makeClosureInstance TODO\n");
             abort();
-            // TODO
+        }
             break;
         case BeaconBytecodeIdentityEquals:
             printf(" == TODO\n");
