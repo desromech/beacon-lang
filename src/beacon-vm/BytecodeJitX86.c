@@ -2,6 +2,7 @@
 #include "beacon-lang/Context.h"
 #include "beacon-lang/Memory.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 #if defined(BEACON_JIT_SUPPORTED) && defined(BEACON_ARCH_X86_64)
 
@@ -827,6 +828,325 @@ void beacon_jit_prologue(beacon_bytecodeJit_t *jit)
 
 }
 
+static void beacon_jit_emitUnwindInfo(beacon_bytecodeJit_t *jit)
+{
+#ifdef _WIN32
+    RUNTIME_FUNCTION runtimeFunction = {0};
+    runtimeFunction.BeginAddress = 0;
+    runtimeFunction.EndAddress = (DWORD)jit->instructions.size;
+    beacon_bytecodeJit_addUnwindInfoBytes(jit, sizeof(runtimeFunction), (uint8_t*)&runtimeFunction);
+
+    // Unwind_info
+    size_t codeCount = jit->unwindInfoBytecode.size/2;
+    int frameRegister = /* RBP */ 5;
+    int frameOffset = jit->cfiFrameOffset;
+
+    beacon_bytecodeJit_addUnwindInfoByte(jit, /*Version*/1  | (/* Flags*/0 << 3));
+    beacon_bytecodeJit_addUnwindInfoByte(jit, (uint8_t)jit->prologueSize);
+    beacon_bytecodeJit_addUnwindInfoByte(jit, (uint8_t)codeCount);
+    beacon_bytecodeJit_addUnwindInfoByte(jit, (uint8_t) ((frameRegister) | (frameOffset << 4)));
+
+    // Unwind codes must be sorted in descending order.
+    uint16_t *unwindCodes = (uint16_t *)jit->unwindInfoBytecode.data;
+    for(size_t i = 0; i < codeCount; ++i)
+        beacon_DynArray_addAll(&jit->unwindInfo, 2, unwindCodes + codeCount - i - 1);
+
+    if((codeCount % 2) != 0)
+    {
+        beacon_bytecodeJit_addUnwindInfoByte(jit, 0);
+        beacon_bytecodeJit_addUnwindInfoByte(jit, 0);
+    }
+#endif
+    beacon_dwarf_cfi_endFDE(&jit->dwarfEhBuilder, jit->instructions.size);
+    beacon_dwarf_cfi_finish(&jit->dwarfEhBuilder);
+}
+
+typedef struct beacon_jit_x64_elfSectionHeaders_s
+{
+    beacon_elf64_sectionHeader_t null;
+    beacon_elf64_sectionHeader_t text;
+    beacon_elf64_sectionHeader_t eh_frame;
+    beacon_elf64_sectionHeader_t debug_line;
+    beacon_elf64_sectionHeader_t debug_str;
+    beacon_elf64_sectionHeader_t debug_abbrev;
+    beacon_elf64_sectionHeader_t debug_info;
+    beacon_elf64_sectionHeader_t symtab;
+    beacon_elf64_sectionHeader_t str;
+    beacon_elf64_sectionHeader_t shstr;
+} beacon_jit_x64_elfSectionHeaders_t;
+
+typedef struct beacon_jit_x64_elfSymbolTable_s
+{
+    beacon_elf64_symbol_t null;
+    beacon_elf64_symbol_t sourceFile;
+    beacon_elf64_symbol_t text;
+    beacon_elf64_symbol_t jittedFunction;
+} beacon_jit_x64_elfSymbolTable_t;
+
+typedef struct beacon_jit_x64_elfContentFooter_s
+{
+    beacon_jit_x64_elfSymbolTable_t symbols;
+    beacon_jit_x64_elfSectionHeaders_t sections;
+} beacon_jit_x64_elfContentFooter_t;
+
+static size_t beacon_jit_emitObjectFileCString(beacon_bytecodeJit_t *jit, const char *cstring)
+{
+    size_t result = jit->objectFileContent.size;
+    beacon_DynArray_addAll(&jit->objectFileContent, strlen(cstring) + 1, cstring);
+    return result;
+}
+
+static size_t beacon_jit_emitObjectFileSourceFileName(beacon_bytecodeJit_t *jit)
+{
+    if(!jit->sourcePosition)
+        return 0;
+
+    beacon_SourcePosition_t *sourcePosition = (beacon_SourcePosition_t*)jit->sourcePosition;
+    if(!sourcePosition->sourceCode)
+        return 0;
+
+    beacon_SourceCode_t *sourceCode = (beacon_SourceCode_t*)sourcePosition->sourceCode;
+    
+    size_t nameOffset = jit->objectFileContent.size;
+    bool hasEmittedName = false;
+
+    if(sourceCode->directory)
+    {
+        size_t byteSize = sourceCode->directory->super.super.super.super.super.header.slotCount;
+        if(byteSize > 0)
+        {
+            beacon_DynArray_addAll(&jit->objectFileContent, byteSize, sourceCode->directory->data);
+            hasEmittedName = true;
+
+            char slash = '/';
+            beacon_DynArray_add(&jit->objectFileContent, &slash);
+        }
+    }
+
+    if(sourceCode->name)
+    {
+        size_t byteSize = sourceCode->name->super.super.super.super.super.header.slotCount;
+        if(byteSize > 0)
+        {
+            beacon_DynArray_addAll(&jit->objectFileContent, byteSize, sourceCode->name->data);
+            hasEmittedName = true;
+        }
+    }
+
+    if(!hasEmittedName)
+        return 0;
+
+    char nullTerminator = 0;
+    beacon_DynArray_add(&jit->objectFileContent, &nullTerminator);
+    return nameOffset;
+}
+
+
+static size_t beacon_jit_emitObjectFileJittedFunctionName(beacon_bytecodeJit_t *jit)
+{
+    size_t nameOffset = jit->objectFileContent.size;
+    jit->objectFileContentJittedFunctionNameOffset = nameOffset;
+
+    // Emit the program entity name;
+    bool hasEmittedName = false;
+
+    // Function source location and pointer number.
+    if(!hasEmittedName)
+    {
+        char pointerBuffer[32];
+        uint32_t sourceLine = (uint32_t)beacon_decodeSmallInteger(jit->sourcePosition->startLine);
+        uint32_t sourceColumn = (uint32_t)beacon_decodeSmallInteger(jit->sourcePosition->startColumn);
+
+        snprintf(pointerBuffer, sizeof(pointerBuffer), "%d:%d-%08llx", sourceLine, sourceColumn, (unsigned long long)jit->compiledProgramEntity);
+        beacon_DynArray_addAll(&jit->objectFileContent, strlen(pointerBuffer), pointerBuffer);
+    }
+
+    char nullTerminator = 0;
+    beacon_DynArray_add(&jit->objectFileContent, &nullTerminator);
+
+    return nameOffset;
+}
+
+static void beacon_jit_emitObjectFile(beacon_bytecodeJit_t *jit)
+{
+    beacon_elf64_header_t header = {0};
+    beacon_jit_x64_elfContentFooter_t footer = {0};
+
+    size_t stringTableOffset = jit->objectFileContent.size;
+    footer.sections.null.name = (beacon_elf64_word_t)beacon_jit_emitObjectFileCString(jit, ""); // Null string
+    footer.sections.text.name = (beacon_elf64_word_t)beacon_jit_emitObjectFileCString(jit, ".text");
+    footer.sections.eh_frame.name = (beacon_elf64_word_t)beacon_jit_emitObjectFileCString(jit, ".eh_frame");
+    footer.sections.debug_line.name = (beacon_elf64_word_t)beacon_jit_emitObjectFileCString(jit, ".debug_line");
+    footer.sections.debug_str.name = (beacon_elf64_word_t)beacon_jit_emitObjectFileCString(jit, ".debug_str");
+    footer.sections.debug_abbrev.name = (beacon_elf64_word_t)beacon_jit_emitObjectFileCString(jit, ".debug_abbrev");
+    footer.sections.debug_info.name = (beacon_elf64_word_t)beacon_jit_emitObjectFileCString(jit, ".debug_info");
+    footer.sections.symtab.name = (beacon_elf64_word_t)beacon_jit_emitObjectFileCString(jit, ".symtab");
+    footer.sections.str.name = (beacon_elf64_word_t)beacon_jit_emitObjectFileCString(jit, ".str");
+    footer.sections.shstr.name = (beacon_elf64_word_t)beacon_jit_emitObjectFileCString(jit, ".shstr");
+
+    footer.symbols.sourceFile.name = (beacon_elf64_word_t)beacon_jit_emitObjectFileSourceFileName(jit);
+    footer.symbols.sourceFile.info = BEACON_ELF64_SYM_INFO(BEACON_STT_FILE, BEACON_STB_LOCAL);
+
+    footer.symbols.text.sectionHeaderIndex = 1;
+    footer.symbols.text.info = BEACON_ELF64_SYM_INFO(BEACON_STT_SECTION, BEACON_STB_LOCAL);
+
+    footer.symbols.jittedFunction.name = (beacon_elf64_word_t)beacon_jit_emitObjectFileJittedFunctionName(jit);
+    footer.symbols.jittedFunction.info = BEACON_ELF64_SYM_INFO(BEACON_STT_FUNC, BEACON_STB_LOCAL);
+    footer.symbols.jittedFunction.sectionHeaderIndex = 1;
+    footer.symbols.jittedFunction.value = 0;
+    footer.symbols.jittedFunction.size = jit->instructions.size;
+
+    header.ident[BEACON_EI_MAG0] = 0x7f;
+    header.ident[BEACON_EI_MAG1] = 'E';
+    header.ident[BEACON_EI_MAG2] = 'L';
+    header.ident[BEACON_EI_MAG3] = 'F';
+    header.ident[BEACON_EI_CLASS] = BEACON_ELFCLASS64;
+    header.ident[BEACON_EI_DATA] = BEACON_ELFDATA2LSB;
+    header.ident[BEACON_EI_VERSION] = BEACON_ELFCURRENT_VERSION;
+    header.type = BEACON_ET_REL;
+    header.machine = BEACON_EM_X86_64;
+    header.elfHeaderSize = sizeof(header);
+    header.version = BEACON_ELFCURRENT_VERSION;
+    header.sectionHeaderEntrySize = sizeof(footer.sections.null);
+    header.sectionHeaderNum = sizeof(footer.sections) / sizeof(footer.sections.null);
+    header.sectionHeaderNameStringTableIndex = offsetof(beacon_jit_x64_elfSectionHeaders_t, shstr) / sizeof(beacon_elf64_sectionHeader_t);
+
+    size_t stringTableEnd = jit->objectFileContent.size;
+    size_t stringTableSize = stringTableEnd - stringTableOffset;
+
+    footer.sections.text.type = BEACON_SHT_PROGBITS;
+    footer.sections.text.flags = BEACON_SHF_ALLOC | BEACON_SHF_EXECINSTR;
+    footer.sections.text.addressAlignment = 1;
+
+    footer.sections.eh_frame.type = sizeof(uintptr_t) == 8 ? SHT_X86_64_UNWIND : BEACON_SHT_PROGBITS;
+    footer.sections.eh_frame.flags = BEACON_SHF_ALLOC;
+    footer.sections.eh_frame.addressAlignment = sizeof(uintptr_t);
+
+    footer.sections.debug_line.type = BEACON_SHT_PROGBITS;
+    footer.sections.debug_line.addressAlignment = sizeof(uintptr_t);
+
+    footer.sections.debug_str.type = BEACON_SHT_PROGBITS;
+    footer.sections.debug_str.addressAlignment = sizeof(uintptr_t);
+
+    footer.sections.debug_abbrev.type = BEACON_SHT_PROGBITS;
+    footer.sections.debug_abbrev.addressAlignment = sizeof(uintptr_t);
+
+    footer.sections.debug_info.type = BEACON_SHT_PROGBITS;
+    footer.sections.debug_info.addressAlignment = sizeof(uintptr_t);
+
+    footer.sections.str.type = BEACON_SHT_STRTAB;
+    footer.sections.str.offset = stringTableOffset;
+    footer.sections.str.addressAlignment = 1;
+    footer.sections.str.size = stringTableSize;
+
+    footer.sections.shstr.type = BEACON_SHT_STRTAB;
+    footer.sections.shstr.offset = stringTableOffset;
+    footer.sections.shstr.addressAlignment = 1;
+    footer.sections.shstr.size = stringTableSize;
+
+    size_t symbolTableOffset = jit->objectFileContent.size;
+    footer.sections.symtab.type = BEACON_SHT_SYMTAB;
+    footer.sections.symtab.offset = symbolTableOffset;
+    footer.sections.symtab.entrySize = sizeof(beacon_elf64_symbol_t);
+    footer.sections.symtab.addressAlignment = 1;
+    footer.sections.symtab.link = offsetof(beacon_jit_x64_elfSectionHeaders_t, str) / sizeof(beacon_elf64_sectionHeader_t);
+    footer.sections.symtab.info = sizeof(beacon_jit_x64_elfSymbolTable_t) / sizeof(beacon_elf64_symbol_t);
+    footer.sections.symtab.size = sizeof(beacon_jit_x64_elfSymbolTable_t);
+
+    beacon_DynArray_addAll(&jit->objectFileHeader, sizeof(header), &header);
+    beacon_DynArray_addAll(&jit->objectFileContent, sizeof(footer), &footer);
+}
+
+static void beacon_jit_fixupObjectFile(beacon_bytecodeJit_t *jit,
+    beacon_elf64_header_t *header, beacon_elf64_header_t *headerExecutablePointer,
+    uint8_t *instructionsExecutablePointer,
+    uint8_t *ehFramePointer, uint8_t *ehFrameExecutablePointer,
+    uint8_t *debugLineExecutablePointer,
+    uint8_t *debugStrExecutablePointer,
+    uint8_t *debugAbbrevExecutablePointer,
+    uint8_t *debugInfoExecutablePointer,
+    uint8_t *objectFileContentExecutablePointer,
+    beacon_jit_x64_elfContentFooter_t *footer)
+{
+    if(jit->dwarfEhBuilder.fdeInitialLocationOffset > 0)
+    {
+        int32_t *initialLocationPointer = (int32_t*)(ehFramePointer + jit->dwarfEhBuilder.fdeInitialLocationOffset);
+        int32_t *initialLocationExecutablePointer = (int32_t*)(ehFrameExecutablePointer + jit->dwarfEhBuilder.fdeInitialLocationOffset);
+        *initialLocationPointer = (int32_t) ((uintptr_t)instructionsExecutablePointer - (uintptr_t)initialLocationExecutablePointer);
+    }
+
+    header->sectionHeadersOffset = (uintptr_t)&footer->sections - (uintptr_t)header;
+    beacon_elf64_off_t contentOffset = (uintptr_t)objectFileContentExecutablePointer - (uintptr_t)headerExecutablePointer;
+
+    footer->sections.text.offset = (uintptr_t)instructionsExecutablePointer - (uintptr_t)headerExecutablePointer;
+    footer->sections.text.address = (beacon_elf64_addr_t)instructionsExecutablePointer;
+    footer->sections.text.size = jit->instructions.size;
+
+    footer->sections.eh_frame.offset = (uintptr_t)ehFrameExecutablePointer - (uintptr_t)headerExecutablePointer;
+    footer->sections.eh_frame.address = (beacon_elf64_addr_t)ehFrameExecutablePointer;
+    footer->sections.eh_frame.size = jit->dwarfEhBuilder.buffer.size;
+
+    footer->sections.debug_line.offset = (uintptr_t)debugLineExecutablePointer - (uintptr_t)headerExecutablePointer;
+    footer->sections.debug_line.size = jit->dwarfDebugInfoBuilder.line.size;
+
+    footer->sections.debug_str.offset = (uintptr_t)debugStrExecutablePointer - (uintptr_t)headerExecutablePointer;
+    footer->sections.debug_str.size = jit->dwarfDebugInfoBuilder.str.size;
+
+    footer->sections.debug_abbrev.offset = (uintptr_t)debugAbbrevExecutablePointer - (uintptr_t)headerExecutablePointer;
+    footer->sections.debug_abbrev.size = jit->dwarfDebugInfoBuilder.abbrev.size;
+
+    footer->sections.debug_info.offset = (uintptr_t)debugInfoExecutablePointer - (uintptr_t)headerExecutablePointer;
+    footer->sections.debug_info.size = jit->dwarfDebugInfoBuilder.info.size;
+
+    footer->sections.symtab.offset += contentOffset;
+    footer->sections.str.offset += contentOffset;
+    footer->sections.shstr.offset += contentOffset;
+}
+
+
+static void beacon_jit_emitDebugInfo(beacon_bytecodeJit_t *jit)
+{
+    bool hasLineInfo = beacon_jit_emitDebugLineInfo(jit);
+
+    beacon_dwarf_debugInfo_beginDIE(&jit->dwarfDebugInfoBuilder, DW_TAG_compile_unit, true);
+    beacon_dwarf_debugInfo_attribute_string(&jit->dwarfDebugInfoBuilder, DW_AT_producer, "Sysbvmi"); // Use the line info.
+    if(hasLineInfo)
+        beacon_dwarf_debugInfo_attribute_secOffset(&jit->dwarfDebugInfoBuilder, DW_AT_stmt_list, 0);
+    beacon_dwarf_debugInfo_attribute_textAddress(&jit->dwarfDebugInfoBuilder, DW_AT_low_pc, 0);
+    beacon_dwarf_debugInfo_attribute_textAddress(&jit->dwarfDebugInfoBuilder, DW_AT_high_pc, jit->instructions.size);
+    beacon_dwarf_debugInfo_endDIE(&jit->dwarfDebugInfoBuilder);
+
+    size_t oopTypeDie = beacon_dwarf_debugInfo_beginDIE(&jit->dwarfDebugInfoBuilder, DW_TAG_base_type, false);
+    {
+        beacon_dwarf_debugInfo_attribute_string(&jit->dwarfDebugInfoBuilder, DW_AT_name, "Oop");
+        beacon_dwarf_debugInfo_attribute_uleb128(&jit->dwarfDebugInfoBuilder, DW_AT_encoding, DW_ATE_signed);
+        beacon_dwarf_debugInfo_attribute_uleb128(&jit->dwarfDebugInfoBuilder, DW_AT_byte_size, sizeof(beacon_oop_t));
+    }
+    beacon_dwarf_debugInfo_endDIE(&jit->dwarfDebugInfoBuilder);
+
+    {
+        beacon_dwarf_debugInfo_beginDIE(&jit->dwarfDebugInfoBuilder, DW_TAG_subprogram, false);
+        if(hasLineInfo && jit->sourcePosition)
+        {
+            beacon_SourcePosition_t *sourcePositionObject = (beacon_SourcePosition_t*)jit->sourcePosition;
+            uint32_t line = beacon_decodeSmallInteger(sourcePositionObject->startLine);
+            beacon_dwarf_debugInfo_attribute_uleb128(&jit->dwarfDebugInfoBuilder, DW_AT_decl_file, beacon_jit_dwarfLineInfoEmissionState_indexOfFile(&jit->dwarfLineEmissionState, sourcePositionObject->sourceCode));
+            beacon_dwarf_debugInfo_attribute_uleb128(&jit->dwarfDebugInfoBuilder, DW_AT_decl_line, line);
+
+        }
+        beacon_dwarf_debugInfo_attribute_textAddress(&jit->dwarfDebugInfoBuilder, DW_AT_low_pc, 0);
+        beacon_dwarf_debugInfo_attribute_textAddress(&jit->dwarfDebugInfoBuilder, DW_AT_high_pc, jit->instructions.size);
+        beacon_dwarf_debugInfo_attribute_textAddress(&jit->dwarfDebugInfoBuilder, DW_AT_type, oopTypeDie);
+        beacon_dwarf_debugInfo_attribute_beginLocationExpression(&jit->dwarfDebugInfoBuilder, DW_AT_frame_base);
+        beacon_dwarf_debugInfo_location_register(&jit->dwarfDebugInfoBuilder, sizeof(uintptr_t) == 8 ? DW_X64_REG_RBP : DW_X86_REG_EBP);
+        beacon_dwarf_debugInfo_attribute_endLocationExpression(&jit->dwarfDebugInfoBuilder);
+        beacon_dwarf_debugInfo_endDIE(&jit->dwarfDebugInfoBuilder);
+    }
+
+    beacon_dwarf_debugInfo_endDIEChildren(&jit->dwarfDebugInfoBuilder);
+
+    beacon_dwarf_debugInfo_finish(&jit->dwarfDebugInfoBuilder);
+}
 
 void beacon_jit_finish(beacon_bytecodeJit_t *jit)
 {
@@ -837,8 +1157,8 @@ void beacon_jit_finish(beacon_bytecodeJit_t *jit)
         *((int32_t*)(jit->instructions.data + relocation->offset)) = (int32_t)(jit->pcDestinations[relocation->targetPC] - (intptr_t)relocation->offset + relocation->addend);
     }
 
-    //beacon_jit_emitUnwindInfo(jit);
-    //beacon_jit_emitDebugInfo(jit);
-    //beacon_jit_emitObjectFile(jit);
+    beacon_jit_emitUnwindInfo(jit);
+    beacon_jit_emitDebugInfo(jit);
+    beacon_jit_emitObjectFile(jit);
 }
 #endif 

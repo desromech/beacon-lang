@@ -4,6 +4,7 @@
 #pragma once
 
 #include "ObjectModel.h"
+#include "DynArray.h"
 #include "Memory.h"
 
 #ifdef __cplusplus
@@ -217,8 +218,9 @@ struct beacon_context_s
     } roots;
 
     beacon_MemoryHeap_t *heap;
-    
+    beacon_DynArray_t jittedObjectFileEntries;
     void *userContextExtension;
+    
 };
 
 beacon_context_t *beacon_context_new(void);

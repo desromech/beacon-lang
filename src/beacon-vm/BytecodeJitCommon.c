@@ -2,6 +2,7 @@
 #include "beacon-lang/Context.h"
 #include "beacon-lang/Memory.h"
 #include "beacon-lang/Exceptions.h"
+#include "beacon-lang/Gdb.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -337,7 +338,7 @@ beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(beacon_context_t *con
 
 bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *function)
 {
-    return false;
+    //return false;
     beacon_BytecodeCode_t *functionBytecode = function->bytecodeImplementation;
     if(!functionBytecode)
         return false;
@@ -362,6 +363,8 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
     jit.literalVector = functionBytecode->literals;
     jit.localVectorSize = temporaryCount;
     jit.maxCallArgumentCount = maxCallArgumentCount;
+    jit.compiledProgramEntity = function;
+    jit.sourcePosition = function->sourcePosition;
 
     jit.pcDestinations = (intptr_t*)malloc(sizeof(intptr_t)*bytecodesSize);
     memset(jit.pcDestinations, -1, sizeof(intptr_t)*bytecodesSize);
@@ -526,9 +529,6 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
 
     beacon_jit_finish(&jit);
 
-    beacon_bytecodeJit_jitFree(&jit);
-    return false;
-#if 0
     size_t objectFileHeaderSize = beacon_sizeAlignedTo(jit.objectFileHeader.size, 16);
     size_t textSectionSize = beacon_sizeAlignedTo(jit.instructions.size, 16);
     size_t rodataSectionSize = beacon_sizeAlignedTo(jit.constants.size, 16);
@@ -542,7 +542,7 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
     size_t requiredCodeSize = objectFileHeaderSize + textSectionSize + rodataSectionSize + unwindInfoSize + debugInfoSize + objectFileContentSize;
     uint8_t *codeWriteablePointer = NULL;
     uint8_t *codeExecutablePointer = NULL;
-    beacon_chunkedAllocator_allocateWithDualMapping(&context->heap.codeAllocator, requiredCodeSize, 16, (void**)&codeWriteablePointer, (void**)&codeExecutablePointer);
+    /*beacon_chunkedAllocator_allocateExecutableMemory(&context->heap.codeAllocator, requiredCodeSize, 16, (void**)&codeWriteablePointer, (void**)&codeExecutablePointer);
     if(!beacon_virtualMemory_lockCodePagesForWriting(codeWriteablePointer, codeExecutablePointer, requiredCodeSize))
         abort();
 
@@ -557,16 +557,10 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
         beacon_gdb_jit_code_entry_t *entry = (beacon_gdb_jit_code_entry_t*)calloc(1, sizeof(beacon_gdb_jit_code_entry_t));
         beacon_DynArray_add(&context->jittedObjectFileEntries, &entry);
         beacon_gdb_registerObjectFile(entry, codeExecutablePointer, requiredCodeSize);
-    }
-
-    //functionBytecode->jittedCode = beacon_tuple_systemHandle_encode(context, (beacon_systemHandle_t)(uintptr_t)entryPointPointer);
-    //functionBytecode->jittedCodeSessionToken = context->roots.sessionToken;
-
-    // Patch the trampoline.
-    beacon_jit_patchTrampolineWithRealEntryPoint(&jit, functionBytecode);
+    }*/
 
     beacon_bytecodeJit_jitFree(&jit);
-#endif
+    return true;
 }
 
 #endif //BEACON_JIT_SUPPORTED

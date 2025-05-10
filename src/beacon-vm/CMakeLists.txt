@@ -12,6 +12,7 @@ set(BeaconVM_Sources
     ArrayPrimitives.c
     Dictionary.c
     Dwarf.c
+    Gdb.c
     DynArray.c
     SourceCode.c
     Scanner.c
