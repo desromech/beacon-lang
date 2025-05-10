@@ -682,6 +682,18 @@ void beacon_jit_allocateBlockClosure(beacon_bytecodeJit_t *jit, beacon_bytecodeJ
     beacon_jit_moveRegisterToOperand(jit, resultOperand, BEACON_X86_RAX);
 }
 
+void beacon_jit_setBlockClosureCaptures(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t closureOperand, beacon_bytecodeJitDecodedOperand_t *captures, uint32_t captureCount)
+{
+    beacon_jit_moveOperandToRegister(jit, BEACON_X86_64_SCRATCH_REG0, closureOperand);
+    beacon_jit_x86_mov64FromMemoryWithOffset(jit, BEACON_X86_64_SCRATCH_REG0, BEACON_X86_64_SCRATCH_REG0, offsetof(beacon_BlockClosure_t, captures));
+
+    for(uint32_t i = 0; i < captureCount; ++i)
+    {
+        beacon_jit_moveOperandToRegister(jit, BEACON_X86_64_SCRATCH_REG1, captures[i]);
+        beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_64_SCRATCH_REG0, sizeof(beacon_ObjectHeader_t) + i*sizeof(beacon_oop_t), BEACON_X86_64_SCRATCH_REG1);
+    }
+}
+
 void beacon_jit_sendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount)
 {
     beacon_jit_x86_jitLoadContextInRegister(jit, BEACON_X86_64_ARG0);

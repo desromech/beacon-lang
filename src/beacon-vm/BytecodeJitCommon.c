@@ -358,7 +358,7 @@ beacon_oop_t beacon_bytecodeJit_superSendMessageTrampoline(beacon_context_t *con
 
 bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *function)
 {
-    //return false;
+    return false;
     beacon_BytecodeCode_t *functionBytecode = function->bytecodeImplementation;
     if(!functionBytecode)
         return false;
@@ -530,9 +530,12 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
             break;
         case BeaconBytecodeMakeClosureInstance:
         {
+            beacon_jit_breakpoint(&jit);
             beacon_jit_allocateBlockClosure(&jit, resultOperand, bytecodeDecodedArguments[0], instructionArgumentCount - 1);
+
+            beacon_jit_breakpoint(&jit);
+            beacon_jit_setBlockClosureCaptures(&jit, resultOperand, bytecodeDecodedArguments + 1, instructionArgumentCount - 1);
             printf(" makeClosureInstance TODO\n");
-            abort();
         }
             break;
         case BeaconBytecodeIdentityEquals:

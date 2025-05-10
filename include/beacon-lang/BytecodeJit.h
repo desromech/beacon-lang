@@ -180,7 +180,10 @@ void beacon_jit_jumpRelativeIfFalse(beacon_bytecodeJit_t *jit, beacon_bytecodeJi
 
 void beacon_jit_safepoint(beacon_bytecodeJit_t *jit);
 void beacon_jit_allocateArray(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t size);
+
 void beacon_jit_allocateBlockClosure(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, beacon_bytecodeJitDecodedOperand_t code, uint32_t captureCount);
+void beacon_jit_setBlockClosureCaptures(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t closureOperand, beacon_bytecodeJitDecodedOperand_t *captures, uint32_t captureCount);
+
 void beacon_jit_sendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount);
 void beacon_jit_superSendMessage(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t resultOperand, uint32_t totalArgumentCount);
 void beacon_jit_return(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOperand_t operand);
