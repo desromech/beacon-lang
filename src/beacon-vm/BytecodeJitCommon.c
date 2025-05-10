@@ -389,7 +389,6 @@ void sysbvm_jit_dumpCodeToFileNamed(const void *code, size_t codeSize, const cha
 
 bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *function)
 {
-    return false;
     beacon_BytecodeCode_t *functionBytecode = function->bytecodeImplementation;
     if(!functionBytecode)
         return false;
@@ -441,7 +440,7 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
         BeaconAssert(context, instructionArgumentCount <= BEACON_MAX_SUPPORTED_BYTECODE_ARGUMENTS);
         beacon_BytecodeOpcode_t opcode = beacon_getBytecodeOpcode(instruction);
 
-        printf("%03d: [%02d]", instructionPC, opcode);
+        //printf("%03d: [%02d]", instructionPC, opcode);
 
         // Special opcode.
         if(opcode == BeaconBytecodeExtendArguments)
@@ -478,29 +477,29 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
             {
             case BytecodeArgumentTypeArgument:
                 BeaconAssert(context, currentDecodedArgument->index <= argumentCount);
-                printf(" arg%d", currentDecodedArgument->index);
+                //printf(" arg%d", currentDecodedArgument->index);
                 break;
             case BytecodeArgumentTypeLiteral:
             case BytecodeArgumentTypeSuperReceiver:
                 BeaconAssert(context, currentDecodedArgument->index <= literalCount);
-                printf(" lit%d", currentDecodedArgument->index);
+                //printf(" lit%d", currentDecodedArgument->index);
                 break;
             case BytecodeArgumentTypeTemporary:
                 BeaconAssert(context, currentDecodedArgument->index <= temporaryCount);
-                printf(" temp%d", currentDecodedArgument->index);
+                //printf(" temp%d", currentDecodedArgument->index);
                 break;
             case BytecodeArgumentTypeJumpDelta:
                 branchDestinationDelta = currentDecodedArgument->signedIndex;
                 branchDestinationPC += branchDestinationDelta;
-                printf(" jump %d", branchDestinationPC);
+                //printf(" jump %d", branchDestinationPC);
                 break;
             case BytecodeArgumentTypeCapture:
                 BeaconAssert(context, 0 < currentDecodedArgument->index && currentDecodedArgument->index <= captureCount);
-                printf(" capture%d", currentDecodedArgument->index);
+                //printf(" capture%d", currentDecodedArgument->index);
                 break;
             case BytecodeArgumentTypeReceiverSlot:
                 BeaconAssert(context, 0 < currentDecodedArgument->index);
-                printf(" receiverSlot%d", currentDecodedArgument->index);
+                //printf(" receiverSlot%d", currentDecodedArgument->index);
                 break;
             default:
                 beacon_exception_error(context, "Invalid bytecode value type");
@@ -515,42 +514,42 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
             // Nothing is required here.
             break;
         case BeaconBytecodeJump:
-            printf(" jump\n");
+            //printf(" jump\n");
             if(branchDestinationDelta < 0)
                 beacon_jit_safepoint(&jit);
             beacon_jit_jumpRelative(&jit, branchDestinationPC);
             break;
         case BeaconBytecodeJumpIfTrue:
-            printf(" jumpIfTrue\n");
+            //printf(" jumpIfTrue\n");
             if(branchDestinationDelta < 0)
                 beacon_jit_safepoint(&jit);
             beacon_jit_jumpRelativeIfTrue(&jit, bytecodeDecodedArguments[0], branchDestinationPC);
             break;
         case BeaconBytecodeJumpIfFalse:
-            printf(" jumpIfFalse\n");
+            //printf(" jumpIfFalse\n");
             if(branchDestinationDelta < 0)
                 beacon_jit_safepoint(&jit);
             beacon_jit_jumpRelativeIfFalse(&jit, bytecodeDecodedArguments[0], branchDestinationPC);
             break;
         case BeaconBytecodeSendMessage:
-            printf(" sendMessage\n");
+            //printf(" sendMessage\n");
             assert(instructionArgumentCount <= jit.maxCallArgumentCount);
             for(uint32_t i = 0; i < instructionArgumentCount; ++i)
                 beacon_jit_moveOperandToCallArgumentVector(&jit, bytecodeDecodedArguments[i], i);
             beacon_jit_sendMessage(&jit, resultOperand, instructionArgumentCount);
             break;
         case BeaconBytecodeSuperSendMessage:
-            printf(" superSendMessage\n");
+            //printf(" superSendMessage\n");
             assert(instructionArgumentCount <= jit.maxCallArgumentCount);
             for(uint32_t i = 0; i < instructionArgumentCount; ++i)
                 beacon_jit_moveOperandToCallArgumentVector(&jit, bytecodeDecodedArguments[i], i);
             beacon_jit_superSendMessage(&jit, resultOperand, instructionArgumentCount);
         case BeaconBytecodeStoreValue:
-            printf(" storeValue\n");
+            //printf(" storeValue\n");
             beacon_jit_moveOperandToOperand(&jit, resultOperand, bytecodeDecodedArguments[0]);
             break;
         case BeaconBytecodeLocalReturn:
-            printf(" localReturn\n");
+            //printf(" localReturn\n");
             beacon_jit_return(&jit, bytecodeDecodedArguments[0]);
             break;
         case BeaconBytecodeNonLocalReturn:
@@ -561,22 +560,22 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
         {
             beacon_jit_allocateArray(&jit, resultOperand, instructionArgumentCount);
             beacon_jit_setArrayElements(&jit, resultOperand, instructionArgumentCount, bytecodeDecodedArguments);
-            printf(" makeArray\n");
+            //printf(" makeArray\n");
         }
             break;
         case BeaconBytecodeMakeClosureInstance:
         {
             beacon_jit_allocateBlockClosure(&jit, resultOperand, bytecodeDecodedArguments[0], instructionArgumentCount - 1);
             beacon_jit_setBlockClosureCaptures(&jit, resultOperand, bytecodeDecodedArguments + 1, instructionArgumentCount - 1);
-            printf(" makeClosureInstance\n");
+            //printf(" makeClosureInstance\n");
         }
             break;
         case BeaconBytecodeIdentityEquals:
-            printf(" == TODO\n");
+            //printf(" ==\n");
             beacon_jit_identityEquals(&jit, resultOperand, bytecodeDecodedArguments[0], bytecodeDecodedArguments[1]);
             break;
         case BeaconBytecodeIdentityNotEquals:
-            printf(" ~~ TODO\n");
+            //printf(" ~~\n");
             beacon_jit_identityNotEquals(&jit, resultOperand, bytecodeDecodedArguments[0], bytecodeDecodedArguments[1]);
             break;
         default:

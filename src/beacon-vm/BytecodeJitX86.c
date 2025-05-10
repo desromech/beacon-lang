@@ -906,14 +906,15 @@ void beacon_jit_prologue(beacon_bytecodeJit_t *jit)
         beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, localVectorPointerOffset, BEACON_X86_64_SCRATCH_REG0);
 
         // Initialize the locals
-        if(jit->localVectorSize > 0)
+        beacon_jit_x86_xorRegister(jit, BEACON_X86_64_SCRATCH_REG0, BEACON_X86_64_SCRATCH_REG0);
+
+        size_t returnValueOffset = jit->stackFrameRecordOffset + offsetof(beacon_StackFrameRecord_t, bytecodeJitMethodStackRecord.returnValue);
+        beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, returnValueOffset, BEACON_X86_64_SCRATCH_REG0);
+
+        for(size_t i = 0; i < jit->localVectorSize; ++i)
         {
-            beacon_jit_x86_xorRegister(jit, BEACON_X86_64_SCRATCH_REG0, BEACON_X86_64_SCRATCH_REG0);
-            for(size_t i = 0; i < jit->localVectorSize; ++i)
-            {
-                size_t localOffset = jit->localVectorOffset + i*sizeof(void*);
-                beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, (int32_t)localOffset, BEACON_X86_64_SCRATCH_REG0);
-            }
+            size_t localOffset = jit->localVectorOffset + i*sizeof(void*);
+            beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, (int32_t)localOffset, BEACON_X86_64_SCRATCH_REG0);
         }
 
         // Connect with the stack unwinder.

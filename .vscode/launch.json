@@ -7,7 +7,7 @@
         {
             "type": "cppdbg",
             "request": "launch",
-            "name": "Debug",
+            "name": "Debug package",
             "program": "${workspaceFolder}/build/dist/beacon-vm",
             //"args": ["-eval", "AGPU"],
             //"args": ["scripts/runtime/Package.st"],

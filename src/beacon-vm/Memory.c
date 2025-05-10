@@ -1,6 +1,7 @@
 #include "beacon-lang/Memory.h"
 #include "beacon-lang/Context.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <assert.h>
 
 #ifdef _WIN32
@@ -121,6 +122,7 @@ void beacon_garbageCollect_markRootsPhase(beacon_context_t *context)
                     beacon_heap_pushReachableObject(context->heap, currentStackRecord->bytecodeJitMethodStackRecord.arguments[i]);
                 for(size_t i = 0; i < currentStackRecord->bytecodeJitMethodStackRecord.temporaryCount; ++i)
                     beacon_heap_pushReachableObject(context->heap, currentStackRecord->bytecodeJitMethodStackRecord.temporaries[i]);
+                    
                 beacon_heap_pushReachableObject(context->heap, currentStackRecord->bytecodeJitMethodStackRecord.returnValue);
             }
                 break;
