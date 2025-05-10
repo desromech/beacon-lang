@@ -332,6 +332,7 @@ beacon_oop_t beacon_bytecodeJit_sendMessageTrampoline(beacon_context_t *context,
     assert(allArgumentsCount >= 2);
     beacon_oop_t receiver = allArguments[0];
     beacon_oop_t selector = allArguments[1];
+    beacon_Symbol_t *selectorSymbol = (beacon_Symbol_t*)selector;
     return beacon_performWithArguments(context, receiver, selector, allArgumentsCount - 2, allArguments + 2);
 }
 
@@ -428,23 +429,29 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
             {
             case BytecodeArgumentTypeArgument:
                 BeaconAssert(context, currentDecodedArgument->index <= argumentCount);
+                printf(" arg%d", currentDecodedArgument->index);
                 break;
             case BytecodeArgumentTypeLiteral:
             case BytecodeArgumentTypeSuperReceiver:
                 BeaconAssert(context, currentDecodedArgument->index <= literalCount);
+                printf(" lit%d", currentDecodedArgument->index);
                 break;
             case BytecodeArgumentTypeTemporary:
                 BeaconAssert(context, currentDecodedArgument->index <= temporaryCount);
+                printf(" temp%d", currentDecodedArgument->index);
                 break;
             case BytecodeArgumentTypeJumpDelta:
                 branchDestinationDelta = currentDecodedArgument->signedIndex;
                 branchDestinationPC += branchDestinationDelta;
+                printf(" jump %d", branchDestinationPC);
                 break;
             case BytecodeArgumentTypeCapture:
                 BeaconAssert(context, 0 < currentDecodedArgument->index && currentDecodedArgument->index <= captureCount);
+                printf(" capture%d", currentDecodedArgument->index);
                 break;
             case BytecodeArgumentTypeReceiverSlot:
                 BeaconAssert(context, 0 < currentDecodedArgument->index);
+                printf(" receiverSlot%d", currentDecodedArgument->index);
                 break;
             default:
                 beacon_exception_error(context, "Invalid bytecode value type");
@@ -478,12 +485,14 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
             break;
         case BeaconBytecodeSendMessage:
             printf(" sendMessage\n");
+            assert(instructionArgumentCount <= jit.maxCallArgumentCount);
             for(uint32_t i = 0; i < instructionArgumentCount; ++i)
                 beacon_jit_moveOperandToCallArgumentVector(&jit, bytecodeDecodedArguments[i], i);
             beacon_jit_sendMessage(&jit, resultOperand, instructionArgumentCount);
             break;
         case BeaconBytecodeSuperSendMessage:
             printf(" superSendMessage\n");
+            assert(instructionArgumentCount <= jit.maxCallArgumentCount);
             for(uint32_t i = 0; i < instructionArgumentCount; ++i)
                 beacon_jit_moveOperandToCallArgumentVector(&jit, bytecodeDecodedArguments[i], i);
             beacon_jit_superSendMessage(&jit, resultOperand, instructionArgumentCount);
@@ -493,7 +502,6 @@ bool beacon_bytecodeJit_jit(beacon_context_t *context, beacon_CompiledCode_t *fu
             break;
         case BeaconBytecodeLocalReturn:
             printf(" localReturn\n");
-            beacon_jit_breakpoint(&jit);
             beacon_jit_return(&jit, bytecodeDecodedArguments[0]);
             break;
         case BeaconBytecodeNonLocalReturn:

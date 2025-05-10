@@ -317,8 +317,8 @@ static void beacon_jit_x86_mov64IntoMemoryWithOffset(beacon_bytecodeJit_t *jit, 
             uint8_t instruction[] = {
                 beacon_jit_x86_rex(true, source > BEACON_X86_REG_HALF_MASK, false, destination > BEACON_X86_REG_HALF_MASK),
                 0x89,
-                beacon_jit_x86_sibOnlyBase(destination),
                 beacon_jit_x86_modRM(destination, source, 0),
+                beacon_jit_x86_sibOnlyBase(destination),
             };
 
             beacon_bytecodeJit_addBytes(jit, sizeof(instruction), instruction);            
@@ -457,10 +457,15 @@ static void beacon_jit_x86_mov8IntoMemoryWithOffset(beacon_bytecodeJit_t *jit, b
     }
 }
 
-static void beacon_jit_x86_movImmediateI32IntoMemory64WithOffset(beacon_bytecodeJit_t *jit, beacon_x86_register_t destination, int32_t offset, int16_t immediate)
+static void beacon_jit_x86_movImmediateI32IntoMemory32WithOffset(beacon_bytecodeJit_t *jit, beacon_x86_register_t destination, int32_t offset, int16_t immediate)
 {
+    uint8_t rex[] = {
+        beacon_jit_x86_rex(false, false, false, destination > BEACON_X86_REG_HALF_MASK),
+    };
+    if(destination > BEACON_X86_REG_HALF_MASK)
+        beacon_bytecodeJit_addBytes(jit, sizeof(rex), rex);
+
     uint8_t instruction[] = {
-        beacon_jit_x86_rex(true, false, false, destination > BEACON_X86_REG_HALF_MASK),
         0xC7,
         beacon_jit_x86_modRM(destination, 0, 2),
         offset & 0xFF, (offset >> 8) & 0xFF, (offset >> 16) & 0xFF, (offset >> 24) & 0xFF,
@@ -521,30 +526,41 @@ static void beacon_jit_moveRegisterToOperand(beacon_bytecodeJit_t *jit, beacon_b
 
 static void beacon_jit_moveOperandToRegister(beacon_bytecodeJit_t *jit, beacon_x86_register_t reg, beacon_bytecodeJitDecodedOperand_t operand)
 {
-    if(operand.index == 0)
-    {
-        beacon_jit_x86_xorRegister(jit, reg, reg);
-        return;
-    }
-
     int32_t vectorOffset = ((int32_t)operand.index - 1) * sizeof(void*);
     switch(operand.type)
     {
     case BytecodeArgumentTypeArgument:
+        if(operand.index == 0)
+        {
+            beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, BEACON_X86_RBP, jit->captureVectorOrReceiverOffset);
+            return;
+        }
+
         beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, BEACON_X86_RBP, jit->argumentVectorOffset);
         beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, reg, vectorOffset);
         break;
     case BytecodeArgumentTypeCapture:
     case BytecodeArgumentTypeReceiverSlot:
+        assert(operand.index > 0);
         beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, BEACON_X86_RBP, jit->captureVectorOrReceiverOffset);
         beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, reg, sizeof(beacon_ObjectHeader_t) + vectorOffset);
         break;
     case BytecodeArgumentTypeLiteral:
     case BytecodeArgumentTypeSuperReceiver:
+        if(operand.index == 0)
+        {
+            beacon_jit_x86_xorRegister(jit, reg, reg);
+            return;
+        }
         beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, BEACON_X86_RBP, jit->literalVectorOffset);
         beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, reg, sizeof(beacon_ObjectHeader_t) + vectorOffset);
         break;
     case BytecodeArgumentTypeTemporary:
+        if(operand.index == 0)
+        {
+            beacon_jit_x86_xorRegister(jit, reg, reg);
+            return;
+        }
         beacon_jit_x86_mov64FromMemoryWithOffset(jit, reg, BEACON_X86_RBP, jit->localVectorOffset + vectorOffset);
         break;
     default:
@@ -679,7 +695,7 @@ void beacon_jit_return(beacon_bytecodeJit_t *jit, beacon_bytecodeJitDecodedOpera
 
 void beacon_jit_storePC(beacon_bytecodeJit_t *jit, uint16_t pc)
 {
-    beacon_jit_x86_movImmediateI32IntoMemory64WithOffset(jit, BEACON_X86_RBP, jit->pcOffset, pc);
+    beacon_jit_x86_movImmediateI32IntoMemory32WithOffset(jit, BEACON_X86_RBP, jit->pcOffset, pc);
 }
 
 static void beacon_jit_cfi_beginPrologue(beacon_bytecodeJit_t *jit)
@@ -746,6 +762,7 @@ void beacon_jit_prologue(beacon_bytecodeJit_t *jit)
     jit->stackFrameSize = (requiredStackSize + 15) & (-16);
     jit->stackFrameRecordOffset = 0;
     jit->stackCallReservationSize = jit->maxCallArgumentCount *  sizeof(intptr_t);  
+    jit->stackCallReservationSize = (jit->stackCallReservationSize + 15) & (-16);
     
     //(beacon_context_t *context, beacon_tuple_t function, size_t argumentCount, beacon_tuple_t *arguments)
     beacon_jit_x86_pushRegister(jit, BEACON_X86_RBP);
@@ -788,8 +805,8 @@ void beacon_jit_prologue(beacon_bytecodeJit_t *jit)
         beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, jit->captureVectorOrReceiverOffset, BEACON_X86_64_ARG1);
     
         // Literal vector
-        beacon_jit_x86_mov64Absolute(jit, BEACON_X86_64_SCRATCH_REG0, (uintptr_t)jit->literalVector); // Pointer to GC root with the literal vector.
         jit->literalVectorOffset = jit->stackFrameRecordOffset + offsetof(beacon_StackFrameRecord_t, bytecodeJitMethodStackRecord.literals);
+        beacon_jit_x86_mov64Absolute(jit, BEACON_X86_64_SCRATCH_REG0, (uintptr_t)jit->literalVector); // Pointer to GC root with the literal vector.
         beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, jit->literalVectorOffset, BEACON_X86_64_SCRATCH_REG0);
 
         // Argument count
@@ -816,6 +833,9 @@ void beacon_jit_prologue(beacon_bytecodeJit_t *jit)
         beacon_jit_x86_movS32IntoMemoryWithOffset(jit, BEACON_X86_RBP, (int32_t)localVectorSizeOffset, (int32_t)jit->localVectorSize);
 
         jit->localVectorOffset = jit->stackFrameRecordOffset + sizeof(beacon_StackFrameRecord_t);
+        size_t localVectorPointerOffset = jit->stackFrameRecordOffset + offsetof(beacon_StackFrameRecord_t, bytecodeJitMethodStackRecord.temporaries);
+        beacon_jit_x86_leaRegisterWithOffset(jit, BEACON_X86_64_SCRATCH_REG0, BEACON_X86_RBP, jit->localVectorOffset);
+        beacon_jit_x86_mov64IntoMemoryWithOffset(jit, BEACON_X86_RBP, localVectorPointerOffset, BEACON_X86_64_SCRATCH_REG0);
 
         // Initialize the locals
         if(jit->localVectorSize > 0)

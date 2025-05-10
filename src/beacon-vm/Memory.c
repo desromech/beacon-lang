@@ -113,6 +113,17 @@ void beacon_garbageCollect_markRootsPhase(beacon_context_t *context)
                 beacon_heap_pushReachableObject(context->heap, currentStackRecord->bytecodeMethodStackRecord.returnResultValue);
             }
                 break;
+            case StackFrameBytecodeJitMethodRecord:
+            {
+                beacon_heap_pushReachableObject(context->heap, (beacon_oop_t)currentStackRecord->bytecodeJitMethodStackRecord.literals);
+                beacon_heap_pushReachableObject(context->heap, (beacon_oop_t)currentStackRecord->bytecodeJitMethodStackRecord.receiverOrCaptures);
+                for(size_t i = 0; i < currentStackRecord->bytecodeJitMethodStackRecord.argumentCount; ++i)
+                    beacon_heap_pushReachableObject(context->heap, currentStackRecord->bytecodeJitMethodStackRecord.arguments[i]);
+                for(size_t i = 0; i < currentStackRecord->bytecodeJitMethodStackRecord.temporaryCount; ++i)
+                    beacon_heap_pushReachableObject(context->heap, currentStackRecord->bytecodeJitMethodStackRecord.temporaries[i]);
+                beacon_heap_pushReachableObject(context->heap, currentStackRecord->bytecodeJitMethodStackRecord.returnValue);
+            }
+                break;
             case StackFrameSourceCompilationRoots:
             {
                 beacon_heap_pushReachableObject(context->heap, currentStackRecord->sourceCompilationRoots.sourceCode);
