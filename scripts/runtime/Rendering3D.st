@@ -347,7 +347,7 @@ outerSpotCutoff: aCutoffAngle
 
 SceneCamera ![
 initialize
-    super initialize
+    super initialize.
 
     location := Vector3 zeros.
     orientation := Matrix3x3 identity.
