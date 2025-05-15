@@ -247,7 +247,7 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
 
     agpu_shader *screenQuadShader;
     if (hasTextureInvertedProjectionY)
-        screenQuadShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiVertex", NULL, "scripts/runtime/assets/shaders/ScreenQuadFlippedY.glsl", AGPU_VERTEX_SHADER);
+        screenQuadShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiVertex", NULL, "scripts/runtime/shaders/ScreenQuadFlipped.glsl", AGPU_VERTEX_SHADER);
     else
         screenQuadShader = beacon_agpu_compileShaderWithSourceFileNamed(context, agpu, "GuiVertex", NULL, "scripts/runtime/shaders/ScreenQuad.glsl", AGPU_VERTEX_SHADER);
 
@@ -471,7 +471,7 @@ void beacon_agpu_loadPipelineStates(beacon_context_t *context, beacon_AGPU_t *ag
         agpu->guiPipelineState = agpuBuildPipelineState(builder);
         if(!agpu->guiPipelineState)
         {
-            fprintf(stderr, "Failed to construct pipeline state.\n");
+            fprintf(stderr, "Failed to construct GUI pipeline state.\n");
         }
 
         agpuReleaseShader(vertexShader);

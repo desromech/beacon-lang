@@ -3,7 +3,7 @@ initialize
     width := 640.
     height := 480.
     drawingForm := nil.
-    useAcceleratedRendering := true.
+    useAcceleratedRendering := self hasAcceleratedRenderingSupport.
 ].
 
 Window ![

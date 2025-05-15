@@ -75,6 +75,7 @@ void beacon_virtualMemory_freeSystemMemoryWithDualMapping(size_t sizeToFree, voi
 
 #include <sys/mman.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -114,12 +115,24 @@ void *beacon_virtualMemory_allocateSystemMemoryWithDualMapping(size_t sizeToAllo
     *writeableMapping = NULL;
     *executableMapping = NULL;
 
+#ifdef __APPLE__
+    const char *tmpFileName = "/tmp/beacon_memfd";
+    int fd = open(tmpFileName, O_CREAT);
+    if(fd < 0)
+    {
+        perror("failed to make memory fd.");
+        abort();
+    }
+
+    unlink(tmpFileName);
+#else
     int fd = memfd_create("beacon_code", MFD_CLOEXEC);
     if(fd < 0)
     {
         perror("failed to make memfd.");
         abort();
     }
+#endif
 
     if(ftruncate(fd, sizeToAllocate) < 0)
     {
