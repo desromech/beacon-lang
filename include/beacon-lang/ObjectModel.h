@@ -808,6 +808,12 @@ typedef struct beacon_TextureRenderingElement_s
     beacon_Rectangle_t *textureRectangle;
 } beacon_TextureRenderingElement_t;
 
+typedef struct beacon_File_s
+{
+    beacon_Object_t super;
+    beacon_oop_t handle;
+} beacon_File_t;
+
 typedef struct beacon_Window_s
 {
     beacon_Object_t super;

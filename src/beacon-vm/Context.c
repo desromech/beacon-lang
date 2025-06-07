@@ -354,6 +354,9 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.formTextRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.formRenderingElementClass, "FormTextRenderingElement", sizeof(beacon_FormTextRenderingElement_t), BeaconObjectKindPointers,
         "text", "color", "fontFace", NULL);
 
+    context->classes.fileClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "File", sizeof(beacon_File_t), BeaconObjectKindPointers,
+        "handle", NULL);
+
     context->classes.windowClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Window", sizeof(beacon_Window_t), BeaconObjectKindPointers,
         "width", "height", "handle", "rendererHandle", "textureHandle", "textureWidth", "textureHeight", "drawingForm",
         "useAcceleratedRendering", "swapChainHandle", NULL);
