@@ -322,8 +322,8 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.weakTombstoneClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "WeakTombstone", sizeof(beacon_WeakTombstone_t), BeaconObjectKindPointers, NULL);
 
     context->classes.streamClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Stream", sizeof(beacon_Stdio_t), BeaconObjectKindPointers, NULL);
-    context->classes.abstractBinaryFileStreamClass = beacon_context_createClassAndMetaclass(context, context->classes.streamClass, "AbstractBinaryFileStream", sizeof(beacon_Stdio_t), BeaconObjectKindPointers,
-        "handle", NULL);
+    context->classes.abstractBinaryFileStreamClass = beacon_context_createClassAndMetaclass(context, context->classes.streamClass, "AbstractBinaryFileStream", sizeof(beacon_AbstractBinaryFileStream_t), BeaconObjectKindPointers,
+        "file", "handle", NULL);
     context->classes.stdioClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Stdio", sizeof(beacon_Stdio_t), BeaconObjectKindPointers, NULL);
     context->classes.stdioStreamClass = beacon_context_createClassAndMetaclass(context, context->classes.abstractBinaryFileStreamClass, "StdioStream", sizeof(beacon_Stdio_t), BeaconObjectKindPointers, NULL);
 
@@ -463,21 +463,33 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
 }
 #else
     {
+        beacon_File_t *stdioFile = beacon_allocateObjectWithBehavior(context->heap, context->classes.fileClass, sizeof(beacon_File_t), BeaconObjectKindPointers);
+        stdioFile->handle = beacon_encodeSmallInteger(STDIN_FILENO);
+
         beacon_StdioStream_t *stdioStdin = beacon_allocateObjectWithBehavior(context->heap, context->classes.stdioStreamClass, sizeof(beacon_StdioStream_t), BeaconObjectKindPointers);
-        stdioStdin->super.handle = beacon_encodeSmallInteger(STDIN_FILENO);
+        stdioStdin->super.file = stdioFile;
+        stdioStdin->super.handle = stdioFile->handle;
         context->roots.stdinStream = (beacon_oop_t)stdioStdin;
     }
 
     {
+        beacon_File_t *stdioFile = beacon_allocateObjectWithBehavior(context->heap, context->classes.fileClass, sizeof(beacon_File_t), BeaconObjectKindPointers);
+        stdioFile->handle = beacon_encodeSmallInteger(STDOUT_FILENO);
+
         beacon_StdioStream_t *stdioStdout = beacon_allocateObjectWithBehavior(context->heap, context->classes.stdioStreamClass, sizeof(beacon_StdioStream_t), BeaconObjectKindPointers);
-        stdioStdout->super.handle = beacon_encodeSmallInteger(STDOUT_FILENO);
+        stdioStdout->super.file = stdioFile;
+        stdioStdout->super.handle = stdioFile->handle;
         context->roots.stdoutStream = (beacon_oop_t)stdioStdout;
     }
 
     {
-        beacon_StdioStream_t *stderrStdout = beacon_allocateObjectWithBehavior(context->heap, context->classes.stdioStreamClass, sizeof(beacon_StdioStream_t), BeaconObjectKindPointers);
-        stderrStdout->super.handle = beacon_encodeSmallInteger(STDERR_FILENO);
-        context->roots.stdoutStream = (beacon_oop_t)stderrStdout;
+        beacon_File_t *stdioFile = beacon_allocateObjectWithBehavior(context->heap, context->classes.fileClass, sizeof(beacon_File_t), BeaconObjectKindPointers);
+        stdioFile->handle = beacon_encodeSmallInteger(STDERR_FILENO);
+
+        beacon_StdioStream_t *stdioStderr = beacon_allocateObjectWithBehavior(context->heap, context->classes.stdioStreamClass, sizeof(beacon_StdioStream_t), BeaconObjectKindPointers);
+        stdioStderr->super.file = stdioFile;
+        stdioStderr->super.handle = stdioFile->handle;
+        context->roots.stderrStream = (beacon_oop_t)stdioStderr;
     }
 
 #endif

@@ -696,6 +696,7 @@ typedef struct beacon_Stream_s
 typedef struct beacon_AbstractBinaryFileStream_s
 {
     beacon_Stream_t super;
+    struct beacon_File_s *file;
     beacon_oop_t handle;
 } beacon_AbstractBinaryFileStream_t;
 
