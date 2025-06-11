@@ -32,6 +32,7 @@ void beacon_context_registerExceptionPrimitives(beacon_context_t *context);
 void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context);
 void beacon_context_registerFormRenderingPrimitives(beacon_context_t *context);
 void beacon_context_registerFontFacePrimitives(beacon_context_t *context);
+void beacon_context_registerFileSystemPrimitives(beacon_context_t *context);
 void beacon_context_registerWindowSystemPrimitives(beacon_context_t *context);
 void beacon_context_registerSourceCodePrimitives(beacon_context_t *context);
 void beacon_context_registerParseTreeCompilationPrimitives(beacon_context_t *context);
@@ -354,8 +355,10 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.formTextRenderingElementClass = beacon_context_createClassAndMetaclass(context, context->classes.formRenderingElementClass, "FormTextRenderingElement", sizeof(beacon_FormTextRenderingElement_t), BeaconObjectKindPointers,
         "text", "color", "fontFace", NULL);
 
-    context->classes.fileClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "File", sizeof(beacon_File_t), BeaconObjectKindPointers,
+    context->classes.directoryClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Directory", sizeof(beacon_Directory_t), BeaconObjectKindPointers,
         "handle", NULL);
+    context->classes.fileClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "File", sizeof(beacon_File_t), BeaconObjectKindPointers,
+        "name", "handle", NULL);
 
     context->classes.windowClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Window", sizeof(beacon_Window_t), BeaconObjectKindPointers,
         "width", "height", "handle", "rendererHandle", "textureHandle", "textureWidth", "textureHeight", "drawingForm",
@@ -542,6 +545,7 @@ void beacon_context_registerBasicPrimitives(beacon_context_t *context)
     beacon_context_registerAgpuRenderingPrimitives(context);
     beacon_context_registerFormRenderingPrimitives(context);
     beacon_context_registerFontFacePrimitives(context);
+    beacon_context_registerFileSystemPrimitives(context);
     beacon_context_registerWindowSystemPrimitives(context);
     beacon_context_registerSourceCodePrimitives(context);
     beacon_context_registerParseTreeCompilationPrimitives(context);

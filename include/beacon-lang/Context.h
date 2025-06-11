@@ -128,6 +128,7 @@ struct beacon_context_s
         beacon_Behavior_t *formTextureHandleRenderingElementClass;
         beacon_Behavior_t *formTextRenderingElementClass;
 
+        beacon_Behavior_t *directoryClass;
         beacon_Behavior_t *fileClass;
 
         beacon_Behavior_t *windowClass;

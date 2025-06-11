@@ -23,6 +23,8 @@ set(BeaconVM_Sources
     BytecodeJitX86.c
     SyntaxCompiler.c
     VirtualMemory.c
+    UnixFileSystem.c
+    Win32FileSystem.c
 )
 
 
