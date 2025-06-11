@@ -5,6 +5,8 @@
 #include "Bytecode.h"
 #include "Elf.h"
 #include "Dwarf.h"
+#include <stdint.h>
+#include <stddef.h>
 
 #if defined(__x86_64__) || defined(_M_X64)
 #   define BEACON_ARCH_X86_64 1
