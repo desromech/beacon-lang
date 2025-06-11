@@ -157,6 +157,44 @@ static beacon_oop_t beacon_File_writeFromStartingAtCount(beacon_context_t *conte
     return beacon_encodeSmallInteger(writeCount);
 }
 
+static beacon_oop_t beacon_File_getPosition(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_File_t *fileObject = (beacon_File_t*)receiver;
+    int fd = beacon_decodeSmallInteger(fileObject->handle);
+    intptr_t position = 0;
+    if(fd >= 0)
+        position = lseek(fd, 0, SEEK_CUR);
+    
+    return beacon_encodeSmallInteger(position);
+}
+
+static beacon_oop_t beacon_File_setPosition(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_File_t *fileObject = (beacon_File_t*)receiver;
+    int fd = beacon_decodeSmallInteger(fileObject->handle);
+    intptr_t position = beacon_decodeSmallInteger(arguments[0]);
+    if(fd >= 0)
+        position = lseek(fd, position, SEEK_SET);
+    
+    return beacon_encodeSmallInteger(position);
+}
+
+static beacon_oop_t beacon_File_getSize(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_File_t *fileObject = (beacon_File_t*)receiver;
+    int fd = beacon_decodeSmallInteger(fileObject->handle);
+    intptr_t size = 0;
+    if(fd >= 0)
+    {
+        off_t position = lseek(fd, 0, SEEK_CUR);
+        size = lseek(fd, 0, SEEK_END);
+        lseek(fd, position, SEEK_SET);
+    }
+    
+    return beacon_encodeSmallInteger(size);
+}
+
+
 static beacon_oop_t beacon_File_close(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     beacon_File_t *fileObject = (beacon_File_t*)receiver;
@@ -180,6 +218,9 @@ void beacon_context_registerFileSystemPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.fileClass), "open:writeable:truncated:", 0, beacon_FileClass_open);
     beacon_addPrimitiveToClass(context, context->classes.fileClass, "readInto:startingAt:count:", 0, beacon_File_readIntoStartingAtCount);
     beacon_addPrimitiveToClass(context, context->classes.fileClass, "writeFrom:startingAt:count:", 0, beacon_File_writeFromStartingAtCount);
+    beacon_addPrimitiveToClass(context, context->classes.fileClass, "position", 0, beacon_File_getPosition);
+    beacon_addPrimitiveToClass(context, context->classes.fileClass, "position:", 0, beacon_File_setPosition);
+    beacon_addPrimitiveToClass(context, context->classes.fileClass, "size", 0, beacon_File_getSize);
     beacon_addPrimitiveToClass(context, context->classes.fileClass, "close", 0, beacon_File_close);
 }
 
