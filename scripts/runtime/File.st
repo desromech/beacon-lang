@@ -17,3 +17,13 @@ File class ![
 openForNewFileNamed: aFileName
     ^ self open: aFileName writeable: true truncated: true
 ].
+
+File ![
+writeFrom: aByteCollection
+    ^ self writeFrom: aByteCollection startingAt: 1 count: aByteCollection size
+].
+
+File ![
+readInto: aByteCollection
+    ^ self readInto: aByteCollection startingAt: 1 count: aByteCollection size
+].

@@ -58,11 +58,11 @@ static beacon_oop_t beacon_File_readIntoStartingAtCount(beacon_context_t *contex
     beacon_oop_t bufferOop = arguments[0];
     BeaconAssert(context, !beacon_isImmediate(bufferOop));
 
-    intptr_t startingIndex = beacon_decodeSmallInteger(arguments[1]);
+    intptr_t startingIndex = beacon_decodeSmallInteger(arguments[1]) - 1;
     intptr_t bufferCount = beacon_decodeSmallInteger(arguments[2]);
 
     beacon_ObjectHeader_t* bufferObjectHeader = (beacon_ObjectHeader_t*)bufferOop;
-    BeaconAssert(context, startingIndex + bufferCount < (intptr_t)bufferObjectHeader->slotCount);
+    BeaconAssert(context, startingIndex + bufferCount <= (intptr_t)bufferObjectHeader->slotCount);
 
     uint8_t *readBuffer = (uint8_t *)(bufferObjectHeader + 1) + startingIndex;
     ssize_t readCount = 0;
@@ -83,11 +83,11 @@ static beacon_oop_t beacon_File_writeFromStartingAtCount(beacon_context_t *conte
     beacon_oop_t bufferOop = arguments[0];
     BeaconAssert(context, !beacon_isImmediate(bufferOop));
 
-    intptr_t startingIndex = beacon_decodeSmallInteger(arguments[1]);
+    intptr_t startingIndex = beacon_decodeSmallInteger(arguments[1]) - 1;
     intptr_t bufferCount = beacon_decodeSmallInteger(arguments[2]);
 
     beacon_ObjectHeader_t* bufferObjectHeader = (beacon_ObjectHeader_t*)bufferOop;
-    BeaconAssert(context, startingIndex + bufferCount < (intptr_t)bufferObjectHeader->slotCount);
+    BeaconAssert(context, startingIndex + bufferCount <= (intptr_t)bufferObjectHeader->slotCount);
 
     uint8_t *writeBuffer = (uint8_t *)(bufferObjectHeader + 1) + startingIndex;
     ssize_t writeCount = 0;
