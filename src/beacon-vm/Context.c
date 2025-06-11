@@ -356,7 +356,9 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
         "text", "color", "fontFace", NULL);
 
     context->classes.directoryClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Directory", sizeof(beacon_Directory_t), BeaconObjectKindPointers,
-        "handle", NULL);
+        "name", "handle", NULL);
+    context->classes.directoryEntryClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "DirectoryEntry", sizeof(beacon_DirectoryEntry_t), BeaconObjectKindPointers,
+        "name", "isRegularFile", "isDirectory", NULL);
     context->classes.fileClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "File", sizeof(beacon_File_t), BeaconObjectKindPointers,
         "name", "handle", NULL);
 

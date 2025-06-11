@@ -21,6 +21,7 @@ FilesToLoad := #(
     'String.st'
     'MethodDictionary.st'
     'Exceptions.st'
+    'Directory.st'
     'File.st'
 
     'TestCase.st'

@@ -6,6 +6,64 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <dirent.h>
+
+static beacon_oop_t beacon_DirectoryClass_open(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_oop_t pathOop = arguments[0];
+    BeaconAssert(context, !beacon_isImmediate(pathOop));
+
+    beacon_ObjectHeader_t *pathHeader = (beacon_ObjectHeader_t*) pathOop;
+    char *pathString = malloc(pathHeader->slotCount + 1);
+    memcpy(pathString, pathHeader + 1, pathHeader->slotCount);
+    pathString[pathHeader->slotCount] = 0;
+
+    DIR *handle = opendir(pathString);
+    if(!handle)
+        return 0;
+
+    beacon_Directory_t *directoryObject = beacon_allocateObjectWithBehavior(context->heap, context->classes.directoryClass, sizeof(beacon_Directory_t), BeaconObjectKindPointers);
+    directoryObject->name = pathOop;
+    directoryObject->handle = beacon_boxExternalAddress(context, handle);
+    return (beacon_oop_t)directoryObject;
+}
+
+static beacon_oop_t beacon_Directory_nextEntry(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_Directory_t *directoryObject = (beacon_Directory_t*)receiver;
+    BeaconAssert(context, directoryObject->handle);
+    DIR *dir = beacon_unboxExternalAddress(context, directoryObject->handle);
+    struct dirent *entry = readdir(dir);
+    if(!entry)
+        return 0;
+
+    beacon_DirectoryEntry_t *dirEntry = beacon_allocateObjectWithBehavior(context->heap, context->classes.directoryEntryClass, sizeof(beacon_DirectoryEntry_t), BeaconObjectKindPointers);
+    dirEntry->name = (beacon_oop_t)beacon_importCString(context, entry->d_name);
+    dirEntry->isRegularFile = (entry->d_type == DT_REG) ? context->roots.trueValue : context->roots.falseValue;
+    dirEntry->isDirectory = (entry->d_type == DT_DIR) ? context->roots.trueValue : context->roots.falseValue;
+    return (beacon_oop_t)dirEntry;
+}
+
+static beacon_oop_t beacon_Directory_rewind(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_Directory_t *directoryObject = (beacon_Directory_t*)receiver;
+    BeaconAssert(context, directoryObject->handle);
+    rewinddir(beacon_unboxExternalAddress(context, directoryObject->handle));
+    return receiver;
+}
+
+static beacon_oop_t beacon_Directory_close(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
+{
+    beacon_Directory_t *directoryObject = (beacon_Directory_t*)receiver;
+    if(directoryObject->handle)
+    {
+        closedir(beacon_unboxExternalAddress(context, directoryObject->handle));
+        directoryObject->handle = 0;
+    }
+
+    return receiver;
+}
 
 static beacon_oop_t beacon_FileClass_open(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
@@ -114,6 +172,11 @@ static beacon_oop_t beacon_File_close(beacon_context_t *context, beacon_oop_t re
 
 void beacon_context_registerFileSystemPrimitives(beacon_context_t *context)
 {
+    beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.directoryClass), "open:", 0, beacon_DirectoryClass_open);
+    beacon_addPrimitiveToClass(context, context->classes.directoryClass, "nextEntry", 0, beacon_Directory_nextEntry);
+    beacon_addPrimitiveToClass(context, context->classes.directoryClass, "rewind", 0, beacon_Directory_rewind);
+    beacon_addPrimitiveToClass(context, context->classes.directoryClass, "close", 0, beacon_Directory_close);
+
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.fileClass), "open:writeable:truncated:", 0, beacon_FileClass_open);
     beacon_addPrimitiveToClass(context, context->classes.fileClass, "readInto:startingAt:count:", 0, beacon_File_readIntoStartingAtCount);
     beacon_addPrimitiveToClass(context, context->classes.fileClass, "writeFrom:startingAt:count:", 0, beacon_File_writeFromStartingAtCount);
