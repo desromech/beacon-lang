@@ -66,8 +66,6 @@ if(SDL2_INCLUDE_DIR)
 	include_directories("${SDL2_INCLUDE_DIR}")
 endif()
 
-add_subdirectory(third-party)
-
 # Add the current directory.
 include_directories(
 .

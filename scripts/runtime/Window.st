@@ -3,7 +3,7 @@ initialize
     width := 640.
     height := 480.
     drawingForm := nil.
-    useAcceleratedRendering := self hasAcceleratedRenderingSupport.
+    useAcceleratedRendering := false.
 ].
 
 Window ![
@@ -87,29 +87,8 @@ renderViaForm
 ].
 
 Window ![
-renderViaQuadCommands
-    | formRenderingBuilder |
-    rendererHandle beginFrame.
-    self render3DEnvironmentWith: rendererHandle.
-
-    formRenderingBuilder := FormRenderingElementBuilder new
-        scaleFactorX: textureWidth // width;
-        scaleFactorY: textureHeight // height;
-        yourself.
-    self renderWithBuilder: formRenderingBuilder.
-
-    rendererHandle
-        renderQuadList: formRenderingBuilder allQuads;
-        endFrame
-].
-
-Window ![
 render
-    useAcceleratedRendering ifFalse: [
-        self renderViaForm
-    ] ifTrue: [
-        self renderViaQuadCommands
-    ]
+    self renderViaForm
 ].
 
 Window ![

@@ -5,7 +5,6 @@
 #include "beacon-lang/Bytecode.h"
 #include "beacon-lang/ArrayList.h"
 #include "beacon-lang/SourceCode.h"
-#include "beacon-lang/AgpuRendering.h"
 #include "beacon-lang/Gdb.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -29,7 +28,6 @@ void beacon_context_registerArrayListPrimitive(beacon_context_t *context);
 void beacon_context_registerArrayPrimitive(beacon_context_t *context);
 void beacon_context_registerDictionaryPrimitives(beacon_context_t *context);
 void beacon_context_registerExceptionPrimitives(beacon_context_t *context);
-void beacon_context_registerAgpuRenderingPrimitives(beacon_context_t *context);
 void beacon_context_registerFormRenderingPrimitives(beacon_context_t *context);
 void beacon_context_registerFontFacePrimitives(beacon_context_t *context);
 void beacon_context_registerFileSystemPrimitives(beacon_context_t *context);
@@ -397,11 +395,6 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
     context->classes.complexClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Complex", sizeof(beacon_Complex_t), BeaconObjectKindBytes,  NULL);
     context->classes.quaternionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Quaternion", sizeof(beacon_Quaternion_t), BeaconObjectKindBytes,  NULL);
     
-    context->classes.agpuClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPU", sizeof(beacon_AGPU_t), BeaconObjectKindBytes, NULL);
-    context->classes.agpuSwapChainClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPUSwapchain", sizeof(beacon_AGPUSwapChain_t), BeaconObjectKindBytes, NULL);
-    context->classes.agpuTextureHandleClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPUTextureHandle", sizeof(beacon_AGPUTextureHandle_t), BeaconObjectKindBytes, NULL);
-    context->classes.agpuWindowRendererClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "AGPUWindowRenderer", sizeof(beacon_AGPUWindowRenderer_t), BeaconObjectKindBytes, NULL);
-
     context->classes.renderingUploadedElementClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "RenderingUploadedElement", sizeof(beacon_RenderingUploadedElement_t), BeaconObjectKindPointers,
         "lastUploadedFrame", "uploadedIndex", NULL);
     context->classes.meshMaterialClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "MeshMaterial", sizeof(beacon_MeshMaterial_t), BeaconObjectKindPointers, NULL);
@@ -521,9 +514,6 @@ void beacon_context_createImportantRoots(beacon_context_t *context)
 
     context->roots.windowHandleMap = beacon_MethodDictionary_new(context);
     context->roots.openWindowList = beacon_ArrayList_new(context);
-
-    context->roots.agpuCommon = beacon_allocateObjectWithBehavior(context->heap, context->classes.agpuClass, sizeof(beacon_AGPU_t), BeaconObjectKindBytes);
-    context->roots.agpuCommon->debugLayerEnabled = true;
 }
 
 void beacon_context_createSystemDictionary(beacon_context_t *context)
@@ -556,7 +546,6 @@ void beacon_context_registerBasicPrimitives(beacon_context_t *context)
     beacon_context_registerArrayPrimitive(context);
     beacon_context_registerDictionaryPrimitives(context);
     beacon_context_registerExceptionPrimitives(context);
-    beacon_context_registerAgpuRenderingPrimitives(context);
     beacon_context_registerFormRenderingPrimitives(context);
     beacon_context_registerFontFacePrimitives(context);
     beacon_context_registerFileSystemPrimitives(context);

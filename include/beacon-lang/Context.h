@@ -157,11 +157,6 @@ struct beacon_context_s
         beacon_Behavior_t *complexClass;
         beacon_Behavior_t *quaternionClass;
 
-        beacon_Behavior_t *agpuClass;
-        beacon_Behavior_t *agpuSwapChainClass;
-        beacon_Behavior_t *agpuTextureHandleClass;
-        beacon_Behavior_t *agpuWindowRendererClass;
-
         beacon_Behavior_t *renderingUploadedElementClass;
         beacon_Behavior_t *meshMaterialClass;
         beacon_Behavior_t *meshMetallicRoughnessMaterialClass;
@@ -218,7 +213,6 @@ struct beacon_context_s
 
         beacon_MethodDictionary_t *windowHandleMap;
         beacon_ArrayList_t *openWindowList;
-        struct beacon_AGPU_s *agpuCommon;
     } roots;
 
     beacon_MemoryHeap_t *heap;

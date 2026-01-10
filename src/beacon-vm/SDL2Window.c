@@ -7,7 +7,6 @@
 #include "Window.h"
 #include "Dictionary.h"
 #include "ArrayList.h"
-#include "AgpuRendering.h"
 #include <stdlib.h>
 
 static bool hasInitializedSDL2;
@@ -43,83 +42,6 @@ static void beacon_sdl2_updateDisplayTextureExtent(beacon_context_t *context, be
     }
 }
 
-void beacon_sdl2_createOrUpdateSwapChain(beacon_context_t *context, beacon_Window_t *beaconWindow, SDL_Window *sdlWindow)
-{
-    agpu_device *device = beacon_agpu_getDevice(context, context->roots.agpuCommon);
-    agpuFinishDeviceExecution(device);
-
-    agpu_swap_chain *oldSwapChain = 0;
-    if(beaconWindow->swapChainHandle)
-        oldSwapChain = beaconWindow->swapChainHandle->swapChain;
-
-    int windowWidth, windowHeight;
-    SDL_GetWindowSize(sdlWindow, &windowWidth, &windowHeight);
-
-    agpu_swap_chain_create_info swapChainCreateInfo = {
-        .colorbuffer_format = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB,
-        .depth_stencil_format = AGPU_TEXTURE_FORMAT_UNKNOWN,
-        .width = windowWidth,
-        .height = windowHeight,
-        .buffer_count = 3,
-        .old_swap_chain = oldSwapChain,
-        .flags = AGPU_SWAP_CHAIN_FLAG_APPLY_SCALE_FACTOR_FOR_HI_DPI,
-        .presentation_mode = AGPU_SWAP_CHAIN_PRESENTATION_MODE_MAILBOX,
-        .fallback_presentation_mode = AGPU_SWAP_CHAIN_PRESENTATION_MODE_IMMEDIATE
-    };
-    
-    // Get the window info.
-    SDL_SysWMinfo windowInfo;
-    SDL_VERSION(&windowInfo.version);
-    SDL_GetWindowWMInfo(sdlWindow, &windowInfo);
-
-    switch (windowInfo.subsystem)
-    {
-#if defined(SDL_VIDEO_DRIVER_WINDOWS)
-    case SDL_SYSWM_WINDOWS:
-    swapChainCreateInfo.window = (agpu_pointer)windowInfo.info.win.window;
-        break;
-#endif
-#if defined(SDL_VIDEO_DRIVER_X11)
-    case SDL_SYSWM_X11:
-        swapChainCreateInfo.window = (agpu_pointer)(uintptr_t)windowInfo.info.x11.window;
-        break;
-#endif
-#if defined(SDL_VIDEO_DRIVER_COCOA)
-    case SDL_SYSWM_COCOA:
-        swapChainCreateInfo.window = (agpu_pointer)windowInfo.info.cocoa.window;
-        break;
-#endif
-    default:
-        fprintf(stderr, "Unsupported window system\n");
-        return;
-    }
-
-    if(!beaconWindow->swapChainHandle)
-        beaconWindow->swapChainHandle = beacon_allocateObjectWithBehavior(context->heap, context->classes.agpuSwapChainClass, sizeof(beacon_AGPUSwapChain_t), BeaconObjectKindBytes);
-
-    beacon_AGPUSwapChain_t *swapChainHandle = beaconWindow->swapChainHandle;
-    if(!swapChainHandle->commandQueue)
-        swapChainHandle->commandQueue = agpuGetDefaultCommandQueue(device);
-
-    swapChainHandle->swapChain = agpuCreateSwapChain(device, swapChainHandle->commandQueue, &swapChainCreateInfo);
-    if(!swapChainHandle->swapChain)
-    {
-        fprintf(stderr, "Failed to create swapchain.");
-        return;
-    }
-
-    int swapChainWidth = agpuGetSwapChainWidth(swapChainHandle->swapChain);
-    int swapChainHeight = agpuGetSwapChainHeight(swapChainHandle->swapChain);
-
-    beaconWindow->width = beacon_encodeSmallInteger(windowWidth);
-    beaconWindow->height = beacon_encodeSmallInteger(windowHeight);
-
-    beaconWindow->textureWidth = beacon_encodeSmallInteger(swapChainWidth);
-    beaconWindow->textureHeight = beacon_encodeSmallInteger(swapChainHeight);
-    if(beaconWindow->rendererHandle)
-        ((beacon_AGPUWindowRenderer_t*)beaconWindow->rendererHandle)->swapChain = swapChainHandle;
-}
-
 static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
 {
     (void)argumentCount;
@@ -140,19 +62,11 @@ static beacon_oop_t beacon_Window_open(beacon_context_t *context, beacon_oop_t r
     beacon_MethodDictionary_atPut(context, context->roots.windowHandleMap, (beacon_Symbol_t*)beaconWindow->handle, (beacon_oop_t)beaconWindow);
     beacon_ArrayList_add(context, context->roots.openWindowList, (beacon_oop_t)beaconWindow);
 
-    if(beaconWindow->useAcceleratedRendering != context->roots.trueValue)
-    {
-        SDL_Renderer *renderer = SDL_CreateRenderer(sdlWindow, -1, SDL_RENDERER_PRESENTVSYNC);
-        beaconWindow->rendererHandle = beacon_boxExternalAddress(context, renderer);
-    
-        beacon_sdl2_updateDisplayTextureExtent(context, beaconWindow);    
-    }
-    else
-    {
-        beacon_AGPUWindowRenderer_t *windowRenderer = beacon_agpu_createWindowRenderer(context);
-        beaconWindow->rendererHandle = (beacon_oop_t)windowRenderer;
-        beacon_sdl2_createOrUpdateSwapChain(context, beaconWindow, sdlWindow);
-    }
+    SDL_Renderer *renderer = SDL_CreateRenderer(sdlWindow, -1, SDL_RENDERER_PRESENTVSYNC);
+    beaconWindow->rendererHandle = beacon_boxExternalAddress(context, renderer);
+
+    beacon_sdl2_updateDisplayTextureExtent(context, beaconWindow);    
+
 
     return receiver;
 }
@@ -171,32 +85,13 @@ static beacon_oop_t beacon_Window_close(beacon_context_t *context, beacon_oop_t 
     //beacon_MethodDictionary_atPut(context, context->roots.windowHandleMap, (beacon_Symbol_t*)beaconWindow->handle, (beacon_oop_t)beaconWindow);
     beacon_ArrayList_remove(context->roots.openWindowList, (beacon_oop_t)beaconWindow);
 
-    if(beaconWindow->useAcceleratedRendering == context->roots.trueValue)
-    {
-        agpuFinishDeviceExecution(beacon_agpu_getDevice(context, context->roots.agpuCommon));
-        if(beaconWindow->swapChainHandle)
-        {
-            agpuReleaseSwapChain(beaconWindow->swapChainHandle->swapChain);
-            beaconWindow->swapChainHandle->swapChain = NULL;
+    SDL_Texture *texture = beacon_unboxExternalAddress(context, beaconWindow->textureHandle);
+    if(texture)
+        SDL_DestroyTexture(texture);
 
-            agpuReleaseCommandQueue(beaconWindow->swapChainHandle->commandQueue);
-            beaconWindow->swapChainHandle->commandQueue = NULL;
-        }
-
-        beacon_AGPUWindowRenderer_t *renderer = (beacon_AGPUWindowRenderer_t*)beaconWindow->rendererHandle;
-        if(renderer)
-            beacon_agpu_destroyWindowRenderer(context, renderer);
-    }
-    else
-    {
-        SDL_Texture *texture = beacon_unboxExternalAddress(context, beaconWindow->textureHandle);
-        if(texture)
-            SDL_DestroyTexture(texture);
-    
-        SDL_Renderer *renderer = beacon_unboxExternalAddress(context, beaconWindow->rendererHandle);
-        if(texture)
-            SDL_DestroyRenderer(renderer); 
-    }
+    SDL_Renderer *renderer = beacon_unboxExternalAddress(context, beaconWindow->rendererHandle);
+    if(texture)
+        SDL_DestroyRenderer(renderer); 
 
     SDL_DestroyWindow(sdlWindow);
     return receiver;
@@ -391,10 +286,7 @@ static void beacon_sdl2_fetchAndDispatchEvents(beacon_context_t *context)
                     beaconWindow->width = beacon_encodeSmallInteger(newWidth);
                     beaconWindow->height = beacon_encodeSmallInteger(newHeight);
 
-                    if (beaconWindow->useAcceleratedRendering == context->roots.trueValue)
-                        beacon_sdl2_createOrUpdateSwapChain(context, beaconWindow, sdlWindow);
-                    else
-                        beacon_sdl2_updateDisplayTextureExtent(context, beaconWindow);
+                    beacon_sdl2_updateDisplayTextureExtent(context, beaconWindow);
                     
                     beacon_perform(context, (beacon_oop_t)beaconWindow, (beacon_oop_t)beacon_internCString(context, "onSizeChanged"));
                 }
@@ -447,20 +339,11 @@ static beacon_oop_t beacon_WindowClass_enterMainLoop(beacon_context_t *context, 
     return receiver;
 }
 
-static beacon_oop_t beacon_Window_hasAcceleratedRendering(beacon_context_t *context, beacon_oop_t receiver, size_t argumentCount, beacon_oop_t *arguments)
-{
-#ifdef __APPLE__
-    return context->roots.falseValue;
-#else
-    return context->roots.trueValue;
-#endif
-}
 
 void beacon_context_registerWindowSystemPrimitives(beacon_context_t *context)
 {
     beacon_addPrimitiveToClass(context, context->classes.windowClass, "open", 0, beacon_Window_open);
     beacon_addPrimitiveToClass(context, context->classes.windowClass, "close", 0, beacon_Window_close);
     beacon_addPrimitiveToClass(context, context->classes.windowClass, "displayForm:", 1, beacon_Window_displayForm);
-    beacon_addPrimitiveToClass(context, context->classes.windowClass, "hasAcceleratedRenderingSupport", 1, beacon_Window_hasAcceleratedRendering);
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.windowClass), "enterMainLoop", 0, beacon_WindowClass_enterMainLoop);
 }

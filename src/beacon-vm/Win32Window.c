@@ -327,6 +327,5 @@ void beacon_context_registerWindowSystemPrimitives(beacon_context_t *context)
     beacon_addPrimitiveToClass(context, context->classes.windowClass, "open", 0, beacon_Window_open);
     beacon_addPrimitiveToClass(context, context->classes.windowClass, "displayForm:", 1, beacon_Window_displayForm);
     beacon_addPrimitiveToClass(context, context->classes.windowClass, "close", 0, beacon_Window_close);
-    beacon_addPrimitiveToClass(context, context->classes.windowClass, "hasAcceleratedRenderingSupport", 1, beacon_Window_hasAcceleratedRendering);
     beacon_addPrimitiveToClass(context, beacon_getClass(context, (beacon_oop_t)context->classes.windowClass), "enterMainLoop", 0, beacon_WindowClass_enterMainLoop);
 }

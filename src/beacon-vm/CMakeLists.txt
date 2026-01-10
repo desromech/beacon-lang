@@ -1,5 +1,4 @@
 set(BeaconVM_Sources
-    AgpuRendering.c
     ChunkedAllocator.c
     Context.c
     DynArray.c
@@ -34,14 +33,14 @@ if(WIN32)
     )
 
     add_library(BeaconVMCore ${BeaconVM_Sources} ${BeaconVM_Win32Source})
-    target_link_libraries(BeaconVMCore Agpu)
+    target_link_libraries(BeaconVMCore)
 elseif(SDL2_LIBRARY AND SDL2_INCLUDE_DIR)
     set(BeaconVM_SDL2Sources
         SDL2Window.c
     )
 
     add_library(BeaconVMCore ${BeaconVM_Sources} ${BeaconVM_SDL2Sources})
-    target_link_libraries(BeaconVMCore ${SDL2_LIBRARY} Agpu)
+    target_link_libraries(BeaconVMCore ${SDL2_LIBRARY})
     if(UNIX)
         target_link_libraries(BeaconVMCore m)
     endif()
