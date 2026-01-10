@@ -156,15 +156,6 @@ struct beacon_context_s
 
         beacon_Behavior_t *complexClass;
         beacon_Behavior_t *quaternionClass;
-
-        beacon_Behavior_t *renderingUploadedElementClass;
-        beacon_Behavior_t *meshMaterialClass;
-        beacon_Behavior_t *meshMetallicRoughnessMaterialClass;
-        beacon_Behavior_t *meshPrimitiveClass;
-        beacon_Behavior_t *model3DClass;
-        beacon_Behavior_t *renderObject3DClass;
-        beacon_Behavior_t *lightSourceClass;
-        beacon_Behavior_t *sceneCameraClass;
     } classes;
 
     struct ContextGCRoots

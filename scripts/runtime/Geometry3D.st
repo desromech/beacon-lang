@@ -376,23 +376,3 @@ rayForNormalizedPoint: normalizedPoint
 	farPoint := self normalizedPointInFarPlane: normalizedPoint.
 	^ Ray3D from: nearPoint to: farPoint
 ].
-
-SceneCamera ![
-viewFrustumWithAspectRatio: aspectRatio
-    | newFrustum |
-    newFrustum := Frustum new.
-    isPerspective ifTrue: [
-        newFrustum makePerspectiveFovY: fovY aspect: aspectRatio near: nearDistance far: farDistance
-    ] ifFalse: [
-        
-    ].
-    ^ newFrustum
-].
-
-SceneCamera ![
-worldFrustumWithAspectRatio: aspectRatio
-    | viewFrustum cameraTransform |
-    viewFrustum := self viewFrustumWithAspectRatio: aspectRatio.
-    cameraTransform := ReversibleAffineTransform3D scale: Vector3 ones rotation: orientation translation: location.
-    ^ viewFrustum transformedWith: cameraTransform
-].

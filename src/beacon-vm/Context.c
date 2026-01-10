@@ -394,28 +394,6 @@ static void beacon_context_createBaseClassHierarchy(beacon_context_t *context)
 
     context->classes.complexClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Complex", sizeof(beacon_Complex_t), BeaconObjectKindBytes,  NULL);
     context->classes.quaternionClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "Quaternion", sizeof(beacon_Quaternion_t), BeaconObjectKindBytes,  NULL);
-    
-    context->classes.renderingUploadedElementClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "RenderingUploadedElement", sizeof(beacon_RenderingUploadedElement_t), BeaconObjectKindPointers,
-        "lastUploadedFrame", "uploadedIndex", NULL);
-    context->classes.meshMaterialClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "MeshMaterial", sizeof(beacon_MeshMaterial_t), BeaconObjectKindPointers, NULL);
-    context->classes.meshMetallicRoughnessMaterialClass = beacon_context_createClassAndMetaclass(context, context->classes.meshMaterialClass, "MeshMetallicRoughnessMaterial", sizeof(beacon_MeshMetallicRoughnessMaterial_t), BeaconObjectKindPointers,
-        "baseColor", "baseColorTexture", "metallicFactor", "roughnessFactor", "occlusionFactor", "metallicRoughnessTexture", "occlusionTexture", "isUnlit", NULL);
-    context->classes.meshPrimitiveClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "MeshPrimitive", sizeof(beacon_MeshPrimitive_t), BeaconObjectKindPointers,
-        "material", "positions", "normals", "texcoords", "tangents4", "indices", "boundingBox", NULL);
-    context->classes.model3DClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "Model3D", sizeof(beacon_Model3D_t), BeaconObjectKindPointers,
-        "primitives", "boundingBox", NULL);
-    context->classes.renderObject3DClass = beacon_context_createClassAndMetaclass(context, context->classes.renderingUploadedElementClass, "RenderObject3D", sizeof(beacon_RenderObject3D_t), BeaconObjectKindPointers,
-        "model", "modelMatrix", "isSelected", "selectionColor", NULL);
-
-    context->classes.lightSourceClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "LightSource", sizeof(beacon_LightSource_t), BeaconObjectKindPointers,
-        "position",  "isDirectional", "intensity", "influenceRadius", "orientation", 
-        "innerSpotCutoff", "outerSpotCutoff", "castShadows", 
-        "shadowMapNormalBiasFactor", NULL);
-
-    context->classes.sceneCameraClass = beacon_context_createClassAndMetaclass(context, context->classes.objectClass, "SceneCamera", sizeof(beacon_SceneCamera_t), BeaconObjectKindPointers,
-        "location", "orientation", "nearDistance", "farDistance", "fovY", "focalDistance", "isPerspective",
-        "timeOfSimulation", "timeOfDay", "exposure", "ambientLightSource", 
-        NULL);
 }
 
 void beacon_context_createImportantRoots(beacon_context_t *context)
